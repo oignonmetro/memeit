@@ -25,24 +25,42 @@ identifiant, RTDB se resynchronise automatiquement.
 
 ## Mise en place d'un projet Firebase (à faire une fois)
 
-1. Va sur [console.firebase.google.com](https://console.firebase.google.com) → **Ajouter un
-   projet** → donne-lui un nom (ex. `memeit`) → tu peux désactiver Google Analytics, il n'est
-   pas utilisé.
-2. Dans le projet, **Compilation > Realtime Database** → **Créer une base de données** → choisis
-   une région → démarre en **mode verrouillé** (les vraies règles sont dans
-   `database.rules.json`, à publier à l'étape 5).
-3. **Paramètres du projet** (icône ⚙️) → onglet **Général** → section "Vos applications" →
-   **Ajouter une application** → icône **Web** (`</>`) → donne-lui un nom → **Enregistrer
-   l'application**. Firebase affiche un bloc de config JS : c'est ce dont tu as besoin.
-4. Copie `client/.env.example` vers `client/.env`, et reporte chaque valeur du bloc de config
-   dans la variable `VITE_FIREBASE_*` correspondante (`apiKey` → `VITE_FIREBASE_API_KEY`, etc.).
-5. Installe la CLI Firebase si besoin (`npm install -g firebase-tools`), puis à la racine du
-   repo :
-   ```bash
-   firebase login
-   firebase use --add        # sélectionne le projet créé à l'étape 1
-   firebase deploy --only database   # publie les règles de database.rules.json
-   ```
+Tout se fait en ligne de commande, sans jamais ouvrir console.firebase.google.com. La seule
+étape qui ouvre un navigateur est la connexion Google elle-même (`firebase login`) — un simple
+écran de connexion, pas le tableau de bord Firebase.
+
+```bash
+# 0. Installer la CLI si besoin
+npm install -g firebase-tools
+
+# 1. Se connecter (ouvre une page de connexion Google le temps de s'authentifier)
+firebase login
+
+# 2. Créer le projet — choisis un identifiant unique (lettres minuscules/chiffres/tirets)
+firebase projects:create memeit-tonpseudo --display-name "MemeIt"
+
+# 3. Créer l'instance Realtime Database (europe-west1 = Belgique, change si besoin)
+firebase database:instances:create memeit-tonpseudo-default-rtdb \
+  --project memeit-tonpseudo --location europe-west1
+
+# 4. Créer l'app Web du projet — note l'"App ID" affiché dans la sortie
+firebase apps:create WEB "MemeIt Web" --project memeit-tonpseudo
+
+# 5. Afficher la config SDK dans le terminal (remplace <APP_ID> par la valeur de l'étape 4)
+firebase apps:sdkconfig WEB <APP_ID> --project memeit-tonpseudo
+```
+
+La dernière commande affiche un objet JS avec `apiKey`, `authDomain`, `databaseURL`, etc.
+Copie `client/.env.example` vers `client/.env` et reporte chaque valeur dans la variable
+`VITE_FIREBASE_*` correspondante (`apiKey` → `VITE_FIREBASE_API_KEY`, etc.).
+
+Puis relie ce projet au repo local (sans passer par le sélecteur interactif) et publie les
+règles de sécurité :
+
+```bash
+echo "{\"projects\":{\"default\":\"memeit-tonpseudo\"}}" > .firebaserc
+firebase deploy --only database
+```
 
 ## Développement local
 
