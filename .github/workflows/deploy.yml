@@ -29,17 +29,9 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: "794701425110"
           VITE_FIREBASE_APP_ID: "1:794701425110:web:122e08962f48a974481c77"
 
-      - name: Déployer sur Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: live
-          projectId: memeit-32d6d
-
-      - name: Publier les règles Realtime Database
+      - name: Déployer Hosting + règles Database
         run: |
           npm install -g firebase-tools
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/firebase-sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
-          firebase deploy --only database --project memeit-32d6d --non-interactive
+          firebase deploy --only hosting,database --project memeit-32d6d --non-interactive --token "$FIREBASE_TOKEN"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

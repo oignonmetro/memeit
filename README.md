@@ -90,6 +90,26 @@ npm run build
 firebase deploy --only hosting,database
 ```
 
+## Déploiement automatique via GitHub Actions
+
+Le repo contient `.github/workflows/deploy.yml` : à chaque push sur `main`, une CI build le
+client puis déploie Hosting + les règles Database — plus besoin de lancer `npm run deploy`
+à la main. Il faut juste lui donner un moyen de s'authentifier auprès de Firebase, une seule
+fois :
+
+```bash
+npm install -g firebase-tools
+firebase login:ci
+```
+
+Ouvre un lien de connexion Google dans un navigateur, puis affiche un jeton dans le terminal.
+Copie ce jeton et ajoute-le comme secret du repo GitHub : **Settings > Secrets and variables >
+Actions > New repository secret**, nom `FIREBASE_TOKEN`, valeur = le jeton copié.
+
+Une fois ce secret créé, va dans l'onglet **Actions** du repo → workflow "Déploiement
+Firebase" → **Run workflow** pour déclencher le premier déploiement (les suivants se
+déclenchent automatiquement à chaque push sur `main`).
+
 Firebase donne une URL publique du type `https://<ton-projet>.web.app`. C'est cette URL qui
 sert la PWA — la Realtime Database, elle, n'a pas besoin d'être "déployée" à part ses règles
 (déjà publiées à l'étape 5 de la mise en place).
