@@ -1,0 +1,45 @@
+name: Déploiement Firebase
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      # Ces valeurs ne sont pas secrètes : la config Firebase Web est destinée à finir
+      # publique dans le bundle JS (voir README, section "Confidentialité et sécurité").
+      - run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: AIzaSyDIWw-WylG0hS3gHlg1hhRJHCt3PRj0XOY
+          VITE_FIREBASE_AUTH_DOMAIN: memeit-32d6d.firebaseapp.com
+          VITE_FIREBASE_DATABASE_URL: https://memeit-32d6d-default-rtdb.firebaseio.com
+          VITE_FIREBASE_PROJECT_ID: memeit-32d6d
+          VITE_FIREBASE_STORAGE_BUCKET: memeit-32d6d.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "794701425110"
+          VITE_FIREBASE_APP_ID: "1:794701425110:web:122e08962f48a974481c77"
+
+      - name: Déployer sur Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: memeit-32d6d
+
+      - name: Publier les règles Realtime Database
+        run: |
+          npm install -g firebase-tools
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          firebase deploy --only database --project memeit-32d6d --non-interactive
