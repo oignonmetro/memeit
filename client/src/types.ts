@@ -33,6 +33,57 @@ export interface PublicPlayer {
   isHost: boolean;
 }
 
+// ---- Raw shape stored under rooms/{code} in Realtime Database ----
+
+export interface DbPlayer {
+  nickname: string;
+  score: number;
+  connected: boolean;
+  joinedAt: number;
+}
+
+export interface DbSubmission {
+  templateId: string;
+  layers: TextLayer[];
+}
+
+export interface DbRevealResult {
+  thumbsUp: number;
+}
+
+export interface DbRoom {
+  createdAt: number;
+  lastActivityAt: number;
+  hostId: string;
+  settings: RoomSettings;
+  status: Phase;
+  players: Record<string, DbPlayer>;
+  currentRound: number;
+  totalRounds: number;
+  currentTemplateId: string | null;
+  roundDeadline: number | null;
+  // submissions, revealOrder and votes are keyed by the author's playerId —
+  // each player submits exactly one meme per round, so playerId doubles as memeId.
+  submissions: Record<string, DbSubmission>;
+  revealOrder: string[];
+  revealIndex: number;
+  revealDeadline: number | null;
+  votes: Record<string, Record<string, boolean>>;
+  revealResults: Record<string, DbRevealResult>;
+  usedTemplateIds: string[];
+  winnerId: string | null;
+}
+
+export interface DbUploadedTemplate {
+  url: string;
+  name: string;
+  source: 'upload';
+}
+
+export type DbTemplates = Record<string, DbUploadedTemplate>;
+
+// ---- View-model shapes consumed by UI components ----
+
 export interface RoomSnapshot {
   code: string;
   phase: Phase;
@@ -41,10 +92,6 @@ export interface RoomSnapshot {
   currentRound: number;
   totalRounds: number;
   templates: Template[];
-}
-
-export interface SelfPlayer extends PublicPlayer {
-  token: string;
 }
 
 export interface RoundStartedPayload {
@@ -57,7 +104,7 @@ export interface RoundStartedPayload {
 export interface RevealMemePayload {
   index: number;
   total: number;
-  meme: { id: string; templateId: string; layers: TextLayer[] };
+  meme: { id: string; templateId: string; layers: TextLayer[]; authorId: string };
   deadline: number;
 }
 
@@ -82,3 +129,16 @@ export interface GameEndedPayload {
 export const FONT_SIZES: Record<TextLayer['fontSize'], number> = { sm: 5.5, md: 8, lg: 11 };
 export const TEXT_COLORS = ['#ffffff', '#000000', '#ffd166', '#ef476f', '#06d6a0'];
 export const MAX_TEXT_LAYERS = 5;
+
+export const DEFAULT_SETTINGS: RoomSettings = {
+  rounds: 3,
+  captionTimeSec: 75,
+  voteTimeSec: 8,
+  templateSource: 'both',
+};
+
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 20;
+export const REVEAL_PAUSE_SEC = 3;
+export const ROUND_TRANSITION_PAUSE_SEC = 5;
+export const ROOM_INACTIVITY_MS = 30 * 60 * 1000;

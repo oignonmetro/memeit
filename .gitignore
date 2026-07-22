@@ -4,3 +4,7 @@ dist/
 .DS_Store
 .env
 .env.local
+client/.env
+client/.env.local
+.firebaserc
+.firebase/

@@ -1,16 +1,29 @@
-import { useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { useGameStore } from './state/gameStore';
+import { firebaseConfigured } from './lib/firebase';
 import Home from './pages/Home';
 import RoomPage from './pages/RoomPage';
 import TvPage from './pages/TvPage';
 
-export default function App() {
-  const initListeners = useGameStore((s) => s.initListeners);
+function FirebaseSetupScreen() {
+  return (
+    <div className="screen">
+      <h1 className="title">
+        Meme<span className="accent">It</span>
+      </h1>
+      <div className="card">
+        <p>
+          Firebase n'est pas configuré. Renseigne les variables <code>VITE_FIREBASE_*</code> (voir{' '}
+          <code>.env.example</code>) puis relance l'application.
+        </p>
+      </div>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    initListeners();
-  }, [initListeners]);
+export default function App() {
+  if (!firebaseConfigured) {
+    return <FirebaseSetupScreen />;
+  }
 
   return (
     <HashRouter>

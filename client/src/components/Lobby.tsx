@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
-import type { RoomSnapshot, SelfPlayer } from '../types';
+import type { RoomSnapshot, PublicPlayer } from '../types';
 import { resizeImageFile } from '../lib/image';
 
 interface LobbyProps {
   room: RoomSnapshot;
-  self: SelfPlayer;
+  self: PublicPlayer;
   onStart: () => Promise<void>;
   onUpload: (dataUrl: string) => Promise<void>;
 }

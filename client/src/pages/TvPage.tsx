@@ -13,12 +13,13 @@ export default function TvPage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { room, roundStarted, captionProgress, revealMeme, lastResult, roundScoreboard, gameEnded, joinTv } = useGameStore();
+  const { room, roundStarted, captionProgress, revealMeme, lastResult, roundScoreboard, gameEnded, joinTv, detachRoom } = useGameStore();
 
   useEffect(() => {
-    if (codeParam) {
-      joinTv(codeParam).catch((err) => setError(err.message));
-    }
+    if (!codeParam) return;
+    joinTv(codeParam).catch((err) => setError(err.message));
+    return () => detachRoom();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeParam]);
 
   const captionCountdown = useCountdown(roundStarted?.deadline, room?.settings.captionTimeSec ?? 60);

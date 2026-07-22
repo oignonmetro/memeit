@@ -1,8 +1,7 @@
-import type { Template } from '../types.js';
+import type { Template } from '../types';
 
-// Built-in, original placeholder templates (served as static SVGs by the
-// client build, referenced here by public path). Rooms can add their own
-// via upload on top of this base library.
+// Built-in, original placeholder templates bundled with the app (client/public/templates/library).
+// Rooms can add their own on top of this base library (stored in Realtime Database).
 export const LIBRARY_TEMPLATES: Template[] = [
   { id: 'lib-1', url: '/templates/library/podium.svg', name: 'Le podium', source: 'library' },
   { id: 'lib-2', url: '/templates/library/two-buttons.svg', name: 'Les deux boutons', source: 'library' },

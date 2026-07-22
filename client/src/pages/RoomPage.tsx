@@ -11,8 +11,9 @@ export default function RoomPage() {
   const { code = '' } = useParams();
   const navigate = useNavigate();
   const {
+    selfId,
     room,
-    self,
+    loaded,
     roundStarted,
     captionProgress,
     revealMeme,
@@ -21,18 +22,18 @@ export default function RoomPage() {
     gameEnded,
     hasSubmitted,
     hasVotedCurrent,
-    myMemeId,
     error,
     clearError,
-    tryRejoin,
+    attachRoom,
+    detachRoom,
     startGame,
     uploadTemplate,
     submitMeme,
     castVote,
+    joinRoom,
     leaveRoom,
   } = useGameStore();
 
-  const [rejoinDone, setRejoinDone] = useState(false);
   const [nickname, setNickname] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -40,15 +41,14 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (!code) return;
-    if (self) {
-      setRejoinDone(true);
-      return;
-    }
-    tryRejoin(code).finally(() => setRejoinDone(true));
+    attachRoom(code.toUpperCase(), 'player');
+    return () => detachRoom();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   const captionCountdown = useCountdown(roundStarted?.deadline, room?.settings.captionTimeSec ?? 60);
+
+  const self = room?.players.find((p) => p.id === selfId) || null;
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -56,7 +56,7 @@ export default function RoomPage() {
     setJoining(true);
     setJoinError(null);
     try {
-      await useGameStore.getState().joinRoom(code, nickname.trim());
+      await joinRoom(code, nickname.trim());
     } catch (err: any) {
       setJoinError(err.message || 'Impossible de rejoindre.');
     } finally {
@@ -69,7 +69,7 @@ export default function RoomPage() {
     navigate('/');
   }
 
-  if (!rejoinDone) {
+  if (!loaded) {
     return (
       <div className="screen">
         <div className="center-note" style={{ marginTop: 80 }}>Connexion...</div>
@@ -77,14 +77,26 @@ export default function RoomPage() {
     );
   }
 
-  if (!self || !room) {
+  if (!room) {
+    return (
+      <div className="screen">
+        <h1 className="title">
+          Salle <span className="accent">{code}</span>
+        </h1>
+        <div className="card center-note">Cette salle n'existe pas (ou plus).</div>
+        <button className="btn btn-ghost" onClick={() => navigate('/')}>Retour à l'accueil</button>
+      </div>
+    );
+  }
+
+  if (!self) {
     return (
       <div className="screen">
         <h1 className="title">
           Salle <span className="accent">{code}</span>
         </h1>
         <form className="card" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }} onSubmit={handleJoin}>
-          <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} />
+          <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} autoFocus />
           <button className="btn btn-primary" type="submit" disabled={joining || !nickname.trim()}>
             {joining ? 'Connexion...' : 'Rejoindre la partie'}
           </button>
@@ -146,11 +158,11 @@ export default function RoomPage() {
           <VotingPanel
             reveal={revealMeme}
             templates={room.templates}
-            isOwnMeme={revealMeme.meme.id === myMemeId}
+            isOwnMeme={revealMeme.meme.authorId === selfId}
             hasVoted={hasVotedCurrent}
             result={lastResult && lastResult.memeId === revealMeme.meme.id ? lastResult : null}
             voteTimeSec={room.settings.voteTimeSec}
-            onVote={(thumbsUp) => castVote(revealMeme.meme.id, thumbsUp)}
+            onVote={(thumbsUp) => castVote(thumbsUp)}
           />
         ) : (
           <div className="center-note" style={{ marginTop: 40 }}>Préparation du vote...</div>
@@ -162,7 +174,7 @@ export default function RoomPage() {
           <Leaderboard
             scores={roundScoreboard.scores}
             title={`Résultats — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
-            selfId={self.id}
+            selfId={selfId}
           />
           <div className="center-note">
             {roundScoreboard.roundNumber >= roundScoreboard.totalRounds ? 'Calcul du classement final...' : 'Prochaine manche dans quelques secondes...'}
@@ -172,7 +184,7 @@ export default function RoomPage() {
 
       {room.phase === 'ended' && gameEnded && (
         <>
-          <Leaderboard scores={gameEnded.scores} title="🏆 Résultats finaux" selfId={self.id} winnerId={gameEnded.winnerId} />
+          <Leaderboard scores={gameEnded.scores} title="🏆 Résultats finaux" selfId={selfId} winnerId={gameEnded.winnerId} />
           <button className="btn btn-primary" onClick={handleLeave}>
             Retour à l'accueil
           </button>
