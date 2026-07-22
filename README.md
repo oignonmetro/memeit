@@ -38,12 +38,33 @@ npm run build   # build le client (client/dist) puis compile le serveur (server/
 npm start        # sert client/dist + API + WebSocket sur le port $PORT (3001 par défaut)
 ```
 
-Un seul service Node à déployer (Render, Railway, Fly.io, un VPS avec PM2, etc.) : il sert à la
-fois l'app web et le WebSocket. Variables d'environnement :
+Un seul service Node à déployer : il sert à la fois l'app web et le WebSocket. Variables
+d'environnement :
 
-- `PORT` — port d'écoute (par défaut 3001)
+- `PORT` — port d'écoute (fourni automatiquement par Render, 3001 en local par défaut)
 - `CLIENT_ORIGIN` — origine autorisée pour CORS Socket.io si le client est servi ailleurs
   (par défaut `*`, inutile si tout est servi par ce même service)
+
+## Déploiement sur Render
+
+Le repo contient un `render.yaml` (Blueprint Render) qui déclare tout ce qu'il faut :
+build (`npm install && npm run build`), démarrage (`npm start`) et un health check sur
+`/api/health`.
+
+1. Sur [render.com](https://render.com), **New > Blueprint**, connecter ce repo GitHub.
+2. Render détecte `render.yaml` et propose de créer le service `memeit` automatiquement.
+3. Vérifier la branche à déployer (par défaut `main` dans le fichier — à changer si besoin,
+   ex. `claude/meme-game-multiplayer-jaskaw` en attendant un merge).
+4. Déployer : Render build puis démarre le service, avec une URL publique du type
+   `https://memeit-xxxx.onrender.com`. WebSocket (Socket.io) fonctionne nativement, aucune
+   config supplémentaire nécessaire.
+
+Alternative sans Blueprint : **New > Web Service**, mêmes commandes de build/start que
+ci-dessus, runtime Node.
+
+Important (plan gratuit) : un service Render gratuit se met en veille après quelques minutes
+d'inactivité et met ~30-60s à se réveiller à la prochaine connexion (première visite un peu
+lente, puis normal). Sur un plan payant ce n'est plus le cas.
 
 ## Déroulé d'une partie
 
@@ -68,6 +89,7 @@ même score en rouvrant simplement le lien de la salle.
 ## Structure du projet
 
 ```
-server/   API + logique de jeu (Room, RoomManager) + WebSocket (Socket.io)
-client/   PWA React — pages Home / Room (joueur) / Tv (grand écran)
+server/       API + logique de jeu (Room, RoomManager) + WebSocket (Socket.io)
+client/       PWA React — pages Home / Room (joueur) / Tv (grand écran)
+render.yaml   Blueprint de déploiement Render
 ```
