@@ -4,20 +4,30 @@ export type GameMode = 'normal' | 'meme' | 'detendu';
 
 export type TemplateSource = 'library' | 'upload';
 
+// A predefined text zone on a template (imgflip-style). Coordinates are
+// percentages of the image; (xPct,yPct) is the CENTER of the box.
+export interface TemplateBox {
+  xPct: number;
+  yPct: number;
+  widthPct: number;
+  heightPct: number;
+}
+
 export interface Template {
   id: string;
   url: string;
   name: string;
   source: TemplateSource;
+  boxes: TemplateBox[];
 }
 
+// A filled-in text zone: a box position + the text a player typed into it.
 export interface TextLayer {
-  id: string;
   text: string;
   xPct: number;
   yPct: number;
-  fontSize: 'sm' | 'md' | 'lg';
-  color: string;
+  widthPct: number;
+  heightPct: number;
 }
 
 export interface RoomSettings {
@@ -147,10 +157,6 @@ export interface GameEndedPayload {
   scores: PublicPlayer[];
   winnerId: string | null;
 }
-
-export const FONT_SIZES: Record<TextLayer['fontSize'], number> = { sm: 5.5, md: 8, lg: 11 };
-export const TEXT_COLORS = ['#ffffff', '#000000', '#ffd166', '#ef476f', '#06d6a0'];
-export const MAX_TEXT_LAYERS = 5;
 
 export const DEFAULT_SETTINGS: RoomSettings = {
   mode: 'normal',

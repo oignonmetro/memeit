@@ -136,8 +136,9 @@ disponibles instantanément.
    (hors-ligne). Possibilité d'ajouter aussi ses propres images (stockées dans la salle,
    visibles par tous les joueurs de cette salle).
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
-   sa légende (texte positionnable librement sur l'image) avec un temps limité (réglable par
-   l'hôte dans le lobby).
+   sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
+   ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps
+   limité (réglable par l'hôte dans le lobby).
 3. **Manche — Révélation** — tous les memes de la manche sont montrés un par un à tout le monde
    (y compris sur la TV si connectée), sans révéler leur auteur.
 4. **Manche — Vote** — une fois tous les memes vus, chaque joueur choisit son meme préféré de la

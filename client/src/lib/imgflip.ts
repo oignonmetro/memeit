@@ -1,8 +1,10 @@
 import type { Template } from '../types';
 import { FALLBACK_TEMPLATES } from './libraryTemplates';
+import { boxesForImgflip } from './templateBoxes';
 
 const IMGFLIP_URL = 'https://api.imgflip.com/get_memes';
-const CACHE_KEY = 'memeit:imgflip-templates-v1';
+// v2: templates now carry predefined text boxes — invalidate any v1 cache.
+const CACHE_KEY = 'memeit:imgflip-templates-v2';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — la liste Imgflip elle-même ne bouge que rarement
 
 interface CacheEntry {
@@ -33,6 +35,7 @@ export async function getPopularTemplates(): Promise<Template[]> {
       url: m.url,
       name: m.name,
       source: 'library' as const,
+      boxes: boxesForImgflip(String(m.id), Number(m.box_count) || 2),
     }));
     inMemory = templates;
     writeCache(templates);

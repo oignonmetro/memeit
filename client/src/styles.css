@@ -183,36 +183,17 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
   font-weight: 900;
   text-transform: uppercase;
   text-align: center;
-  font-family: Impact, 'Arial Narrow', sans-serif;
+  font-family: Impact, 'Arial Narrow', Haettenschweiler, sans-serif;
+  color: #fff;
   -webkit-text-stroke: 1.5px black;
   paint-order: stroke fill;
-  line-height: 1.1;
-  max-width: 92%;
-  word-break: break-word;
-  white-space: pre-wrap;
-  cursor: grab;
+  line-height: 1.05;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: normal;
   user-select: none;
+  pointer-events: none;
 }
-
-.meme-text-layer.editable { cursor: grab; outline: 1px dashed rgba(255,255,255,0.4); }
-.meme-text-layer.selected { outline: 2px dashed var(--accent); }
-
-.toolbar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-}
-
-.color-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.4);
-}
-
-.color-dot.selected { border-color: var(--accent); }
 
 .center-note {
   text-align: center;

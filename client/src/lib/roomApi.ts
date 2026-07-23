@@ -12,6 +12,7 @@ import {
 import { db } from './firebase';
 import { generateRoomCode } from './codes';
 import { getPopularTemplates } from './imgflip';
+import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
 import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS } from '../types';
 
@@ -244,7 +245,13 @@ async function getCustomTemplates(code: string): Promise<Template[]> {
   const snap = await get(templatesRef(code));
   if (!snap.exists()) return [];
   const data = snap.val() as DbTemplates;
-  return Object.entries(data).map(([id, t]) => ({ id, url: t.url, name: t.name, source: 'upload' as const }));
+  return Object.entries(data).map(([id, t]) => ({
+    id,
+    url: t.url,
+    name: t.name,
+    source: 'upload' as const,
+    boxes: DEFAULT_UPLOAD_BOXES,
+  }));
 }
 
 export async function startGame(code: string): Promise<void> {

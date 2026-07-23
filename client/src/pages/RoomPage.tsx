@@ -150,7 +150,7 @@ export default function RoomPage() {
             </div>
           ) : roundStarted.template ? (
             <CaptionEditor
-              templateUrl={roundStarted.template.url}
+              template={roundStarted.template}
               submitting={submitting}
               onSubmit={async (layers) => {
                 setSubmitting(true);

@@ -10,6 +10,7 @@ import type {
   RoundScoreboardPayload,
   GameEndedPayload,
 } from '../types';
+import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 
 export interface DerivedView {
   room: RoomSnapshot | null;
@@ -39,6 +40,7 @@ function buildTemplates(libraryTemplates: Template[], dbTemplates: DbTemplates |
     url: t.url,
     name: t.name,
     source: 'upload',
+    boxes: DEFAULT_UPLOAD_BOXES,
   }));
   return [...libraryTemplates, ...uploads];
 }
