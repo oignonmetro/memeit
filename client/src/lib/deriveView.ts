@@ -10,7 +10,6 @@ import type {
   RoundScoreboardPayload,
   GameEndedPayload,
 } from '../types';
-import { LIBRARY_TEMPLATES } from './libraryTemplates';
 
 export interface DerivedView {
   room: RoomSnapshot | null;
@@ -36,14 +35,14 @@ const EMPTY_VIEW: DerivedView = {
   hasVotedCurrent: false,
 };
 
-function buildTemplates(dbTemplates: DbTemplates | null): Template[] {
+function buildTemplates(libraryTemplates: Template[], dbTemplates: DbTemplates | null): Template[] {
   const uploads: Template[] = Object.entries(dbTemplates || {}).map(([id, t]) => ({
     id,
     url: t.url,
     name: t.name,
     source: 'upload',
   }));
-  return [...LIBRARY_TEMPLATES, ...uploads];
+  return [...libraryTemplates, ...uploads];
 }
 
 function buildPlayers(dbRoom: DbRoom): PublicPlayer[] {
@@ -59,10 +58,16 @@ function buildPlayers(dbRoom: DbRoom): PublicPlayer[] {
     .sort((a, b) => b.score - a.score);
 }
 
-export function deriveView(code: string, dbRoom: DbRoom | null, dbTemplates: DbTemplates | null, selfId: string): DerivedView {
+export function deriveView(
+  code: string,
+  dbRoom: DbRoom | null,
+  dbTemplates: DbTemplates | null,
+  libraryTemplates: Template[],
+  selfId: string
+): DerivedView {
   if (!dbRoom) return EMPTY_VIEW;
 
-  const templates = buildTemplates(dbTemplates);
+  const templates = buildTemplates(libraryTemplates, dbTemplates);
   const players = buildPlayers(dbRoom);
   const room: RoomSnapshot = {
     code,
@@ -76,16 +81,13 @@ export function deriveView(code: string, dbRoom: DbRoom | null, dbTemplates: DbT
 
   let roundStarted: RoundStartedPayload | null = null;
   let captionProgress: { submitted: number; total: number } | null = null;
-  if (dbRoom.status === 'caption' && dbRoom.currentTemplateId) {
-    const template = templates.find((t) => t.id === dbRoom.currentTemplateId) || null;
-    if (template) {
-      roundStarted = {
-        roundNumber: dbRoom.currentRound,
-        totalRounds: dbRoom.totalRounds,
-        template,
-        deadline: dbRoom.roundDeadline || Date.now(),
-      };
-    }
+  if (dbRoom.status === 'caption' && dbRoom.currentTemplate) {
+    roundStarted = {
+      roundNumber: dbRoom.currentRound,
+      totalRounds: dbRoom.totalRounds,
+      template: dbRoom.currentTemplate,
+      deadline: dbRoom.roundDeadline || Date.now(),
+    };
     captionProgress = {
       submitted: Object.keys(dbRoom.submissions || {}).length,
       total: players.filter((p) => p.connected).length,
@@ -94,14 +96,15 @@ export function deriveView(code: string, dbRoom: DbRoom | null, dbTemplates: DbT
 
   let revealMeme: RevealMemePayload | null = null;
   let lastResult: RevealResultPayload | null = null;
-  if (dbRoom.status === 'voting') {
+  if (dbRoom.status === 'voting' && dbRoom.currentTemplate) {
     const authorId = dbRoom.revealOrder?.[dbRoom.revealIndex];
     const submission = authorId ? dbRoom.submissions?.[authorId] : undefined;
     if (authorId && submission) {
       revealMeme = {
         index: dbRoom.revealIndex,
         total: (dbRoom.revealOrder || []).length,
-        meme: { id: authorId, templateId: submission.templateId, layers: submission.layers || [], authorId },
+        template: dbRoom.currentTemplate,
+        meme: { id: authorId, layers: submission.layers || [], authorId },
         deadline: dbRoom.revealDeadline || Date.now(),
       };
       const result = dbRoom.revealResults?.[authorId];

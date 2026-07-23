@@ -43,7 +43,6 @@ export interface DbPlayer {
 }
 
 export interface DbSubmission {
-  templateId: string;
   layers: TextLayer[];
 }
 
@@ -60,7 +59,7 @@ export interface DbRoom {
   players: Record<string, DbPlayer>;
   currentRound: number;
   totalRounds: number;
-  currentTemplateId: string | null;
+  currentTemplate: Template | null;
   roundDeadline: number | null;
   // submissions, revealOrder and votes are keyed by the author's playerId —
   // each player submits exactly one meme per round, so playerId doubles as memeId.
@@ -104,7 +103,8 @@ export interface RoundStartedPayload {
 export interface RevealMemePayload {
   index: number;
   total: number;
-  meme: { id: string; templateId: string; layers: TextLayer[]; authorId: string };
+  template: Template;
+  meme: { id: string; layers: TextLayer[]; authorId: string };
   deadline: number;
 }
 

@@ -11,8 +11,8 @@ import {
 } from 'firebase/database';
 import { db } from './firebase';
 import { generateRoomCode } from './codes';
-import { LIBRARY_TEMPLATES } from './libraryTemplates';
-import type { DbRoom, DbTemplates, RoomSettings, TextLayer } from '../types';
+import { getPopularTemplates } from './imgflip';
+import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
 import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS } from '../types';
 
 function requireDb() {
@@ -48,7 +48,7 @@ export async function createRoom(playerId: string, nickname: string, settings: P
       players: { [playerId]: { nickname, score: 0, connected: true, joinedAt: Date.now() } },
       currentRound: 0,
       totalRounds: merged.rounds,
-      currentTemplateId: null,
+      currentTemplate: null,
       roundDeadline: null,
       submissions: {},
       revealOrder: [],
@@ -146,25 +146,25 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function pickTemplateId(settings: RoomSettings, customIds: string[], usedIds: string[]): string {
-  let pool: string[];
-  if (settings.templateSource === 'library') pool = LIBRARY_TEMPLATES.map((t) => t.id);
-  else if (settings.templateSource === 'upload') pool = customIds.length ? customIds : LIBRARY_TEMPLATES.map((t) => t.id);
-  else pool = [...LIBRARY_TEMPLATES.map((t) => t.id), ...customIds];
+function pickTemplate(settings: RoomSettings, libraryTemplates: Template[], customTemplates: Template[], usedIds: string[]): Template {
+  let pool: Template[];
+  if (settings.templateSource === 'library') pool = libraryTemplates;
+  else if (settings.templateSource === 'upload') pool = customTemplates.length ? customTemplates : libraryTemplates;
+  else pool = [...libraryTemplates, ...customTemplates];
 
-  const candidates = pool.filter((id) => !usedIds.includes(id));
+  const candidates = pool.filter((t) => !usedIds.includes(t.id));
   const finalPool = candidates.length ? candidates : pool;
   return finalPool[Math.floor(Math.random() * finalPool.length)];
 }
 
-function beginRound(room: DbRoom, customIds: string[], roundNumber: number): DbRoom {
-  const templateId = pickTemplateId(room.settings, customIds, room.usedTemplateIds || []);
+function beginRound(room: DbRoom, libraryTemplates: Template[], customTemplates: Template[], roundNumber: number): DbRoom {
+  const template = pickTemplate(room.settings, libraryTemplates, customTemplates, room.usedTemplateIds || []);
   return {
     ...room,
     status: 'caption',
     currentRound: roundNumber,
-    currentTemplateId: templateId,
-    usedTemplateIds: [...(room.usedTemplateIds || []), templateId],
+    currentTemplate: template,
+    usedTemplateIds: [...(room.usedTemplateIds || []), template.id],
     roundDeadline: Date.now() + room.settings.captionTimeSec * 1000,
     submissions: {},
     revealOrder: [],
@@ -176,24 +176,26 @@ function beginRound(room: DbRoom, customIds: string[], roundNumber: number): DbR
   };
 }
 
-async function getCustomTemplateIds(code: string): Promise<string[]> {
+async function getCustomTemplates(code: string): Promise<Template[]> {
   const snap = await get(templatesRef(code));
-  return snap.exists() ? Object.keys(snap.val()) : [];
+  if (!snap.exists()) return [];
+  const data = snap.val() as DbTemplates;
+  return Object.entries(data).map(([id, t]) => ({ id, url: t.url, name: t.name, source: 'upload' as const }));
 }
 
 export async function startGame(code: string): Promise<void> {
-  const customIds = await getCustomTemplateIds(code);
+  const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room || room.status !== 'lobby') return room;
     const connectedCount = Object.values(room.players || {}).filter((p) => p.connected).length;
     if (connectedCount < 2) return room;
-    return beginRound(room, customIds, 1);
+    return beginRound(room, libraryTemplates, customTemplates, 1);
   });
 }
 
-export async function submitMeme(code: string, playerId: string, templateId: string, layers: TextLayer[]): Promise<void> {
+export async function submitMeme(code: string, playerId: string, layers: TextLayer[]): Promise<void> {
   await update(roomRef(code), {
-    [`submissions/${playerId}`]: { templateId, layers },
+    [`submissions/${playerId}`]: { layers },
     lastActivityAt: Date.now(),
   });
   await maybeAdvanceFromCaption(code);
@@ -211,7 +213,7 @@ export async function maybeAdvanceFromCaption(code: string): Promise<void> {
 
     const submissions = { ...(room.submissions || {}) };
     for (const id of connectedIds) {
-      if (!submissions[id]) submissions[id] = { templateId: room.currentTemplateId!, layers: [] };
+      if (!submissions[id]) submissions[id] = { layers: [] };
     }
     const revealOrder = shuffle(Object.keys(submissions));
     return {
@@ -278,7 +280,7 @@ export async function advanceReveal(code: string): Promise<void> {
 }
 
 export async function advanceAfterRoundResults(code: string): Promise<void> {
-  const customIds = await getCustomTemplateIds(code);
+  const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room || room.status !== 'round_results') return room;
     if (room.currentRound >= room.totalRounds) {
@@ -292,7 +294,7 @@ export async function advanceAfterRoundResults(code: string): Promise<void> {
       }
       return { ...room, status: 'ended', winnerId, lastActivityAt: Date.now() };
     }
-    return beginRound(room, customIds, room.currentRound + 1);
+    return beginRound(room, libraryTemplates, customTemplates, room.currentRound + 1);
   });
 }
 

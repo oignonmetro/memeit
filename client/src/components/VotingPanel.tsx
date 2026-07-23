@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import MemeRender from './MemeRender';
 import { useCountdown } from '../hooks/useCountdown';
-import type { RevealMemePayload, RevealResultPayload, Template } from '../types';
+import type { RevealMemePayload, RevealResultPayload } from '../types';
 
 interface VotingPanelProps {
   reveal: RevealMemePayload;
-  templates: Template[];
   isOwnMeme: boolean;
   hasVoted: boolean;
   result: RevealResultPayload | null;
@@ -13,10 +12,9 @@ interface VotingPanelProps {
   onVote: (thumbsUp: boolean) => Promise<void>;
 }
 
-export default function VotingPanel({ reveal, templates, isOwnMeme, hasVoted, result, voteTimeSec, onVote }: VotingPanelProps) {
+export default function VotingPanel({ reveal, isOwnMeme, hasVoted, result, voteTimeSec, onVote }: VotingPanelProps) {
   const [voting, setVoting] = useState(false);
   const { remainingSec, pct } = useCountdown(result ? null : reveal.deadline, voteTimeSec);
-  const template = templates.find((t) => t.id === reveal.meme.templateId);
   const resolved = Boolean(result);
 
   async function vote(thumbsUp: boolean) {
@@ -34,11 +32,7 @@ export default function VotingPanel({ reveal, templates, isOwnMeme, hasVoted, re
       <div className="subtitle" style={{ margin: 0 }}>
         Meme {reveal.index + 1} / {reveal.total}
       </div>
-      {template ? (
-        <MemeRender templateUrl={template.url} layers={reveal.meme.layers} />
-      ) : (
-        <div className="center-note">Template introuvable.</div>
-      )}
+      <MemeRender templateUrl={reveal.template.url} layers={reveal.meme.layers} />
 
       {!resolved && (
         <div className="timer-bar">

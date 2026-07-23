@@ -109,7 +109,6 @@ export default function TvPage() {
         </div>
       );
     }
-    const template = room.templates.find((t) => t.id === revealMeme.meme.templateId);
     const result = lastResult && lastResult.memeId === revealMeme.meme.id ? lastResult : null;
     return (
       <div className="tv-screen">
@@ -117,7 +116,7 @@ export default function TvPage() {
           Meme {revealMeme.index + 1} / {revealMeme.total}
         </div>
         <div className="tv-meme-frame">
-          {template && <MemeRender templateUrl={template.url} layers={revealMeme.meme.layers} />}
+          <MemeRender templateUrl={revealMeme.template.url} layers={revealMeme.meme.layers} />
         </div>
         {!result && (
           <div className="timer-bar" style={{ maxWidth: 480 }}>

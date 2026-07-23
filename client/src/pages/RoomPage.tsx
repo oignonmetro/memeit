@@ -143,7 +143,7 @@ export default function RoomPage() {
               onSubmit={async (layers) => {
                 setSubmitting(true);
                 try {
-                  await submitMeme(roundStarted.template.id, layers);
+                  await submitMeme(layers);
                 } finally {
                   setSubmitting(false);
                 }
@@ -157,7 +157,6 @@ export default function RoomPage() {
         revealMeme ? (
           <VotingPanel
             reveal={revealMeme}
-            templates={room.templates}
             isOwnMeme={revealMeme.meme.authorId === selfId}
             hasVoted={hasVotedCurrent}
             result={lastResult && lastResult.memeId === revealMeme.meme.id ? lastResult : null}

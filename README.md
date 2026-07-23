@@ -125,8 +125,11 @@ disponibles instantanément.
 ## Déroulé d'une partie
 
 1. **Lobby** — l'hôte crée une salle (code à 4 lettres), les joueurs rejoignent depuis leur
-   téléphone avec le code (ou en scannant le QR code affiché sur la TV). Bibliothèque de
-   templates intégrée + possibilité d'ajouter ses propres images (stockées dans la salle,
+   téléphone avec le code (ou en scannant le QR code affiché sur la TV). Les templates de
+   base viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes) (les ~100
+   templates les plus utilisés du moment, mis en cache 6h côté client) — pas une bibliothèque
+   figée dans le code. Repli sur une petite bibliothèque locale si l'API est injoignable
+   (hors-ligne). Possibilité d'ajouter aussi ses propres images (stockées dans la salle,
    visibles par tous les joueurs de cette salle).
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
    sa légende (texte positionnable librement sur l'image) avec un temps limité.

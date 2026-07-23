@@ -18,8 +18,9 @@ import {
   cleanupIfInactive,
 } from '../lib/roomApi';
 import { getOrCreatePlayerId } from '../lib/playerId';
+import { getPopularTemplates } from '../lib/imgflip';
 import { deriveView, type DerivedView } from '../lib/deriveView';
-import type { DbRoom, DbTemplates, RoomSettings, TextLayer } from '../types';
+import type { DbRoom, DbTemplates, RoomSettings, Template, TextLayer } from '../types';
 import { REVEAL_PAUSE_SEC, ROUND_TRANSITION_PAUSE_SEC } from '../types';
 
 type Role = 'player' | 'tv' | null;
@@ -43,7 +44,7 @@ interface GameState extends DerivedView {
   detachRoom: () => void;
   startGame: () => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
-  submitMeme: (templateId: string, layers: TextLayer[]) => Promise<void>;
+  submitMeme: (layers: TextLayer[]) => Promise<void>;
   castVote: (thumbsUp: boolean) => Promise<void>;
   leaveRoom: () => void;
 }
@@ -54,6 +55,7 @@ let tickHandle: ReturnType<typeof setInterval> | null = null;
 let tickCount = 0;
 let latestDbRoom: DbRoom | null = null;
 let latestDbTemplates: DbTemplates = {};
+let latestLibraryTemplates: Template[] = [];
 
 function stopLoops() {
   if (unsubRoom) {
@@ -134,11 +136,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (role === 'player' && room && room.players?.[selfId] && !room.players[selfId].connected) {
         markConnected(code, selfId).catch(() => {});
       }
-      set({ ...deriveView(code, room, latestDbTemplates, selfId), loaded: true });
+      set({ ...deriveView(code, room, latestDbTemplates, latestLibraryTemplates, selfId), loaded: true });
     });
     unsubTemplates = subscribeTemplates(code, (templates) => {
       latestDbTemplates = templates;
-      set({ ...deriveView(code, latestDbRoom, templates, selfId) });
+      set({ ...deriveView(code, latestDbRoom, templates, latestLibraryTemplates, selfId) });
+    });
+    getPopularTemplates().then((templates) => {
+      latestLibraryTemplates = templates;
+      if (get().code === code) {
+        set({ ...deriveView(code, latestDbRoom, latestDbTemplates, templates, selfId) });
+      }
     });
     tickHandle = setInterval(() => driveGameForward(code), TICK_MS);
   },
@@ -178,10 +186,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     await addCustomTemplate(code, dataUrl);
   },
 
-  submitMeme: async (templateId, layers) => {
+  submitMeme: async (layers) => {
     const { code, selfId } = get();
     if (!code) return;
-    await apiSubmitMeme(code, selfId, templateId, layers);
+    await apiSubmitMeme(code, selfId, layers);
   },
 
   castVote: async (thumbsUp) => {
