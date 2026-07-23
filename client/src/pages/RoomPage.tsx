@@ -184,13 +184,17 @@ export default function RoomPage() {
         )
       )}
 
-      {room.phase === 'vote' && voteState && (
-        <FavoriteVotePanel
-          vote={voteState}
-          selfId={selfId}
-          voteTimeSec={room.settings.voteTimeSec}
-          onVote={castFavorite}
-        />
+      {room.phase === 'vote' && (
+        voteState ? (
+          <FavoriteVotePanel
+            vote={voteState}
+            selfId={selfId}
+            voteTimeSec={room.settings.voteTimeSec}
+            onVote={castFavorite}
+          />
+        ) : (
+          <div className="center-note" style={{ marginTop: 40 }}>Préparation du vote...</div>
+        )
       )}
 
       {room.phase === 'round_results' && roundScoreboard && (
