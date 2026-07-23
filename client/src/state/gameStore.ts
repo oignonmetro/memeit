@@ -21,6 +21,7 @@ import {
 } from '../lib/roomApi';
 import { getOrCreatePlayerId } from '../lib/playerId';
 import { getPopularTemplates } from '../lib/imgflip';
+import { requestWakeLock, releaseWakeLock } from '../lib/wakeLock';
 import { deriveView, type DerivedView } from '../lib/deriveView';
 import type { DbRoom, DbTemplates, GameMode, RoomSettings, Template } from '../types';
 import { ROUND_TRANSITION_PAUSE_SEC } from '../types';
@@ -60,6 +61,13 @@ let tickCount = 0;
 let latestDbRoom: DbRoom | null = null;
 let latestDbTemplates: DbTemplates = {};
 let latestLibraryTemplates: Template[] = [];
+let activeCode: string | null = null;
+
+function onVisibilityCatchUp() {
+  if (document.visibilityState === 'visible' && activeCode) {
+    driveGameForward(activeCode);
+  }
+}
 
 function stopLoops() {
   if (unsubRoom) {
@@ -74,9 +82,12 @@ function stopLoops() {
     clearInterval(tickHandle);
     tickHandle = null;
   }
+  document.removeEventListener('visibilitychange', onVisibilityCatchUp);
+  releaseWakeLock();
   latestDbRoom = null;
   latestDbTemplates = {};
   tickCount = 0;
+  activeCode = null;
 }
 
 function driveGameForward(code: string) {
@@ -127,8 +138,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   attachRoom: (code, role) => {
     stopLoops();
     tickCount = 0;
+    activeCode = code;
     set({ code, role, loaded: false, error: null });
     const selfId = get().selfId;
+
+    requestWakeLock();
+    document.addEventListener('visibilitychange', onVisibilityCatchUp);
 
     unsubRoom = subscribeRoom(code, (room) => {
       latestDbRoom = room;
