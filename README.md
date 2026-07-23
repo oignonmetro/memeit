@@ -169,9 +169,20 @@ un acteur malveillant.
 
 ## Nettoyage des salles inactives
 
-Pas de tâche planifiée côté serveur (il n'y a pas de serveur) : chaque appareil affichant une
-salle vérifie toutes les 60 secondes si elle est inactive depuis plus de 30 minutes, et la
-supprime le cas échéant via une transaction Realtime Database.
+Pas de tâche planifiée côté serveur (il n'y a pas de serveur). Deux mécanismes complémentaires,
+tous deux pilotés par les appareils connectés :
+
+- **Heartbeat** — chaque appareil ayant une salle ouverte rafraîchit un index léger
+  `roomActivity/{code}` (juste un timestamp) toutes les 60 secondes. Une salle « vit » donc tant
+  qu'au moins un appareil la regarde.
+- **Balayage opportuniste** — à chaque fois qu'un appareil entre dans une salle (création,
+  rejoint, TV), il lit cet index (uniquement des timestamps, jamais le contenu des salles) et
+  supprime les salles dont le heartbeat dépasse 30 minutes — c'est-à-dire abandonnées depuis le
+  départ du dernier appareil. Cela nettoie aussi les salles orphelines laissées quand tout le
+  monde a fermé l'appli d'un coup.
+
+L'index `roomActivity` est volontairement séparé du nœud `rooms` pour que le balayage n'ait
+jamais besoin de lire (ni d'exposer) le contenu des salles.
 
 ## Structure du projet
 

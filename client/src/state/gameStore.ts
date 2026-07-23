@@ -17,7 +17,8 @@ import {
   advanceReveal,
   maybeTallyVotes,
   advanceAfterRoundResults,
-  cleanupIfInactive,
+  touchActivity,
+  sweepStaleRooms,
 } from '../lib/roomApi';
 import { getOrCreatePlayerId } from '../lib/playerId';
 import { getPopularTemplates } from '../lib/imgflip';
@@ -29,7 +30,7 @@ import { ROUND_TRANSITION_PAUSE_SEC } from '../types';
 type Role = 'player' | 'tv' | null;
 
 const TICK_MS = 1000;
-const CLEANUP_EVERY_N_TICKS = 60;
+const HEARTBEAT_EVERY_N_TICKS = 60;
 
 interface GameState extends DerivedView {
   selfId: string;
@@ -113,8 +114,9 @@ function driveGameForward(code: string) {
   }
 
   tickCount += 1;
-  if (tickCount % CLEANUP_EVERY_N_TICKS === 0) {
-    cleanupIfInactive(code);
+  if (tickCount % HEARTBEAT_EVERY_N_TICKS === 0) {
+    // Keep the room alive while at least one device is here.
+    touchActivity(code).catch(() => {});
   }
 }
 
@@ -144,6 +146,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     requestWakeLock();
     document.addEventListener('visibilitychange', onVisibilityCatchUp);
+
+    // Mark ourselves present, and opportunistically sweep abandoned rooms.
+    touchActivity(code).catch(() => {});
+    sweepStaleRooms().catch(() => {});
 
     unsubRoom = subscribeRoom(code, (room) => {
       latestDbRoom = room;

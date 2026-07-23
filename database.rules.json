@@ -5,6 +5,11 @@
         ".read": true,
         ".write": true
       }
+    },
+    "roomActivity": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ".value"
     }
   }
 }

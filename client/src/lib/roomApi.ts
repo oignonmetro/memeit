@@ -7,6 +7,11 @@ import {
   runTransaction,
   onDisconnect,
   push,
+  query,
+  orderByValue,
+  endAt,
+  limitToFirst,
+  remove,
   type Unsubscribe,
 } from 'firebase/database';
 import { db } from './firebase';
@@ -27,6 +32,13 @@ function roomRef(code: string) {
 
 function templatesRef(code: string) {
   return ref(requireDb(), `rooms/${code.toUpperCase()}/templates`);
+}
+
+// Lightweight per-room heartbeat index (code -> last-seen timestamp), kept in a
+// separate top-level node so the sweep only reads timestamps, never the rooms'
+// full content (which includes base64 custom templates).
+function roomActivityRef(code: string) {
+  return ref(requireDb(), `roomActivity/${code.toUpperCase()}`);
 }
 
 // ---------- create / join / leave / presence ----------
@@ -65,6 +77,10 @@ export async function createRoom(playerId: string, nickname: string, settings: P
     };
     // eslint-disable-next-line no-await-in-loop
     await set(r, initial);
+    // Heartbeat is best-effort: never fail room creation over it (e.g. if the
+    // updated security rules haven't propagated yet).
+    // eslint-disable-next-line no-await-in-loop
+    await set(ref(database, `roomActivity/${code}`), Date.now()).catch(() => {});
     registerPresence(code, playerId);
     return code;
   }
@@ -406,12 +422,37 @@ export async function advanceAfterRoundResults(code: string): Promise<void> {
   });
 }
 
-// ---------- inactivity cleanup (client-driven, no server) ----------
+// ---------- room lifetime (client-driven, no server) ----------
 
-export async function cleanupIfInactive(code: string): Promise<void> {
-  await runTransaction(roomRef(code), (room: DbRoom | null) => {
-    if (!room) return room;
-    if (Date.now() - (room.lastActivityAt || 0) >= ROOM_INACTIVITY_MS) return null;
-    return room;
-  });
+// A room lives as long as at least one device has it open. Every connected
+// client bumps its heartbeat; a room whose heartbeat is older than the
+// inactivity window has been abandoned and is swept.
+
+export async function touchActivity(code: string): Promise<void> {
+  await set(roomActivityRef(code), Date.now());
+}
+
+// Opportunistic cleanup: called when entering a room. Reads only the small
+// heartbeat index (timestamps), then deletes abandoned rooms (both the room
+// node and its heartbeat entry). Bounded to a handful per call.
+export async function sweepStaleRooms(): Promise<void> {
+  const database = requireDb();
+  const cutoff = Date.now() - ROOM_INACTIVITY_MS;
+  try {
+    const q = query(ref(database, 'roomActivity'), orderByValue(), endAt(cutoff), limitToFirst(20));
+    const snap = await get(q);
+    if (!snap.exists()) return;
+    const ops: Promise<unknown>[] = [];
+    snap.forEach((child) => {
+      const code = child.key;
+      if (!code) return undefined;
+      ops.push(remove(ref(database, `rooms/${code}`)));
+      ops.push(remove(ref(database, `roomActivity/${code}`)));
+      return undefined;
+    });
+    await Promise.all(ops);
+  } catch {
+    // Index missing / offline / permission — ignore; the heartbeat still lets a
+    // later sweep (from another client) clean the room up.
+  }
 }
