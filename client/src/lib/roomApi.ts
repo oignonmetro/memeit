@@ -49,6 +49,7 @@ export async function createRoom(playerId: string, nickname: string, settings: P
       currentRound: 0,
       totalRounds: merged.rounds,
       currentTemplate: null,
+      roundTemplates: {},
       roundDeadline: null,
       submissions: {},
       revealOrder: [],
@@ -136,6 +137,14 @@ export async function setRounds(code: string, rounds: number): Promise<void> {
   });
 }
 
+export async function setMode(code: string, mode: RoomSettings['mode']): Promise<void> {
+  if (!['normal', 'meme', 'detendu'].includes(mode)) return;
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room || room.status !== 'lobby') return room;
+    return { ...room, settings: { ...room.settings, mode }, lastActivityAt: Date.now() };
+  });
+}
+
 // ---------- templates ----------
 
 export async function addCustomTemplate(code: string, dataUrl: string): Promise<string> {
@@ -166,25 +175,58 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function pickTemplate(settings: RoomSettings, libraryTemplates: Template[], customTemplates: Template[], usedIds: string[]): Template {
-  let pool: Template[];
-  if (settings.templateSource === 'library') pool = libraryTemplates;
-  else if (settings.templateSource === 'upload') pool = customTemplates.length ? customTemplates : libraryTemplates;
-  else pool = [...libraryTemplates, ...customTemplates];
+function buildPool(settings: RoomSettings, libraryTemplates: Template[], customTemplates: Template[]): Template[] {
+  if (settings.templateSource === 'library') return libraryTemplates;
+  if (settings.templateSource === 'upload') return customTemplates.length ? customTemplates : libraryTemplates;
+  return [...libraryTemplates, ...customTemplates];
+}
 
+function pickOne(pool: Template[], usedIds: string[]): Template {
   const candidates = pool.filter((t) => !usedIds.includes(t.id));
   const finalPool = candidates.length ? candidates : pool;
   return finalPool[Math.floor(Math.random() * finalPool.length)];
 }
 
+// Assigns one template per player. In "meme" mode everyone shares the same one;
+// otherwise each player gets a distinct template while the pool allows it.
+function assignTemplates(
+  settings: RoomSettings,
+  playerIds: string[],
+  pool: Template[],
+  usedIds: string[]
+): { roundTemplates: Record<string, Template>; sharedTemplate: Template | null; newlyUsed: string[] } {
+  if (pool.length === 0) return { roundTemplates: {}, sharedTemplate: null, newlyUsed: [] };
+
+  if (settings.mode === 'meme') {
+    const template = pickOne(pool, usedIds);
+    const roundTemplates: Record<string, Template> = {};
+    for (const id of playerIds) roundTemplates[id] = template;
+    return { roundTemplates, sharedTemplate: template, newlyUsed: [template.id] };
+  }
+
+  const fresh = shuffle(pool.filter((t) => !usedIds.includes(t.id)));
+  const roundTemplates: Record<string, Template> = {};
+  const newlyUsed: string[] = [];
+  let freshIdx = 0;
+  for (const id of playerIds) {
+    const template = freshIdx < fresh.length ? fresh[freshIdx++] : pool[Math.floor(Math.random() * pool.length)];
+    roundTemplates[id] = template;
+    newlyUsed.push(template.id);
+  }
+  return { roundTemplates, sharedTemplate: null, newlyUsed };
+}
+
 function beginRound(room: DbRoom, libraryTemplates: Template[], customTemplates: Template[], roundNumber: number): DbRoom {
-  const template = pickTemplate(room.settings, libraryTemplates, customTemplates, room.usedTemplateIds || []);
+  const pool = buildPool(room.settings, libraryTemplates, customTemplates);
+  const playerIds = Object.keys(room.players || {});
+  const { roundTemplates, sharedTemplate, newlyUsed } = assignTemplates(room.settings, playerIds, pool, room.usedTemplateIds || []);
   return {
     ...room,
     status: 'caption',
     currentRound: roundNumber,
-    currentTemplate: template,
-    usedTemplateIds: [...(room.usedTemplateIds || []), template.id],
+    currentTemplate: sharedTemplate,
+    roundTemplates,
+    usedTemplateIds: [...(room.usedTemplateIds || []), ...newlyUsed],
     roundDeadline: Date.now() + room.settings.captionTimeSec * 1000,
     submissions: {},
     revealOrder: [],
@@ -261,6 +303,16 @@ export async function advanceReveal(code: string): Promise<void> {
     if (!deadlinePassed) return room;
     const nextIndex = room.revealIndex + 1;
     if (nextIndex >= (room.revealOrder || []).length) {
+      // Détendu mode has no vote and no scoring — go straight to the round wrap-up.
+      if (room.settings.mode === 'detendu') {
+        return {
+          ...room,
+          status: 'round_results',
+          lastRoundVotes: {},
+          roundWinnerId: null,
+          lastActivityAt: Date.now(),
+        };
+      }
       return {
         ...room,
         status: 'vote',

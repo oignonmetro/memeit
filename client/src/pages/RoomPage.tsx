@@ -28,6 +28,7 @@ export default function RoomPage() {
     detachRoom,
     startGame,
     setCaptionTime,
+    setMode,
     uploadTemplate,
     submitMeme,
     castFavorite,
@@ -120,7 +121,14 @@ export default function RoomPage() {
       </div>
 
       {room.phase === 'lobby' && (
-        <Lobby room={room} self={self} onStart={startGame} onUpload={uploadTemplate} onSetCaptionTime={setCaptionTime} />
+        <Lobby
+          room={room}
+          self={self}
+          onStart={startGame}
+          onUpload={uploadTemplate}
+          onSetCaptionTime={setCaptionTime}
+          onSetMode={setMode}
+        />
       )}
 
       {room.phase === 'caption' && roundStarted && (
@@ -140,7 +148,7 @@ export default function RoomPage() {
                 Meme envoyé ! En attente des autres ({captionProgress?.submitted ?? 0}/{captionProgress?.total ?? room.players.length})
               </div>
             </div>
-          ) : (
+          ) : roundStarted.template ? (
             <CaptionEditor
               templateUrl={roundStarted.template.url}
               submitting={submitting}
@@ -153,6 +161,8 @@ export default function RoomPage() {
                 }
               }}
             />
+          ) : (
+            <div className="card center-note">En attente du prochain tour...</div>
           )}
         </>
       )}
@@ -185,30 +195,46 @@ export default function RoomPage() {
 
       {room.phase === 'round_results' && roundScoreboard && (
         <>
-          {roundScoreboard.winner ? (
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div className="subtitle" style={{ margin: 0, color: 'var(--text)', fontWeight: 800, textAlign: 'center' }}>
-                🏆 Meme de la manche — {roundScoreboard.winner.nickname} ({roundScoreboard.winner.votes} vote{roundScoreboard.winner.votes > 1 ? 's' : ''})
-              </div>
-              <MemeRender templateUrl={roundScoreboard.winner.template.url} layers={roundScoreboard.winner.layers} />
+          {room.settings.mode === 'detendu' ? (
+            <div className="card center-note" style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
+              Manche {roundScoreboard.roundNumber} terminée 🎉
             </div>
           ) : (
-            <div className="card center-note">Personne n'a voté cette manche.</div>
+            <>
+              {roundScoreboard.winner ? (
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="subtitle" style={{ margin: 0, color: 'var(--text)', fontWeight: 800, textAlign: 'center' }}>
+                    🏆 Meme de la manche — {roundScoreboard.winner.nickname} ({roundScoreboard.winner.votes} vote{roundScoreboard.winner.votes > 1 ? 's' : ''})
+                  </div>
+                  <MemeRender templateUrl={roundScoreboard.winner.template.url} layers={roundScoreboard.winner.layers} />
+                </div>
+              ) : (
+                <div className="card center-note">Personne n'a voté cette manche.</div>
+              )}
+              <Leaderboard
+                scores={roundScoreboard.scores}
+                title={`Classement — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
+                selfId={selfId}
+              />
+            </>
           )}
-          <Leaderboard
-            scores={roundScoreboard.scores}
-            title={`Classement — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
-            selfId={selfId}
-          />
           <div className="center-note">
-            {roundScoreboard.roundNumber >= roundScoreboard.totalRounds ? 'Calcul du classement final...' : 'Prochaine manche dans quelques secondes...'}
+            {roundScoreboard.roundNumber >= roundScoreboard.totalRounds
+              ? (room.settings.mode === 'detendu' ? 'Fin de la partie...' : 'Calcul du classement final...')
+              : 'Prochaine manche dans quelques secondes...'}
           </div>
         </>
       )}
 
       {room.phase === 'ended' && gameEnded && (
         <>
-          <Leaderboard scores={gameEnded.scores} title="🏆 Résultats finaux" selfId={selfId} winnerId={gameEnded.winnerId} />
+          {room.settings.mode === 'detendu' ? (
+            <div className="card center-note" style={{ fontSize: '1.2rem', color: 'var(--text)' }}>
+              Partie terminée — merci d'avoir joué ! 🎉
+            </div>
+          ) : (
+            <Leaderboard scores={gameEnded.scores} title="🏆 Résultats finaux" selfId={selfId} winnerId={gameEnded.winnerId} />
+          )}
           <button className="btn btn-primary" onClick={handleLeave}>
             Retour à l'accueil
           </button>

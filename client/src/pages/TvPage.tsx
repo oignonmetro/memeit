@@ -89,9 +89,15 @@ export default function TvPage() {
         <div className="subtitle" style={{ fontSize: '1.3rem' }}>
           Manche {roundStarted.roundNumber} / {roundStarted.totalRounds} — à vos claviers !
         </div>
-        <div className="tv-meme-frame">
-          <MemeRender templateUrl={roundStarted.template.url} layers={[]} />
-        </div>
+        {roundStarted.template ? (
+          <div className="tv-meme-frame">
+            <MemeRender templateUrl={roundStarted.template.url} layers={[]} />
+          </div>
+        ) : (
+          <div className="subtitle" style={{ fontSize: '1.4rem', color: 'var(--text)' }}>
+            Chaque joueur a reçu son propre meme 🎲
+          </div>
+        )}
         <div className="timer-bar" style={{ maxWidth: 480 }}>
           <div className="timer-fill" style={{ width: `${captionCountdown.pct}%` }} />
         </div>
@@ -139,7 +145,7 @@ export default function TvPage() {
           {voteState.memes.map((meme, i) => (
             <div key={meme.authorId} className="vote-card disabled">
               <span className="vote-card__badge">#{i + 1}</span>
-              <MemeRender templateUrl={voteState.template.url} layers={meme.layers} />
+              <MemeRender templateUrl={meme.template.url} layers={meme.layers} />
             </div>
           ))}
         </div>
@@ -148,6 +154,15 @@ export default function TvPage() {
   }
 
   if (room.phase === 'round_results' && roundScoreboard) {
+    if (room.settings.mode === 'detendu') {
+      return (
+        <div className="tv-screen">
+          <div className="subtitle" style={{ fontSize: '1.8rem', color: 'var(--text)' }}>
+            Manche {roundScoreboard.roundNumber} / {roundScoreboard.totalRounds} terminée 🎉
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="tv-screen">
         {roundScoreboard.winner && (
@@ -171,6 +186,15 @@ export default function TvPage() {
   }
 
   if (room.phase === 'ended' && gameEnded) {
+    if (room.settings.mode === 'detendu') {
+      return (
+        <div className="tv-screen">
+          <div className="subtitle" style={{ fontSize: '1.8rem', color: 'var(--text)' }}>
+            Partie terminée — merci d'avoir joué ! 🎉
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="tv-screen">
         <div style={{ maxWidth: 480, width: '100%' }}>

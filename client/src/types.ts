@@ -1,5 +1,7 @@
 export type Phase = 'lobby' | 'caption' | 'reveal' | 'vote' | 'round_results' | 'ended';
 
+export type GameMode = 'normal' | 'meme' | 'detendu';
+
 export type TemplateSource = 'library' | 'upload';
 
 export interface Template {
@@ -19,6 +21,7 @@ export interface TextLayer {
 }
 
 export interface RoomSettings {
+  mode: GameMode;
   rounds: number;
   captionTimeSec: number;
   revealTimeSec: number;
@@ -56,7 +59,10 @@ export interface DbRoom {
   players: Record<string, DbPlayer>;
   currentRound: number;
   totalRounds: number;
+  // In "meme" mode, currentTemplate is the single shared template; in other
+  // modes it is null and each player gets their own template via roundTemplates.
   currentTemplate: Template | null;
+  roundTemplates: Record<string, Template>;
   roundDeadline: number | null;
   // submissions and revealOrder are keyed by / contain the author's playerId —
   // each player submits exactly one meme per round, so playerId doubles as memeId.
@@ -96,7 +102,7 @@ export interface RoomSnapshot {
 export interface RoundStartedPayload {
   roundNumber: number;
   totalRounds: number;
-  template: Template;
+  template: Template | null; // the viewer's own template (null on TV in non-meme modes)
   deadline: number;
 }
 
@@ -110,11 +116,11 @@ export interface RevealMemePayload {
 
 export interface VoteMeme {
   authorId: string;
+  template: Template;
   layers: TextLayer[];
 }
 
 export interface VoteStatePayload {
-  template: Template;
   memes: VoteMeme[];
   deadline: number;
   myVote: string | null; // authorId this player voted for, or null
@@ -147,6 +153,7 @@ export const TEXT_COLORS = ['#ffffff', '#000000', '#ffd166', '#ef476f', '#06d6a0
 export const MAX_TEXT_LAYERS = 5;
 
 export const DEFAULT_SETTINGS: RoomSettings = {
+  mode: 'normal',
   rounds: 3,
   captionTimeSec: 90,
   revealTimeSec: 5,
@@ -155,6 +162,12 @@ export const DEFAULT_SETTINGS: RoomSettings = {
 };
 
 export const CAPTION_TIME_OPTIONS = [45, 60, 90, 120, 180, 300];
+
+export const GAME_MODES: { id: GameMode; label: string; description: string }[] = [
+  { id: 'normal', label: 'Normal', description: 'Chaque joueur reçoit un meme aléatoire' },
+  { id: 'meme', label: 'Même meme', description: 'Tous les joueurs reçoivent le même meme' },
+  { id: 'detendu', label: 'Détendu', description: 'Pas de points, pas de stress. Juste faire des memes' },
+];
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 20;

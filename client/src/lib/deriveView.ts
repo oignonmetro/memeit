@@ -77,13 +77,16 @@ export function deriveView(
     templates,
   };
 
+  const templateFor = (authorId: string): Template | null =>
+    dbRoom.roundTemplates?.[authorId] || dbRoom.currentTemplate || null;
+
   let roundStarted: RoundStartedPayload | null = null;
   let captionProgress: { submitted: number; total: number } | null = null;
-  if (dbRoom.status === 'caption' && dbRoom.currentTemplate) {
+  if (dbRoom.status === 'caption') {
     roundStarted = {
       roundNumber: dbRoom.currentRound,
       totalRounds: dbRoom.totalRounds,
-      template: dbRoom.currentTemplate,
+      template: templateFor(selfId),
       deadline: dbRoom.roundDeadline || Date.now(),
     };
     captionProgress = {
@@ -93,14 +96,15 @@ export function deriveView(
   }
 
   let revealMeme: RevealMemePayload | null = null;
-  if (dbRoom.status === 'reveal' && dbRoom.currentTemplate) {
+  if (dbRoom.status === 'reveal') {
     const authorId = dbRoom.revealOrder?.[dbRoom.revealIndex];
     const submission = authorId ? dbRoom.submissions?.[authorId] : undefined;
-    if (authorId && submission) {
+    const template = authorId ? templateFor(authorId) : null;
+    if (authorId && submission && template) {
       revealMeme = {
         index: dbRoom.revealIndex,
         total: (dbRoom.revealOrder || []).length,
-        template: dbRoom.currentTemplate,
+        template,
         meme: { authorId, layers: submission.layers || [] },
         deadline: dbRoom.revealDeadline || Date.now(),
       };
@@ -108,14 +112,13 @@ export function deriveView(
   }
 
   let voteState: VoteStatePayload | null = null;
-  if (dbRoom.status === 'vote' && dbRoom.currentTemplate) {
+  if (dbRoom.status === 'vote') {
     const order = dbRoom.revealOrder || [];
     const memes = order
-      .filter((authorId) => dbRoom.submissions?.[authorId])
-      .map((authorId) => ({ authorId, layers: dbRoom.submissions[authorId].layers || [] }));
+      .filter((authorId) => dbRoom.submissions?.[authorId] && templateFor(authorId))
+      .map((authorId) => ({ authorId, template: templateFor(authorId)!, layers: dbRoom.submissions[authorId].layers || [] }));
     const connectedTotal = players.filter((p) => p.connected).length;
     voteState = {
-      template: dbRoom.currentTemplate,
       memes,
       deadline: dbRoom.voteDeadline || Date.now(),
       myVote: dbRoom.favoriteVotes?.[selfId] || null,
@@ -128,13 +131,14 @@ export function deriveView(
   if (dbRoom.status === 'round_results') {
     const winnerId = dbRoom.roundWinnerId;
     const winnerSubmission = winnerId ? dbRoom.submissions?.[winnerId] : undefined;
+    const winnerTemplate = winnerId ? templateFor(winnerId) : null;
     const winner =
-      winnerId && winnerSubmission && dbRoom.currentTemplate
+      winnerId && winnerSubmission && winnerTemplate
         ? {
             authorId: winnerId,
             nickname: dbRoom.players?.[winnerId]?.nickname || '???',
             votes: dbRoom.lastRoundVotes?.[winnerId] || 0,
-            template: dbRoom.currentTemplate,
+            template: winnerTemplate,
             layers: winnerSubmission.layers || [],
           }
         : null;

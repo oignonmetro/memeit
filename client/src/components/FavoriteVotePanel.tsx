@@ -48,7 +48,7 @@ export default function FavoriteVotePanel({ vote, selfId, voteTimeSec, onVote }:
             >
               <span className="vote-card__badge">#{i + 1}</span>
               {own && <span className="vote-card__own-tag">toi</span>}
-              <MemeRender templateUrl={vote.template.url} layers={meme.layers} />
+              <MemeRender templateUrl={meme.template.url} layers={meme.layers} />
             </button>
           );
         })}

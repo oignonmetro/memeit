@@ -12,6 +12,7 @@ import {
   submitMeme as apiSubmitMeme,
   castFavorite as apiCastFavorite,
   setCaptionTime as apiSetCaptionTime,
+  setMode as apiSetMode,
   maybeAdvanceFromCaption,
   advanceReveal,
   maybeTallyVotes,
@@ -21,7 +22,7 @@ import {
 import { getOrCreatePlayerId } from '../lib/playerId';
 import { getPopularTemplates } from '../lib/imgflip';
 import { deriveView, type DerivedView } from '../lib/deriveView';
-import type { DbRoom, DbTemplates, RoomSettings, Template } from '../types';
+import type { DbRoom, DbTemplates, GameMode, RoomSettings, Template } from '../types';
 import { ROUND_TRANSITION_PAUSE_SEC } from '../types';
 
 type Role = 'player' | 'tv' | null;
@@ -45,6 +46,7 @@ interface GameState extends DerivedView {
   detachRoom: () => void;
   startGame: () => Promise<void>;
   setCaptionTime: (seconds: number) => Promise<void>;
+  setMode: (mode: GameMode) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
   submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
   castFavorite: (authorId: string) => Promise<void>;
@@ -181,6 +183,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code } = get();
     if (!code) return;
     await apiSetCaptionTime(code, seconds);
+  },
+
+  setMode: async (mode) => {
+    const { code } = get();
+    if (!code) return;
+    await apiSetMode(code, mode);
   },
 
   uploadTemplate: async (dataUrl) => {

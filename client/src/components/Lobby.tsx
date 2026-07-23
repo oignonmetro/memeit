@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import type { RoomSnapshot, PublicPlayer } from '../types';
-import { CAPTION_TIME_OPTIONS } from '../types';
+import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
+import { CAPTION_TIME_OPTIONS, GAME_MODES } from '../types';
 import { resizeImageFile } from '../lib/image';
 
 interface LobbyProps {
@@ -9,6 +9,7 @@ interface LobbyProps {
   onStart: () => Promise<void>;
   onUpload: (dataUrl: string) => Promise<void>;
   onSetCaptionTime: (seconds: number) => Promise<void>;
+  onSetMode: (mode: GameMode) => Promise<void>;
 }
 
 function formatTime(sec: number): string {
@@ -18,11 +19,12 @@ function formatTime(sec: number): string {
   return s ? `${m}min${s}` : `${m}min`;
 }
 
-export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime }: LobbyProps) {
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetMode }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const customCount = room.templates.filter((t) => t.source === 'upload').length;
+  const currentMode = GAME_MODES.find((m) => m.id === room.settings.mode) ?? GAME_MODES[0];
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -61,6 +63,29 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime 
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="card">
+        <div className="subtitle" style={{ margin: '0 0 10px' }}>Mode de jeu</div>
+        {self.isHost ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {GAME_MODES.map((m) => (
+              <button
+                key={m.id}
+                className={`mode-option ${room.settings.mode === m.id ? 'selected' : ''}`}
+                onClick={() => onSetMode(m.id)}
+              >
+                <span className="mode-option__label">{m.label}</span>
+                <span className="mode-option__desc">{m.description}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontWeight: 800 }}>{currentMode.label}</div>
+            <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{currentMode.description}</div>
+          </div>
+        )}
       </div>
 
       <div className="card">
