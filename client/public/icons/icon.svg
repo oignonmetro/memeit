@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#181022"/>
-  <circle cx="256" cy="230" r="150" fill="#ffd166"/>
-  <circle cx="200" cy="210" r="18" fill="#181022"/>
-  <circle cx="312" cy="210" r="18" fill="#181022"/>
-  <path d="M180 280 Q256 340 332 280" stroke="#181022" stroke-width="18" fill="none" stroke-linecap="round"/>
-  <text x="256" y="460" font-family="Arial, sans-serif" font-weight="900" font-size="72" fill="#ffffff" text-anchor="middle">MEME</text>
-</svg>

@@ -45,6 +45,7 @@ export default function Home() {
 
   return (
     <div className="screen">
+      <img src="/icons/icon-192.png" alt="MemeIt" className="home-logo" />
       <h1 className="title">
         Meme<span className="accent">It</span>
       </h1>
