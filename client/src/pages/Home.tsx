@@ -94,8 +94,8 @@ export default function Home() {
             type="text"
             placeholder="Code de la salle"
             value={code}
-            maxLength={6}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            maxLength={4}
+            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
             style={{ textAlign: 'center', letterSpacing: '0.2em', fontWeight: 800, textTransform: 'uppercase' }}
             autoFocus
           />

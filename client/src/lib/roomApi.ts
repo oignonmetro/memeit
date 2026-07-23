@@ -13,7 +13,7 @@ import { db } from './firebase';
 import { generateRoomCode } from './codes';
 import { getPopularTemplates } from './imgflip';
 import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
-import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS } from '../types';
+import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS } from '../types';
 
 function requireDb() {
   if (!db) throw new Error('Firebase n\'est pas configuré (variables VITE_FIREBASE_* manquantes).');
@@ -54,8 +54,10 @@ export async function createRoom(playerId: string, nickname: string, settings: P
       revealOrder: [],
       revealIndex: -1,
       revealDeadline: null,
-      votes: {},
-      revealResults: {},
+      voteDeadline: null,
+      favoriteVotes: {},
+      lastRoundVotes: {},
+      roundWinnerId: null,
       usedTemplateIds: [],
       winnerId: null,
     };
@@ -116,6 +118,24 @@ export async function leaveRoomLobby(code: string, playerId: string): Promise<vo
   });
 }
 
+// ---------- settings (host, lobby only) ----------
+
+export async function setCaptionTime(code: string, seconds: number): Promise<void> {
+  const clamped = CAPTION_TIME_OPTIONS.includes(seconds) ? seconds : DEFAULT_SETTINGS.captionTimeSec;
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room || room.status !== 'lobby') return room;
+    return { ...room, settings: { ...room.settings, captionTimeSec: clamped }, lastActivityAt: Date.now() };
+  });
+}
+
+export async function setRounds(code: string, rounds: number): Promise<void> {
+  const clamped = Math.min(10, Math.max(1, Math.round(rounds)));
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room || room.status !== 'lobby') return room;
+    return { ...room, settings: { ...room.settings, rounds: clamped }, totalRounds: clamped, lastActivityAt: Date.now() };
+  });
+}
+
 // ---------- templates ----------
 
 export async function addCustomTemplate(code: string, dataUrl: string): Promise<string> {
@@ -170,8 +190,10 @@ function beginRound(room: DbRoom, libraryTemplates: Template[], customTemplates:
     revealOrder: [],
     revealIndex: -1,
     revealDeadline: null,
-    votes: {},
-    revealResults: {},
+    voteDeadline: null,
+    favoriteVotes: {},
+    lastRoundVotes: {},
+    roundWinnerId: null,
     lastActivityAt: Date.now(),
   };
 }
@@ -219,61 +241,88 @@ export async function maybeAdvanceFromCaption(code: string): Promise<void> {
     return {
       ...room,
       submissions,
-      status: 'voting',
+      status: 'reveal',
       revealOrder,
       revealIndex: 0,
-      revealDeadline: Date.now() + room.settings.voteTimeSec * 1000,
-      votes: {},
-      revealResults: {},
+      revealDeadline: Date.now() + room.settings.revealTimeSec * 1000,
+      voteDeadline: null,
+      favoriteVotes: {},
       lastActivityAt: Date.now(),
     };
   });
 }
 
-export async function castVote(code: string, authorId: string, voterId: string, thumbsUp: boolean): Promise<void> {
-  if (thumbsUp) {
-    await update(roomRef(code), {
-      [`votes/${authorId}/${voterId}`]: true,
-      lastActivityAt: Date.now(),
-    });
-  }
-}
-
-export async function maybeResolveCurrentReveal(code: string): Promise<void> {
-  await runTransaction(roomRef(code), (room: DbRoom | null) => {
-    if (!room || room.status !== 'voting') return room;
-    const authorId = room.revealOrder?.[room.revealIndex];
-    if (!authorId || room.revealResults?.[authorId]) return room;
-    const deadlinePassed = room.revealDeadline != null && Date.now() >= room.revealDeadline;
-    if (!deadlinePassed) return room;
-
-    const thumbsUp = Object.keys(room.votes?.[authorId] || {}).length;
-    const players = { ...room.players };
-    if (players[authorId]) {
-      players[authorId] = { ...players[authorId], score: (players[authorId].score || 0) + thumbsUp };
-    }
-    return {
-      ...room,
-      players,
-      revealResults: { ...(room.revealResults || {}), [authorId]: { thumbsUp } },
-      lastActivityAt: Date.now(),
-    };
-  });
-}
-
+// Reveal phase: advance to the next meme, or move to the vote phase once all
+// memes have been shown one by one.
 export async function advanceReveal(code: string): Promise<void> {
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
-    if (!room || room.status !== 'voting') return room;
-    const authorId = room.revealOrder?.[room.revealIndex];
-    if (!authorId || !room.revealResults?.[authorId]) return room;
+    if (!room || room.status !== 'reveal') return room;
+    const deadlinePassed = room.revealDeadline != null && Date.now() >= room.revealDeadline;
+    if (!deadlinePassed) return room;
     const nextIndex = room.revealIndex + 1;
     if (nextIndex >= (room.revealOrder || []).length) {
-      return { ...room, status: 'round_results', lastActivityAt: Date.now() };
+      return {
+        ...room,
+        status: 'vote',
+        voteDeadline: Date.now() + room.settings.voteTimeSec * 1000,
+        favoriteVotes: {},
+        lastActivityAt: Date.now(),
+      };
     }
     return {
       ...room,
       revealIndex: nextIndex,
-      revealDeadline: Date.now() + room.settings.voteTimeSec * 1000,
+      revealDeadline: Date.now() + room.settings.revealTimeSec * 1000,
+      lastActivityAt: Date.now(),
+    };
+  });
+}
+
+// Vote phase: each player picks their single favorite meme of the round
+// (cannot be their own).
+export async function castFavorite(code: string, voterId: string, authorId: string): Promise<void> {
+  if (voterId === authorId) return;
+  await update(roomRef(code), {
+    [`favoriteVotes/${voterId}`]: authorId,
+    lastActivityAt: Date.now(),
+  });
+  await maybeTallyVotes(code);
+}
+
+export async function maybeTallyVotes(code: string): Promise<void> {
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room || room.status !== 'vote') return room;
+    const connectedIds = Object.entries(room.players || {})
+      .filter(([, p]) => p.connected)
+      .map(([id]) => id);
+    const deadlinePassed = room.voteDeadline != null && Date.now() >= room.voteDeadline;
+    const allVoted = connectedIds.every((id) => room.favoriteVotes?.[id]);
+    if (!allVoted && !deadlinePassed) return room;
+
+    const counts: Record<string, number> = {};
+    for (const author of Object.values(room.favoriteVotes || {})) {
+      counts[author] = (counts[author] || 0) + 1;
+    }
+    const players = { ...room.players };
+    for (const [author, c] of Object.entries(counts)) {
+      if (players[author]) players[author] = { ...players[author], score: (players[author].score || 0) + c };
+    }
+    let winnerId: string | null = null;
+    let best = 0;
+    for (const author of room.revealOrder || []) {
+      const c = counts[author] || 0;
+      if (c > best) {
+        best = c;
+        winnerId = author;
+      }
+    }
+    return {
+      ...room,
+      players,
+      status: 'round_results',
+      lastRoundVotes: counts,
+      roundWinnerId: winnerId,
+      voteDeadline: null,
       lastActivityAt: Date.now(),
     };
   });

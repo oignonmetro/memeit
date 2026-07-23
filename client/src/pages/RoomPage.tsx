@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useGameStore } from '../state/gameStore';
 import Lobby from '../components/Lobby';
 import CaptionEditor from '../components/CaptionEditor';
-import VotingPanel from '../components/VotingPanel';
+import FavoriteVotePanel from '../components/FavoriteVotePanel';
+import MemeRender from '../components/MemeRender';
 import Leaderboard from '../components/Leaderboard';
 import { useCountdown } from '../hooks/useCountdown';
 
@@ -17,19 +18,19 @@ export default function RoomPage() {
     roundStarted,
     captionProgress,
     revealMeme,
-    lastResult,
+    voteState,
     roundScoreboard,
     gameEnded,
     hasSubmitted,
-    hasVotedCurrent,
     error,
     clearError,
     attachRoom,
     detachRoom,
     startGame,
+    setCaptionTime,
     uploadTemplate,
     submitMeme,
-    castVote,
+    castFavorite,
     joinRoom,
     leaveRoom,
   } = useGameStore();
@@ -47,6 +48,7 @@ export default function RoomPage() {
   }, [code]);
 
   const captionCountdown = useCountdown(roundStarted?.deadline, room?.settings.captionTimeSec ?? 60);
+  const revealCountdown = useCountdown(revealMeme?.deadline, room?.settings.revealTimeSec ?? 5);
 
   const self = room?.players.find((p) => p.id === selfId) || null;
 
@@ -117,7 +119,9 @@ export default function RoomPage() {
         </button>
       </div>
 
-      {room.phase === 'lobby' && <Lobby room={room} self={self} onStart={startGame} onUpload={uploadTemplate} />}
+      {room.phase === 'lobby' && (
+        <Lobby room={room} self={self} onStart={startGame} onUpload={uploadTemplate} onSetCaptionTime={setCaptionTime} />
+      )}
 
       {room.phase === 'caption' && roundStarted && (
         <>
@@ -153,26 +157,47 @@ export default function RoomPage() {
         </>
       )}
 
-      {room.phase === 'voting' && (
+      {room.phase === 'reveal' && (
         revealMeme ? (
-          <VotingPanel
-            reveal={revealMeme}
-            isOwnMeme={revealMeme.meme.authorId === selfId}
-            hasVoted={hasVotedCurrent}
-            result={lastResult && lastResult.memeId === revealMeme.meme.id ? lastResult : null}
-            voteTimeSec={room.settings.voteTimeSec}
-            onVote={(thumbsUp) => castVote(thumbsUp)}
-          />
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="subtitle" style={{ margin: 0 }}>
+              Découverte des memes — {revealMeme.index + 1} / {revealMeme.total}
+            </div>
+            <MemeRender templateUrl={revealMeme.template.url} layers={revealMeme.meme.layers} />
+            <div className="timer-bar">
+              <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
+            </div>
+            <div className="center-note">Le vote arrive quand tous les memes sont passés.</div>
+          </div>
         ) : (
-          <div className="center-note" style={{ marginTop: 40 }}>Préparation du vote...</div>
+          <div className="center-note" style={{ marginTop: 40 }}>Préparation...</div>
         )
+      )}
+
+      {room.phase === 'vote' && voteState && (
+        <FavoriteVotePanel
+          vote={voteState}
+          selfId={selfId}
+          voteTimeSec={room.settings.voteTimeSec}
+          onVote={castFavorite}
+        />
       )}
 
       {room.phase === 'round_results' && roundScoreboard && (
         <>
+          {roundScoreboard.winner ? (
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="subtitle" style={{ margin: 0, color: 'var(--text)', fontWeight: 800, textAlign: 'center' }}>
+                🏆 Meme de la manche — {roundScoreboard.winner.nickname} ({roundScoreboard.winner.votes} vote{roundScoreboard.winner.votes > 1 ? 's' : ''})
+              </div>
+              <MemeRender templateUrl={roundScoreboard.winner.template.url} layers={roundScoreboard.winner.layers} />
+            </div>
+          ) : (
+            <div className="card center-note">Personne n'a voté cette manche.</div>
+          )}
           <Leaderboard
             scores={roundScoreboard.scores}
-            title={`Résultats — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
+            title={`Classement — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
             selfId={selfId}
           />
           <div className="center-note">

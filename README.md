@@ -132,12 +132,16 @@ disponibles instantanément.
    (hors-ligne). Possibilité d'ajouter aussi ses propres images (stockées dans la salle,
    visibles par tous les joueurs de cette salle).
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
-   sa légende (texte positionnable librement sur l'image) avec un temps limité.
-3. **Manche — Vote** — les memes sont révélés un par un à tout le monde (y compris sur la TV
-   si connectée). Chaque joueur vote 👍 ou passe (pas de vote) sur les memes des autres.
-4. **Score** — le score d'un joueur pour la manche est son nombre de 👍 reçus, cumulé sur toutes
-   les manches.
-5. Les étapes 2-4 se répètent pour le nombre de manches configuré, puis le classement final
+   sa légende (texte positionnable librement sur l'image) avec un temps limité (réglable par
+   l'hôte dans le lobby).
+3. **Manche — Révélation** — tous les memes de la manche sont montrés un par un à tout le monde
+   (y compris sur la TV si connectée), sans révéler leur auteur.
+4. **Manche — Vote** — une fois tous les memes vus, chaque joueur choisit son meme préféré de la
+   manche (un seul vote, impossible de voter pour le sien).
+5. **Score** — chaque meme rapporte à son auteur autant de points que de votes reçus, cumulés
+   sur toutes les manches. Le meme le plus voté de la manche est mis en avant, puis le
+   classement s'affiche.
+6. Les étapes 2-5 se répètent pour le nombre de manches configuré, puis le classement final
    s'affiche.
 
 Il n'y a pas de serveur de jeu central : ce sont les appareils connectés à une salle qui

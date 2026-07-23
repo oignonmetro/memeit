@@ -1,4 +1,4 @@
-export type Phase = 'lobby' | 'caption' | 'voting' | 'round_results' | 'ended';
+export type Phase = 'lobby' | 'caption' | 'reveal' | 'vote' | 'round_results' | 'ended';
 
 export type TemplateSource = 'library' | 'upload';
 
@@ -21,6 +21,7 @@ export interface TextLayer {
 export interface RoomSettings {
   rounds: number;
   captionTimeSec: number;
+  revealTimeSec: number;
   voteTimeSec: number;
   templateSource: 'library' | 'upload' | 'both';
 }
@@ -46,10 +47,6 @@ export interface DbSubmission {
   layers: TextLayer[];
 }
 
-export interface DbRevealResult {
-  thumbsUp: number;
-}
-
 export interface DbRoom {
   createdAt: number;
   lastActivityAt: number;
@@ -61,14 +58,17 @@ export interface DbRoom {
   totalRounds: number;
   currentTemplate: Template | null;
   roundDeadline: number | null;
-  // submissions, revealOrder and votes are keyed by the author's playerId —
+  // submissions and revealOrder are keyed by / contain the author's playerId —
   // each player submits exactly one meme per round, so playerId doubles as memeId.
   submissions: Record<string, DbSubmission>;
   revealOrder: string[];
   revealIndex: number;
   revealDeadline: number | null;
-  votes: Record<string, Record<string, boolean>>;
-  revealResults: Record<string, DbRevealResult>;
+  voteDeadline: number | null;
+  // favoriteVotes[voterId] = authorId the voter picked as favorite this round.
+  favoriteVotes: Record<string, string>;
+  lastRoundVotes: Record<string, number>;
+  roundWinnerId: string | null;
   usedTemplateIds: string[];
   winnerId: string | null;
 }
@@ -104,21 +104,37 @@ export interface RevealMemePayload {
   index: number;
   total: number;
   template: Template;
-  meme: { id: string; layers: TextLayer[]; authorId: string };
+  meme: { authorId: string; layers: TextLayer[] };
   deadline: number;
 }
 
-export interface RevealResultPayload {
-  memeId: string;
+export interface VoteMeme {
   authorId: string;
-  authorNickname: string;
-  thumbsUp: number;
+  layers: TextLayer[];
+}
+
+export interface VoteStatePayload {
+  template: Template;
+  memes: VoteMeme[];
+  deadline: number;
+  myVote: string | null; // authorId this player voted for, or null
+  votedCount: number;
+  total: number;
+}
+
+export interface RoundWinner {
+  authorId: string;
+  nickname: string;
+  votes: number;
+  template: Template;
+  layers: TextLayer[];
 }
 
 export interface RoundScoreboardPayload {
   roundNumber: number;
   totalRounds: number;
   scores: PublicPlayer[];
+  winner: RoundWinner | null;
 }
 
 export interface GameEndedPayload {
@@ -132,13 +148,15 @@ export const MAX_TEXT_LAYERS = 5;
 
 export const DEFAULT_SETTINGS: RoomSettings = {
   rounds: 3,
-  captionTimeSec: 75,
-  voteTimeSec: 8,
+  captionTimeSec: 90,
+  revealTimeSec: 5,
+  voteTimeSec: 30,
   templateSource: 'both',
 };
 
+export const CAPTION_TIME_OPTIONS = [45, 60, 90, 120, 180, 300];
+
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 20;
-export const REVEAL_PAUSE_SEC = 3;
-export const ROUND_TRANSITION_PAUSE_SEC = 5;
+export const ROUND_TRANSITION_PAUSE_SEC = 6;
 export const ROOM_INACTIVITY_MS = 30 * 60 * 1000;

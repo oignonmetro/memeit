@@ -13,7 +13,7 @@ export default function TvPage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { room, roundStarted, captionProgress, revealMeme, lastResult, roundScoreboard, gameEnded, joinTv, detachRoom } = useGameStore();
+  const { room, roundStarted, captionProgress, revealMeme, voteState, roundScoreboard, gameEnded, joinTv, detachRoom } = useGameStore();
 
   useEffect(() => {
     if (!codeParam) return;
@@ -23,7 +23,8 @@ export default function TvPage() {
   }, [codeParam]);
 
   const captionCountdown = useCountdown(roundStarted?.deadline, room?.settings.captionTimeSec ?? 60);
-  const voteCountdown = useCountdown(revealMeme?.deadline, room?.settings.voteTimeSec ?? 10);
+  const revealCountdown = useCountdown(revealMeme?.deadline, room?.settings.revealTimeSec ?? 5);
+  const voteCountdown = useCountdown(voteState?.deadline, room?.settings.voteTimeSec ?? 30);
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +49,7 @@ export default function TvPage() {
             type="text"
             placeholder="Code de la salle"
             value={codeInput}
-            maxLength={6}
+            maxLength={4}
             onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
             style={{ textAlign: 'center', letterSpacing: '0.2em', fontWeight: 800, fontSize: '1.4rem' }}
             autoFocus
@@ -101,35 +102,47 @@ export default function TvPage() {
     );
   }
 
-  if (room.phase === 'voting') {
+  if (room.phase === 'reveal') {
     if (!revealMeme) {
       return (
         <div className="tv-screen">
-          <div className="subtitle" style={{ fontSize: '1.4rem' }}>Préparation du vote...</div>
+          <div className="subtitle" style={{ fontSize: '1.4rem' }}>Préparation...</div>
         </div>
       );
     }
-    const result = lastResult && lastResult.memeId === revealMeme.meme.id ? lastResult : null;
     return (
       <div className="tv-screen">
         <div className="subtitle" style={{ fontSize: '1.3rem' }}>
-          Meme {revealMeme.index + 1} / {revealMeme.total}
+          Découverte des memes — {revealMeme.index + 1} / {revealMeme.total}
         </div>
         <div className="tv-meme-frame">
           <MemeRender templateUrl={revealMeme.template.url} layers={revealMeme.meme.layers} />
         </div>
-        {!result && (
-          <div className="timer-bar" style={{ maxWidth: 480 }}>
-            <div className="timer-fill" style={{ width: `${voteCountdown.pct}%` }} />
-          </div>
-        )}
-        {result ? (
-          <div className="subtitle" style={{ fontSize: '1.6rem', color: 'var(--text)' }}>
-            De <strong>{result.authorNickname}</strong> — {result.thumbsUp} 👍
-          </div>
-        ) : (
-          <div className="subtitle">Votez sur vos téléphones !</div>
-        )}
+        <div className="timer-bar" style={{ maxWidth: 480 }}>
+          <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (room.phase === 'vote' && voteState) {
+    return (
+      <div className="tv-screen">
+        <div className="subtitle" style={{ fontSize: '1.6rem', color: 'var(--text)' }}>
+          Votez pour votre meme préféré sur vos téléphones !
+        </div>
+        <div className="timer-bar" style={{ maxWidth: 480 }}>
+          <div className="timer-fill" style={{ width: `${voteCountdown.pct}%` }} />
+        </div>
+        <div className="subtitle">{voteState.votedCount} / {voteState.total} ont voté</div>
+        <div className="vote-grid tv">
+          {voteState.memes.map((meme, i) => (
+            <div key={meme.authorId} className="vote-card disabled">
+              <span className="vote-card__badge">#{i + 1}</span>
+              <MemeRender templateUrl={voteState.template.url} layers={meme.layers} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -137,10 +150,20 @@ export default function TvPage() {
   if (room.phase === 'round_results' && roundScoreboard) {
     return (
       <div className="tv-screen">
+        {roundScoreboard.winner && (
+          <>
+            <div className="subtitle" style={{ fontSize: '1.6rem', color: 'var(--text)' }}>
+              🏆 {roundScoreboard.winner.nickname} — {roundScoreboard.winner.votes} vote{roundScoreboard.winner.votes > 1 ? 's' : ''}
+            </div>
+            <div className="tv-meme-frame">
+              <MemeRender templateUrl={roundScoreboard.winner.template.url} layers={roundScoreboard.winner.layers} />
+            </div>
+          </>
+        )}
         <div style={{ maxWidth: 480, width: '100%' }}>
           <Leaderboard
             scores={roundScoreboard.scores}
-            title={`Résultats — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
+            title={`Classement — manche ${roundScoreboard.roundNumber} / ${roundScoreboard.totalRounds}`}
           />
         </div>
       </div>

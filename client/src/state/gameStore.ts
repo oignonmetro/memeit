@@ -10,18 +10,19 @@ import {
   addCustomTemplate,
   startGame as apiStartGame,
   submitMeme as apiSubmitMeme,
-  castVote as apiCastVote,
+  castFavorite as apiCastFavorite,
+  setCaptionTime as apiSetCaptionTime,
   maybeAdvanceFromCaption,
-  maybeResolveCurrentReveal,
   advanceReveal,
+  maybeTallyVotes,
   advanceAfterRoundResults,
   cleanupIfInactive,
 } from '../lib/roomApi';
 import { getOrCreatePlayerId } from '../lib/playerId';
 import { getPopularTemplates } from '../lib/imgflip';
 import { deriveView, type DerivedView } from '../lib/deriveView';
-import type { DbRoom, DbTemplates, RoomSettings, Template, TextLayer } from '../types';
-import { REVEAL_PAUSE_SEC, ROUND_TRANSITION_PAUSE_SEC } from '../types';
+import type { DbRoom, DbTemplates, RoomSettings, Template } from '../types';
+import { ROUND_TRANSITION_PAUSE_SEC } from '../types';
 
 type Role = 'player' | 'tv' | null;
 
@@ -43,9 +44,10 @@ interface GameState extends DerivedView {
   attachRoom: (code: string, role: Role) => void;
   detachRoom: () => void;
   startGame: () => Promise<void>;
+  setCaptionTime: (seconds: number) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
-  submitMeme: (layers: TextLayer[]) => Promise<void>;
-  castVote: (thumbsUp: boolean) => Promise<void>;
+  submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
+  castFavorite: (authorId: string) => Promise<void>;
   leaveRoom: () => void;
 }
 
@@ -83,17 +85,13 @@ function driveGameForward(code: string) {
     if (room.roundDeadline != null && Date.now() >= room.roundDeadline) {
       maybeAdvanceFromCaption(code);
     }
-  } else if (room.status === 'voting') {
-    const authorId = room.revealOrder?.[room.revealIndex];
-    if (authorId) {
-      const resolved = room.revealResults?.[authorId];
-      if (!resolved) {
-        if (room.revealDeadline != null && Date.now() >= room.revealDeadline) {
-          maybeResolveCurrentReveal(code);
-        }
-      } else if (Date.now() - (room.lastActivityAt || 0) >= REVEAL_PAUSE_SEC * 1000) {
-        advanceReveal(code);
-      }
+  } else if (room.status === 'reveal') {
+    if (room.revealDeadline != null && Date.now() >= room.revealDeadline) {
+      advanceReveal(code);
+    }
+  } else if (room.status === 'vote') {
+    if (room.voteDeadline != null && Date.now() >= room.voteDeadline) {
+      maybeTallyVotes(code);
     }
   } else if (room.status === 'round_results') {
     if (Date.now() - (room.lastActivityAt || 0) >= ROUND_TRANSITION_PAUSE_SEC * 1000) {
@@ -117,11 +115,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   roundStarted: null,
   captionProgress: null,
   revealMeme: null,
-  lastResult: null,
+  voteState: null,
   roundScoreboard: null,
   gameEnded: null,
   hasSubmitted: false,
-  hasVotedCurrent: false,
 
   clearError: () => set({ error: null }),
 
@@ -180,6 +177,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     await apiStartGame(code);
   },
 
+  setCaptionTime: async (seconds) => {
+    const { code } = get();
+    if (!code) return;
+    await apiSetCaptionTime(code, seconds);
+  },
+
   uploadTemplate: async (dataUrl) => {
     const { code } = get();
     if (!code) return;
@@ -192,10 +195,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     await apiSubmitMeme(code, selfId, layers);
   },
 
-  castVote: async (thumbsUp) => {
-    const { code, selfId, revealMeme } = get();
-    if (!code || !revealMeme) return;
-    await apiCastVote(code, revealMeme.meme.authorId, selfId, thumbsUp);
+  castFavorite: async (authorId) => {
+    const { code, selfId } = get();
+    if (!code) return;
+    await apiCastFavorite(code, selfId, authorId);
   },
 
   leaveRoom: () => {
@@ -212,11 +215,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       roundStarted: null,
       captionProgress: null,
       revealMeme: null,
-      lastResult: null,
+      voteState: null,
       roundScoreboard: null,
       gameEnded: null,
       hasSubmitted: false,
-      hasVotedCurrent: false,
     });
   },
 }));

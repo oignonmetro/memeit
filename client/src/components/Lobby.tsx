@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { RoomSnapshot, PublicPlayer } from '../types';
+import { CAPTION_TIME_OPTIONS } from '../types';
 import { resizeImageFile } from '../lib/image';
 
 interface LobbyProps {
@@ -7,9 +8,17 @@ interface LobbyProps {
   self: PublicPlayer;
   onStart: () => Promise<void>;
   onUpload: (dataUrl: string) => Promise<void>;
+  onSetCaptionTime: (seconds: number) => Promise<void>;
 }
 
-export default function Lobby({ room, self, onStart, onUpload }: LobbyProps) {
+function formatTime(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s ? `${m}min${s}` : `${m}min`;
+}
+
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -52,6 +61,27 @@ export default function Lobby({ room, self, onStart, onUpload }: LobbyProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="card">
+        <div className="subtitle" style={{ margin: '0 0 10px' }}>
+          Temps pour créer son meme : {formatTime(room.settings.captionTimeSec)}
+        </div>
+        {self.isHost ? (
+          <div className="setting-options">
+            {CAPTION_TIME_OPTIONS.map((sec) => (
+              <button
+                key={sec}
+                className={`setting-chip ${room.settings.captionTimeSec === sec ? 'selected' : ''}`}
+                onClick={() => onSetCaptionTime(sec)}
+              >
+                {formatTime(sec)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
+        )}
       </div>
 
       <div className="card">

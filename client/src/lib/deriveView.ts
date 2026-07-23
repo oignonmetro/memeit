@@ -6,7 +6,7 @@ import type {
   RoomSnapshot,
   RoundStartedPayload,
   RevealMemePayload,
-  RevealResultPayload,
+  VoteStatePayload,
   RoundScoreboardPayload,
   GameEndedPayload,
 } from '../types';
@@ -16,11 +16,10 @@ export interface DerivedView {
   roundStarted: RoundStartedPayload | null;
   captionProgress: { submitted: number; total: number } | null;
   revealMeme: RevealMemePayload | null;
-  lastResult: RevealResultPayload | null;
+  voteState: VoteStatePayload | null;
   roundScoreboard: RoundScoreboardPayload | null;
   gameEnded: GameEndedPayload | null;
   hasSubmitted: boolean;
-  hasVotedCurrent: boolean;
 }
 
 const EMPTY_VIEW: DerivedView = {
@@ -28,11 +27,10 @@ const EMPTY_VIEW: DerivedView = {
   roundStarted: null,
   captionProgress: null,
   revealMeme: null,
-  lastResult: null,
+  voteState: null,
   roundScoreboard: null,
   gameEnded: null,
   hasSubmitted: false,
-  hasVotedCurrent: false,
 };
 
 function buildTemplates(libraryTemplates: Template[], dbTemplates: DbTemplates | null): Template[] {
@@ -95,8 +93,7 @@ export function deriveView(
   }
 
   let revealMeme: RevealMemePayload | null = null;
-  let lastResult: RevealResultPayload | null = null;
-  if (dbRoom.status === 'voting' && dbRoom.currentTemplate) {
+  if (dbRoom.status === 'reveal' && dbRoom.currentTemplate) {
     const authorId = dbRoom.revealOrder?.[dbRoom.revealIndex];
     const submission = authorId ? dbRoom.submissions?.[authorId] : undefined;
     if (authorId && submission) {
@@ -104,24 +101,49 @@ export function deriveView(
         index: dbRoom.revealIndex,
         total: (dbRoom.revealOrder || []).length,
         template: dbRoom.currentTemplate,
-        meme: { id: authorId, layers: submission.layers || [], authorId },
+        meme: { authorId, layers: submission.layers || [] },
         deadline: dbRoom.revealDeadline || Date.now(),
       };
-      const result = dbRoom.revealResults?.[authorId];
-      if (result) {
-        lastResult = {
-          memeId: authorId,
-          authorId,
-          authorNickname: dbRoom.players?.[authorId]?.nickname || '???',
-          thumbsUp: result.thumbsUp,
-        };
-      }
     }
+  }
+
+  let voteState: VoteStatePayload | null = null;
+  if (dbRoom.status === 'vote' && dbRoom.currentTemplate) {
+    const order = dbRoom.revealOrder || [];
+    const memes = order
+      .filter((authorId) => dbRoom.submissions?.[authorId])
+      .map((authorId) => ({ authorId, layers: dbRoom.submissions[authorId].layers || [] }));
+    const connectedTotal = players.filter((p) => p.connected).length;
+    voteState = {
+      template: dbRoom.currentTemplate,
+      memes,
+      deadline: dbRoom.voteDeadline || Date.now(),
+      myVote: dbRoom.favoriteVotes?.[selfId] || null,
+      votedCount: Object.keys(dbRoom.favoriteVotes || {}).length,
+      total: connectedTotal,
+    };
   }
 
   let roundScoreboard: RoundScoreboardPayload | null = null;
   if (dbRoom.status === 'round_results') {
-    roundScoreboard = { roundNumber: dbRoom.currentRound, totalRounds: dbRoom.totalRounds, scores: players };
+    const winnerId = dbRoom.roundWinnerId;
+    const winnerSubmission = winnerId ? dbRoom.submissions?.[winnerId] : undefined;
+    const winner =
+      winnerId && winnerSubmission && dbRoom.currentTemplate
+        ? {
+            authorId: winnerId,
+            nickname: dbRoom.players?.[winnerId]?.nickname || '???',
+            votes: dbRoom.lastRoundVotes?.[winnerId] || 0,
+            template: dbRoom.currentTemplate,
+            layers: winnerSubmission.layers || [],
+          }
+        : null;
+    roundScoreboard = {
+      roundNumber: dbRoom.currentRound,
+      totalRounds: dbRoom.totalRounds,
+      scores: players,
+      winner,
+    };
   }
 
   let gameEnded: GameEndedPayload | null = null;
@@ -130,8 +152,6 @@ export function deriveView(
   }
 
   const hasSubmitted = Boolean(dbRoom.submissions?.[selfId]);
-  const currentAuthorId = dbRoom.revealOrder?.[dbRoom.revealIndex];
-  const hasVotedCurrent = Boolean(currentAuthorId && dbRoom.votes?.[currentAuthorId]?.[selfId]);
 
-  return { room, roundStarted, captionProgress, revealMeme, lastResult, roundScoreboard, gameEnded, hasSubmitted, hasVotedCurrent };
+  return { room, roundStarted, captionProgress, revealMeme, voteState, roundScoreboard, gameEnded, hasSubmitted };
 }
