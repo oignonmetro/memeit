@@ -10,6 +10,7 @@ import {
   addCustomTemplate,
   startGame as apiStartGame,
   submitMeme as apiSubmitMeme,
+  changeTemplate as apiChangeTemplate,
   castFavorite as apiCastFavorite,
   setCaptionTime as apiSetCaptionTime,
   setMode as apiSetMode,
@@ -51,6 +52,7 @@ interface GameState extends DerivedView {
   setMode: (mode: GameMode) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
   submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
+  changeTemplate: () => Promise<void>;
   castFavorite: (authorId: string) => Promise<void>;
   leaveRoom: () => void;
 }
@@ -222,6 +224,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code, selfId } = get();
     if (!code) return;
     await apiSubmitMeme(code, selfId, layers);
+  },
+
+  changeTemplate: async () => {
+    const { code, selfId } = get();
+    if (!code) return;
+    await apiChangeTemplate(code, selfId);
   },
 
   castFavorite: async (authorId) => {

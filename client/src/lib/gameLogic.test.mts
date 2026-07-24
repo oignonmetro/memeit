@@ -7,8 +7,11 @@ import {
   reduceReveal,
   reduceTally,
   reduceRoundResults,
+  reduceChangeTemplate,
+  buildPool,
 } from './gameLogic';
 import type { DbRoom, GameMode, Template } from '../types';
+import { MAX_TEMPLATE_CHANGES } from '../types';
 
 const LIB: Template[] = Array.from({ length: 6 }, (_, i) => ({
   id: `t${i}`,
@@ -38,6 +41,7 @@ function makeRoom(mode: GameMode): DbRoom {
     totalRounds: 2,
     currentTemplate: null,
     roundTemplates: {},
+    templateChanges: {},
     roundDeadline: null,
     submissions: {},
     revealOrder: [],
@@ -127,6 +131,31 @@ function playGame(mode: GameMode): string {
   return `PASS  ${mode.padEnd(8)} → ${room.status}, scores ${Object.values(room.players).map((p) => p.score).join('/')}, vainqueur ${room.winnerId ?? '—'}`;
 }
 
+function testTemplateChanges(mode: GameMode): string {
+  let room = makeRoom(mode);
+  room = reduceStartGame(room, LIB, [], tick())!;
+  const pool = buildPool(room.settings, LIB, []);
+  const startId = room.roundTemplates.p1.id;
+
+  // p1 re-rolls 5 times; each must succeed and (usually) change the template.
+  for (let i = 1; i <= MAX_TEMPLATE_CHANGES; i++) {
+    const before = room.roundTemplates.p1.id;
+    room = reduceChangeTemplate(room, 'p1', pool, tick())!;
+    assert.equal(room.templateChanges.p1, i, `[${mode}] change #${i} counted`);
+    assert.notEqual(room.roundTemplates.p1.id, before, `[${mode}] template actually changed on #${i}`);
+  }
+  assert.ok(MAX_TEMPLATE_CHANGES >= 5, 'at least 5 changes allowed');
+
+  // 6th change is blocked (cap reached).
+  const capped = reduceChangeTemplate(room, 'p1', pool, tick())!;
+  assert.equal(capped.templateChanges.p1, MAX_TEMPLATE_CHANGES, `[${mode}] change capped at ${MAX_TEMPLATE_CHANGES}`);
+
+  // Changing p1 must not affect other players' templates.
+  assert.equal(room.templateChanges.p2 ?? 0, 0, `[${mode}] p2 unaffected`);
+
+  return `PASS  ${mode.padEnd(8)} → ${MAX_TEMPLATE_CHANGES} changements OK puis plafonné (départ ${startId} → ${room.roundTemplates.p1.id})`;
+}
+
 let ok = true;
 for (const mode of ['normal', 'meme', 'detendu'] as GameMode[]) {
   try {
@@ -134,6 +163,15 @@ for (const mode of ['normal', 'meme', 'detendu'] as GameMode[]) {
   } catch (e) {
     ok = false;
     console.error(`FAIL  ${mode}:`, (e as Error).message);
+  }
+}
+console.log('--- changement de template ---');
+for (const mode of ['normal', 'meme', 'detendu'] as GameMode[]) {
+  try {
+    console.log(testTemplateChanges(mode));
+  } catch (e) {
+    ok = false;
+    console.error(`FAIL  ${mode} (template):`, (e as Error).message);
   }
 }
 console.log(ok ? '\nRESULT: PASS — les 3 modes bouclent une partie complète.' : '\nRESULT: FAIL');

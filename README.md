@@ -138,7 +138,8 @@ disponibles instantanément.
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
    sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
    ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps
-   limité (réglable par l'hôte dans le lobby).
+   limité (réglable par l'hôte dans le lobby). Chaque joueur peut re-roller son propre template
+   jusqu'à 5 fois par manche (dans tous les modes).
 3. **Manche — Révélation** — tous les memes de la manche sont montrés un par un à tout le monde
    (y compris sur la TV si connectée), sans révéler leur auteur.
 4. **Manche — Vote** — une fois tous les memes vus, chaque joueur choisit son meme préféré de la

@@ -73,6 +73,8 @@ export interface DbRoom {
   // modes it is null and each player gets their own template via roundTemplates.
   currentTemplate: Template | null;
   roundTemplates: Record<string, Template>;
+  // How many times each player has re-rolled their template this round.
+  templateChanges: Record<string, number>;
   roundDeadline: number | null;
   // submissions and revealOrder are keyed by / contain the author's playerId —
   // each player submits exactly one meme per round, so playerId doubles as memeId.
@@ -113,6 +115,7 @@ export interface RoundStartedPayload {
   roundNumber: number;
   totalRounds: number;
   template: Template | null; // the viewer's own template (null on TV in non-meme modes)
+  changesLeft: number; // template re-rolls the viewer still has this round
   deadline: number;
 }
 
@@ -162,10 +165,13 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   mode: 'normal',
   rounds: 3,
   captionTimeSec: 90,
-  revealTimeSec: 5,
+  revealTimeSec: 8,
   voteTimeSec: 30,
   templateSource: 'both',
 };
+
+// Each player may re-roll their template up to this many times per round.
+export const MAX_TEMPLATE_CHANGES = 5;
 
 export const CAPTION_TIME_OPTIONS = [45, 60, 90, 120, 180, 300];
 

@@ -1,4 +1,5 @@
 import type { DbRoom, RoomSettings, Template } from '../types';
+import { MAX_TEMPLATE_CHANGES } from '../types';
 
 // Pure game-state reducers, extracted from the Realtime Database transactions
 // in roomApi.ts so they can be reasoned about and unit-tested without Firebase.
@@ -73,6 +74,7 @@ export function beginRound(
     currentRound: roundNumber,
     currentTemplate: sharedTemplate,
     roundTemplates,
+    templateChanges: {},
     usedTemplateIds: [...(room.usedTemplateIds || []), ...newlyUsed],
     roundDeadline: now + room.settings.captionTimeSec * 1000,
     submissions: {},
@@ -97,6 +99,24 @@ export function reduceStartGame(
   const connectedCount = Object.values(room.players || {}).filter((p) => p.connected).length;
   if (connectedCount < 2) return room;
   return beginRound(room, libraryTemplates, customTemplates, 1, now);
+}
+
+// A player re-rolls their own template during the caption phase (any mode).
+// `pool` is the available template pool. Capped at MAX_TEMPLATE_CHANGES.
+export function reduceChangeTemplate(room: DbRoom | null, playerId: string, pool: Template[], now: number): DbRoom | null {
+  if (!room || room.status !== 'caption') return room;
+  const changes = room.templateChanges?.[playerId] || 0;
+  if (changes >= MAX_TEMPLATE_CHANGES) return room;
+  const current = room.roundTemplates?.[playerId];
+  const candidates = pool.filter((t) => t.id !== current?.id);
+  if (candidates.length === 0) return room;
+  const next = candidates[Math.floor(Math.random() * candidates.length)];
+  return {
+    ...room,
+    roundTemplates: { ...(room.roundTemplates || {}), [playerId]: next },
+    templateChanges: { ...(room.templateChanges || {}), [playerId]: changes + 1 },
+    lastActivityAt: now,
+  };
 }
 
 export function reduceCaption(room: DbRoom | null, now: number): DbRoom | null {

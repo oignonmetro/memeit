@@ -6,6 +6,8 @@ interface CaptionEditorProps {
   template: Template;
   onSubmit: (layers: TextLayer[]) => void;
   submitting: boolean;
+  changesLeft: number;
+  onChangeTemplate: () => Promise<void>;
 }
 
 function boxLabel(count: number, i: number): string {
@@ -14,9 +16,20 @@ function boxLabel(count: number, i: number): string {
   return `Texte ${i + 1}`;
 }
 
-export default function CaptionEditor({ template, onSubmit, submitting }: CaptionEditorProps) {
+export default function CaptionEditor({ template, onSubmit, submitting, changesLeft, onChangeTemplate }: CaptionEditorProps) {
   const boxes = template.boxes && template.boxes.length ? template.boxes : [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }];
   const [texts, setTexts] = useState<string[]>(() => boxes.map(() => ''));
+  const [changing, setChanging] = useState(false);
+
+  async function handleChange() {
+    if (changing || changesLeft <= 0) return;
+    setChanging(true);
+    try {
+      await onChangeTemplate();
+    } finally {
+      setChanging(false);
+    }
+  }
 
   // Preview shows the real position of each zone, with a faint placeholder when empty.
   const previewLayers: TextLayer[] = useMemo(
@@ -37,6 +50,14 @@ export default function CaptionEditor({ template, onSubmit, submitting }: Captio
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MemeRender templateUrl={template.url} layers={previewLayers} />
+
+      <button
+        className="btn btn-secondary"
+        onClick={handleChange}
+        disabled={changing || changesLeft <= 0}
+      >
+        {changesLeft > 0 ? `🎲 Changer de template (${changesLeft} restant${changesLeft > 1 ? 's' : ''})` : 'Plus de changement possible'}
+      </button>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {boxes.map((_, i) => (

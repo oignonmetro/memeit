@@ -24,6 +24,8 @@ import {
   reduceReveal,
   reduceTally,
   reduceRoundResults,
+  reduceChangeTemplate,
+  buildPool,
 } from './gameLogic';
 import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
 import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS } from '../types';
@@ -70,6 +72,7 @@ export async function createRoom(playerId: string, nickname: string, settings: P
       totalRounds: merged.rounds,
       currentTemplate: null,
       roundTemplates: {},
+      templateChanges: {},
       roundDeadline: null,
       submissions: {},
       revealOrder: [],
@@ -216,6 +219,16 @@ export async function submitMeme(code: string, playerId: string, layers: TextLay
     lastActivityAt: Date.now(),
   });
   await maybeAdvanceFromCaption(code);
+}
+
+// Re-roll the player's own template during the caption phase (all modes).
+export async function changeTemplate(code: string, playerId: string): Promise<void> {
+  const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room) return room;
+    const pool = buildPool(room.settings, libraryTemplates, customTemplates);
+    return reduceChangeTemplate(room, playerId, pool, Date.now());
+  });
 }
 
 export async function maybeAdvanceFromCaption(code: string): Promise<void> {

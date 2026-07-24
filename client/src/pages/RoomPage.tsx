@@ -31,6 +31,7 @@ export default function RoomPage() {
     setMode,
     uploadTemplate,
     submitMeme,
+    changeTemplate,
     castFavorite,
     joinRoom,
     leaveRoom,
@@ -150,8 +151,11 @@ export default function RoomPage() {
             </div>
           ) : roundStarted.template ? (
             <CaptionEditor
+              key={roundStarted.template.id}
               template={roundStarted.template}
               submitting={submitting}
+              changesLeft={roundStarted.changesLeft}
+              onChangeTemplate={changeTemplate}
               onSubmit={async (layers) => {
                 setSubmitting(true);
                 try {
