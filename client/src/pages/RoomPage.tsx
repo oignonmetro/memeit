@@ -29,6 +29,7 @@ export default function RoomPage() {
     startGame,
     setCaptionTime,
     setMode,
+    setMaxTemplateChanges,
     uploadTemplate,
     submitMeme,
     changeTemplate,
@@ -129,6 +130,7 @@ export default function RoomPage() {
           onUpload={uploadTemplate}
           onSetCaptionTime={setCaptionTime}
           onSetMode={setMode}
+          onSetMaxTemplateChanges={setMaxTemplateChanges}
         />
       )}
 

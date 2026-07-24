@@ -10,7 +10,6 @@ import type {
   RoundScoreboardPayload,
   GameEndedPayload,
 } from '../types';
-import { MAX_TEMPLATE_CHANGES } from '../types';
 import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 
 export interface DerivedView {
@@ -90,7 +89,7 @@ export function deriveView(
       roundNumber: dbRoom.currentRound,
       totalRounds: dbRoom.totalRounds,
       template: templateFor(selfId),
-      changesLeft: Math.max(0, MAX_TEMPLATE_CHANGES - (dbRoom.templateChanges?.[selfId] || 0)),
+      changesLeft: Math.max(0, (dbRoom.settings.maxTemplateChanges || 5) - (dbRoom.templateChanges?.[selfId] || 0)),
       deadline: dbRoom.roundDeadline || Date.now(),
     };
     captionProgress = {

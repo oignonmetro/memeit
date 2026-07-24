@@ -36,6 +36,7 @@ export interface RoomSettings {
   captionTimeSec: number;
   revealTimeSec: number;
   voteTimeSec: number;
+  maxTemplateChanges: number;
   templateSource: 'library' | 'upload' | 'both';
 }
 
@@ -167,11 +168,12 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   captionTimeSec: 90,
   revealTimeSec: 10,
   voteTimeSec: 30,
+  maxTemplateChanges: 5,
   templateSource: 'both',
 };
 
-// Each player may re-roll their template up to this many times per round.
-export const MAX_TEMPLATE_CHANGES = 5;
+// Allowed values for the per-round template re-roll limit (host-configurable).
+export const TEMPLATE_CHANGE_OPTIONS = [5, 10, 15, 20];
 
 export const CAPTION_TIME_OPTIONS = [45, 60, 90, 120, 180, 300];
 

@@ -14,6 +14,7 @@ import {
   castFavorite as apiCastFavorite,
   setCaptionTime as apiSetCaptionTime,
   setMode as apiSetMode,
+  setMaxTemplateChanges as apiSetMaxTemplateChanges,
   maybeAdvanceFromCaption,
   advanceReveal,
   maybeTallyVotes,
@@ -50,6 +51,7 @@ interface GameState extends DerivedView {
   startGame: () => Promise<void>;
   setCaptionTime: (seconds: number) => Promise<void>;
   setMode: (mode: GameMode) => Promise<void>;
+  setMaxTemplateChanges: (value: number) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
   submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
   changeTemplate: () => Promise<void>;
@@ -212,6 +214,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code } = get();
     if (!code) return;
     await apiSetMode(code, mode);
+  },
+
+  setMaxTemplateChanges: async (value) => {
+    const { code } = get();
+    if (!code) return;
+    await apiSetMaxTemplateChanges(code, value);
   },
 
   uploadTemplate: async (dataUrl) => {

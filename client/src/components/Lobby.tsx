@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
-import { CAPTION_TIME_OPTIONS, GAME_MODES } from '../types';
+import { CAPTION_TIME_OPTIONS, GAME_MODES, TEMPLATE_CHANGE_OPTIONS } from '../types';
 import { resizeImageFile } from '../lib/image';
 
 interface LobbyProps {
@@ -10,6 +10,7 @@ interface LobbyProps {
   onUpload: (dataUrl: string) => Promise<void>;
   onSetCaptionTime: (seconds: number) => Promise<void>;
   onSetMode: (mode: GameMode) => Promise<void>;
+  onSetMaxTemplateChanges: (value: number) => Promise<void>;
 }
 
 function formatTime(sec: number): string {
@@ -19,7 +20,7 @@ function formatTime(sec: number): string {
   return s ? `${m}min${s}` : `${m}min`;
 }
 
-export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetMode }: LobbyProps) {
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetMode, onSetMaxTemplateChanges }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -101,6 +102,27 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
                 onClick={() => onSetCaptionTime(sec)}
               >
                 {formatTime(sec)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="subtitle" style={{ margin: '0 0 10px' }}>
+          Changements de template par manche : {room.settings.maxTemplateChanges}
+        </div>
+        {self.isHost ? (
+          <div className="setting-options">
+            {TEMPLATE_CHANGE_OPTIONS.map((n) => (
+              <button
+                key={n}
+                className={`setting-chip ${room.settings.maxTemplateChanges === n ? 'selected' : ''}`}
+                onClick={() => onSetMaxTemplateChanges(n)}
+              >
+                {n}
               </button>
             ))}
           </div>

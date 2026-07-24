@@ -1,5 +1,4 @@
 import type { DbRoom, RoomSettings, Template } from '../types';
-import { MAX_TEMPLATE_CHANGES } from '../types';
 
 // Pure game-state reducers, extracted from the Realtime Database transactions
 // in roomApi.ts so they can be reasoned about and unit-tested without Firebase.
@@ -105,8 +104,9 @@ export function reduceStartGame(
 // `pool` is the available template pool. Capped at MAX_TEMPLATE_CHANGES.
 export function reduceChangeTemplate(room: DbRoom | null, playerId: string, pool: Template[], now: number): DbRoom | null {
   if (!room || room.status !== 'caption') return room;
+  const max = room.settings.maxTemplateChanges || 5;
   const changes = room.templateChanges?.[playerId] || 0;
-  if (changes >= MAX_TEMPLATE_CHANGES) return room;
+  if (changes >= max) return room;
   const current = room.roundTemplates?.[playerId];
   const candidates = pool.filter((t) => t.id !== current?.id);
   if (candidates.length === 0) return room;

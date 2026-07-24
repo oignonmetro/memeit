@@ -11,7 +11,8 @@ import {
   buildPool,
 } from './gameLogic';
 import type { DbRoom, GameMode, Template } from '../types';
-import { MAX_TEMPLATE_CHANGES } from '../types';
+
+const MAX = 5; // matches the room settings below
 
 const LIB: Template[] = Array.from({ length: 6 }, (_, i) => ({
   id: `t${i}`,
@@ -34,7 +35,7 @@ function makeRoom(mode: GameMode): DbRoom {
     createdAt: 0,
     lastActivityAt: 0,
     hostId: 'p1',
-    settings: { mode, rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, templateSource: 'library' },
+    settings: { mode, rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' },
     status: 'lobby',
     players,
     currentRound: 0,
@@ -138,22 +139,22 @@ function testTemplateChanges(mode: GameMode): string {
   const startId = room.roundTemplates.p1.id;
 
   // p1 re-rolls 5 times; each must succeed and (usually) change the template.
-  for (let i = 1; i <= MAX_TEMPLATE_CHANGES; i++) {
+  for (let i = 1; i <= MAX; i++) {
     const before = room.roundTemplates.p1.id;
     room = reduceChangeTemplate(room, 'p1', pool, tick())!;
     assert.equal(room.templateChanges.p1, i, `[${mode}] change #${i} counted`);
     assert.notEqual(room.roundTemplates.p1.id, before, `[${mode}] template actually changed on #${i}`);
   }
-  assert.ok(MAX_TEMPLATE_CHANGES >= 5, 'at least 5 changes allowed');
+  assert.ok(MAX >= 5, 'at least 5 changes allowed');
 
   // 6th change is blocked (cap reached).
   const capped = reduceChangeTemplate(room, 'p1', pool, tick())!;
-  assert.equal(capped.templateChanges.p1, MAX_TEMPLATE_CHANGES, `[${mode}] change capped at ${MAX_TEMPLATE_CHANGES}`);
+  assert.equal(capped.templateChanges.p1, MAX, `[${mode}] change capped at ${MAX}`);
 
   // Changing p1 must not affect other players' templates.
   assert.equal(room.templateChanges.p2 ?? 0, 0, `[${mode}] p2 unaffected`);
 
-  return `PASS  ${mode.padEnd(8)} → ${MAX_TEMPLATE_CHANGES} changements OK puis plafonné (départ ${startId} → ${room.roundTemplates.p1.id})`;
+  return `PASS  ${mode.padEnd(8)} → ${MAX} changements OK puis plafonné (départ ${startId} → ${room.roundTemplates.p1.id})`;
 }
 
 let ok = true;
@@ -173,6 +174,19 @@ for (const mode of ['normal', 'meme', 'detendu'] as GameMode[]) {
     ok = false;
     console.error(`FAIL  ${mode} (template):`, (e as Error).message);
   }
+}
+// The cap follows the room setting (e.g. 10, not the hardcoded 5).
+try {
+  let room = makeRoom('normal');
+  room.settings.maxTemplateChanges = 10;
+  room = reduceStartGame(room, LIB, [], tick())!;
+  const pool = buildPool(room.settings, LIB, []);
+  for (let i = 0; i < 12; i++) room = reduceChangeTemplate(room, 'p1', pool, tick())!;
+  assert.equal(room.templateChanges.p1, 10, 'cap follows the setting (10)');
+  console.log('PASS  réglage    → plafond configurable respecté (10)');
+} catch (e) {
+  ok = false;
+  console.error('FAIL  réglage configurable:', (e as Error).message);
 }
 console.log(ok ? '\nRESULT: PASS — les 3 modes bouclent une partie complète.' : '\nRESULT: FAIL');
 process.exit(ok ? 0 : 1);

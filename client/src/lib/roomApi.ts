@@ -28,7 +28,7 @@ import {
   buildPool,
 } from './gameLogic';
 import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
-import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS } from '../types';
+import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS, TEMPLATE_CHANGE_OPTIONS } from '../types';
 
 function requireDb() {
   if (!db) throw new Error('Firebase n\'est pas configuré (variables VITE_FIREBASE_* manquantes).');
@@ -169,6 +169,14 @@ export async function setMode(code: string, mode: RoomSettings['mode']): Promise
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room || room.status !== 'lobby') return room;
     return { ...room, settings: { ...room.settings, mode }, lastActivityAt: Date.now() };
+  });
+}
+
+export async function setMaxTemplateChanges(code: string, value: number): Promise<void> {
+  const clamped = TEMPLATE_CHANGE_OPTIONS.includes(value) ? value : DEFAULT_SETTINGS.maxTemplateChanges;
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room || room.status !== 'lobby') return room;
+    return { ...room, settings: { ...room.settings, maxTemplateChanges: clamped }, lastActivityAt: Date.now() };
   });
 }
 
