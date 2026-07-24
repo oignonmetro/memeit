@@ -165,7 +165,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   mode: 'normal',
   rounds: 3,
   captionTimeSec: 90,
-  revealTimeSec: 8,
+  revealTimeSec: 10,
   voteTimeSec: 30,
   templateSource: 'both',
 };
