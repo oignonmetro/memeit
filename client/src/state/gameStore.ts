@@ -12,6 +12,7 @@ import {
   submitMeme as apiSubmitMeme,
   changeTemplate as apiChangeTemplate,
   castFavorite as apiCastFavorite,
+  sendChatMessage as apiSendChatMessage,
   setCaptionTime as apiSetCaptionTime,
   setMode as apiSetMode,
   setMaxTemplateChanges as apiSetMaxTemplateChanges,
@@ -56,6 +57,7 @@ interface GameState extends DerivedView {
   submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
   changeTemplate: () => Promise<void>;
   castFavorite: (authorId: string) => Promise<void>;
+  sendChat: (text: string) => Promise<void>;
   leaveRoom: () => void;
 }
 
@@ -138,6 +140,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   roundScoreboard: null,
   gameEnded: null,
   hasSubmitted: false,
+  chat: [],
+  chatOrder: [],
 
   clearError: () => set({ error: null }),
 
@@ -246,6 +250,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     await apiCastFavorite(code, selfId, authorId);
   },
 
+  sendChat: async (text) => {
+    const { code, selfId, room } = get();
+    if (!code) return;
+    const nickname = room?.players.find((p) => p.id === selfId)?.nickname || '?';
+    await apiSendChatMessage(code, selfId, nickname, text);
+  },
+
   leaveRoom: () => {
     const { code, selfId, role } = get();
     if (code && role === 'player') {
@@ -264,6 +275,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       roundScoreboard: null,
       gameEnded: null,
       hasSubmitted: false,
+      chat: [],
+      chatOrder: [],
     });
   },
 }));

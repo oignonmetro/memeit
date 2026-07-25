@@ -9,6 +9,7 @@ import type {
   VoteStatePayload,
   RoundScoreboardPayload,
   GameEndedPayload,
+  ChatMessage,
 } from '../types';
 import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 
@@ -21,6 +22,8 @@ export interface DerivedView {
   roundScoreboard: RoundScoreboardPayload | null;
   gameEnded: GameEndedPayload | null;
   hasSubmitted: boolean;
+  chat: ChatMessage[];
+  chatOrder: string[];
 }
 
 const EMPTY_VIEW: DerivedView = {
@@ -32,6 +35,8 @@ const EMPTY_VIEW: DerivedView = {
   roundScoreboard: null,
   gameEnded: null,
   hasSubmitted: false,
+  chat: [],
+  chatOrder: [],
 };
 
 function buildTemplates(libraryTemplates: Template[], dbTemplates: DbTemplates | null): Template[] {
@@ -160,5 +165,15 @@ export function deriveView(
 
   const hasSubmitted = Boolean(dbRoom.submissions?.[selfId]);
 
-  return { room, roundStarted, captionProgress, revealMeme, voteState, roundScoreboard, gameEnded, hasSubmitted };
+  const chat: ChatMessage[] = Object.entries(dbRoom.chat || {})
+    .map(([id, m]) => ({ id, playerId: m.playerId, name: m.name, text: m.text }))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  // Arrival order (by joinedAt) drives stable per-player chat colours.
+  const chatOrder = Object.entries(dbRoom.players || {})
+    .filter(([, p]) => p && p.nickname)
+    .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0))
+    .map(([id]) => id);
+
+  return { room, roundStarted, captionProgress, revealMeme, voteState, roundScoreboard, gameEnded, hasSubmitted, chat, chatOrder };
 }

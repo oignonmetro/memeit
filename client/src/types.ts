@@ -90,6 +90,14 @@ export interface DbRoom {
   roundWinnerId: string | null;
   usedTemplateIds: string[];
   winnerId: string | null;
+  chat?: Record<string, DbChatMessage>;
+}
+
+export interface DbChatMessage {
+  playerId: string;
+  name: string;
+  text: string;
+  ts: number | object; // serverTimestamp() placeholder, resolves to a number
 }
 
 export interface DbUploadedTemplate {
@@ -161,6 +169,18 @@ export interface GameEndedPayload {
   scores: PublicPlayer[];
   winnerId: string | null;
 }
+
+export interface ChatMessage {
+  id: string;
+  playerId: string;
+  name: string;
+  text: string;
+}
+
+export const MAX_CHAT_LENGTH = 500;
+
+// Stable per-player colours, indexed by arrival order in the room.
+export const PLAYER_PALETTE = ['#f97316', '#a78bfa', '#4ade80', '#f472b6', '#38bdf8', '#facc15', '#fb7185', '#2dd4bf'];
 
 export const DEFAULT_SETTINGS: RoomSettings = {
   mode: 'normal',

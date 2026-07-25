@@ -3,6 +3,7 @@ import { firebaseConfigured } from './lib/firebase';
 import Home from './pages/Home';
 import RoomPage from './pages/RoomPage';
 import TvPage from './pages/TvPage';
+import Chat from './components/Chat';
 
 function FirebaseSetupScreen() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/tv" element={<TvPage />} />
         <Route path="/tv/:code" element={<TvPage />} />
       </Routes>
+      <Chat />
     </HashRouter>
   );
 }

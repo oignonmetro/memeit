@@ -7,6 +7,7 @@ import {
   runTransaction,
   onDisconnect,
   push,
+  serverTimestamp,
   query,
   orderByValue,
   endAt,
@@ -28,7 +29,7 @@ import {
   buildPool,
 } from './gameLogic';
 import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
-import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS, TEMPLATE_CHANGE_OPTIONS } from '../types';
+import { DEFAULT_SETTINGS, ROOM_INACTIVITY_MS, CAPTION_TIME_OPTIONS, TEMPLATE_CHANGE_OPTIONS, MAX_CHAT_LENGTH } from '../types';
 
 function requireDb() {
   if (!db) throw new Error('Firebase n\'est pas configuré (variables VITE_FIREBASE_* manquantes).');
@@ -187,6 +188,22 @@ export async function addCustomTemplate(code: string, dataUrl: string): Promise<
   await set(newRef, { url: dataUrl, name: 'Template perso', source: 'upload' });
   await update(roomRef(code), { lastActivityAt: Date.now() });
   return newRef.key!;
+}
+
+// ---------- chat ----------
+
+// Note: unlike the reference spec, this does NOT bump room.lastActivityAt —
+// that field also drives the round_results→next-round timer here, so touching
+// it on every message would delay the game. Room lifetime is handled by the
+// separate roomActivity heartbeat, which is already fresh while anyone's here.
+export async function sendChatMessage(code: string, playerId: string, name: string, text: string): Promise<void> {
+  const trimmed = (text || '').trim().slice(0, MAX_CHAT_LENGTH);
+  if (!trimmed) return;
+  const messageId = push(ref(requireDb(), `rooms/${code.toUpperCase()}/chat`)).key;
+  if (!messageId) return;
+  await update(roomRef(code), {
+    [`chat/${messageId}`]: { playerId, name, text: trimmed, ts: serverTimestamp() },
+  });
 }
 
 // ---------- subscriptions ----------
