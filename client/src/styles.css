@@ -412,8 +412,8 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
 .chat-panel {
   width: 100%;
   max-width: 520px;
-  height: 75vh;
-  max-height: 75vh;
+  height: 40vh;
+  max-height: 40vh;
   background: var(--card);
   border-radius: 20px 20px 0 0;
   display: flex;
@@ -434,6 +434,18 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
 
 .chat-panel__header { display: flex; align-items: center; justify-content: space-between; }
 .chat-panel__header h2 { font-size: 1.2rem; margin: 0; }
+
+.chat-settings {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
 .chat-panel__close {
   background: none;
   border: none;

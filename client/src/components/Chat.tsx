@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../state/gameStore';
 import { useChatVisible } from '../hooks/useChatVisible';
+import { useChatSize } from '../hooks/useChatSize';
+import { setChatSize } from '../lib/chatSize';
 import { playerColor } from '../lib/playerColor';
 import { MAX_CHAT_LENGTH } from '../types';
 
@@ -13,7 +15,9 @@ export default function Chat() {
   const chatOrder = useGameStore((s) => s.chatOrder);
   const sendChat = useGameStore((s) => s.sendChat);
 
+  const size = useChatSize();
   const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -79,11 +83,44 @@ export default function Chat() {
 
       {open && (
         <div className="chat-overlay" onClick={() => setOpen(false)}>
-          <div className="chat-panel" role="dialog" aria-label="Chat" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="chat-panel"
+            role="dialog"
+            aria-label="Chat"
+            style={{ height: size === 'large' ? '70vh' : '40vh', maxHeight: size === 'large' ? '70vh' : '40vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <header className="chat-panel__header">
               <h2>Chat</h2>
-              <button className="chat-panel__close" aria-label="Fermer" onClick={() => setOpen(false)}>✕</button>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  className="chat-panel__close"
+                  aria-label="Paramètres du chat"
+                  aria-expanded={settingsOpen}
+                  onClick={() => setSettingsOpen((o) => !o)}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </button>
+                <button className="chat-panel__close" aria-label="Fermer" onClick={() => setOpen(false)}>✕</button>
+              </div>
             </header>
+
+            {settingsOpen && (
+              <div className="chat-settings">
+                <span>Fenêtre de chat</span>
+                <div className="setting-options">
+                  <button className={`setting-chip ${size === 'small' ? 'selected' : ''}`} onClick={() => setChatSize('small')}>
+                    Petite
+                  </button>
+                  <button className={`setting-chip ${size === 'large' ? 'selected' : ''}`} onClick={() => setChatSize('large')}>
+                    Grande
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="chat-messages" ref={listRef}>
               {chat.length === 0 ? (
