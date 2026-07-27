@@ -143,6 +143,21 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
   margin-left: 6px;
 }
 
+.kick-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent2);
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.kick-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .timer-bar {
   width: 100%;
   height: 8px;

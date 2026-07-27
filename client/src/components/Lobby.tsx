@@ -13,6 +13,7 @@ interface LobbyProps {
   onSetRounds: (rounds: number) => Promise<void>;
   onSetMode: (mode: GameMode) => Promise<void>;
   onSetMaxTemplateChanges: (value: number) => Promise<void>;
+  onKick: (playerId: string) => Promise<void>;
 }
 
 function formatTime(sec: number): string {
@@ -22,11 +23,12 @@ function formatTime(sec: number): string {
   return s ? `${m}min${s}` : `${m}min`;
 }
 
-export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges }: LobbyProps) {
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges, onKick }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [addingPack, setAddingPack] = useState(false);
   const [packAdded, setPackAdded] = useState(false);
   const [packCount, setPackCount] = useState(0);
+  const [kicking, setKicking] = useState<string | null>(null);
   const customCount = room.templates.filter((t) => t.source === 'upload').length;
   const currentMode = GAME_MODES.find((m) => m.id === room.settings.mode) ?? GAME_MODES[0];
 
@@ -34,6 +36,18 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
     if (!self.isHost) return;
     listPersonalTemplates().then((pack) => setPackCount(pack.length)).catch(() => {});
   }, [self.isHost]);
+
+  async function handleKick(playerId: string, nickname: string) {
+    if (!window.confirm(`Exclure ${nickname} de la salle ?`)) return;
+    setKicking(playerId);
+    try {
+      await onKick(playerId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setKicking(null);
+    }
+  }
 
   async function handleAddPack() {
     setAddingPack(true);
@@ -69,7 +83,19 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
               <span>
                 {p.nickname} {p.isHost && <span className="badge">Hôte</span>} {p.id === self.id && '(toi)'}
               </span>
-              {!p.connected && <span style={{ fontSize: '0.8rem' }}>déconnecté</span>}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {!p.connected && <span style={{ fontSize: '0.8rem' }}>déconnecté</span>}
+                {self.isHost && p.id !== self.id && (
+                  <button
+                    className="kick-btn"
+                    aria-label={`Exclure ${p.nickname}`}
+                    disabled={kicking === p.id}
+                    onClick={() => handleKick(p.id, p.nickname)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </span>
             </div>
           ))}
         </div>

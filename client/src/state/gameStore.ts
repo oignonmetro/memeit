@@ -6,6 +6,7 @@ import {
   joinRoom as apiJoinRoom,
   joinTv as apiJoinTv,
   leaveRoomLobby,
+  kickPlayer as apiKickPlayer,
   markConnected,
   addCustomTemplate,
   startGame as apiStartGame,
@@ -62,6 +63,7 @@ interface GameState extends DerivedView {
   changeTemplate: () => Promise<void>;
   castFavorite: (authorId: string) => Promise<void>;
   sendChat: (text: string) => Promise<void>;
+  kickPlayer: (playerId: string) => Promise<void>;
   leaveRoom: () => void;
 }
 
@@ -271,6 +273,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!code) return;
     const nickname = room?.players.find((p) => p.id === selfId)?.nickname || '?';
     await apiSendChatMessage(code, selfId, nickname, text);
+  },
+
+  kickPlayer: async (playerId) => {
+    const { code } = get();
+    if (!code) return;
+    await apiKickPlayer(code, playerId);
   },
 
   leaveRoom: () => {

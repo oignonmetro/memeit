@@ -148,6 +148,21 @@ export async function leaveRoomLobby(code: string, playerId: string): Promise<vo
   });
 }
 
+// Host-only (enforced client-side, same trust model as the other lobby
+// settings below), lobby only — a kicked player can simply rejoin with the
+// room code since nothing else changes.
+export async function kickPlayer(code: string, targetId: string): Promise<void> {
+  const r = roomRef(code);
+  await runTransaction(r, (room: DbRoom | null) => {
+    if (!room) return room;
+    if (room.status !== 'lobby') return room;
+    if (!room.players?.[targetId] || targetId === room.hostId) return room;
+    const players = { ...room.players };
+    delete players[targetId];
+    return { ...room, players, lastActivityAt: Date.now() };
+  });
+}
+
 // ---------- settings (host, lobby only) ----------
 
 export async function setCaptionTime(code: string, seconds: number): Promise<void> {

@@ -137,6 +137,8 @@ disponibles instantanément.
    viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes) (les ~100 templates les
    plus utilisés du moment, mis en cache 6h côté client) — pas une bibliothèque figée dans le
    code. Repli sur une petite bibliothèque locale si l'API est injoignable (hors-ligne).
+   L'hôte peut aussi exclure un joueur de la salle (petit bouton rouge à côté de son pseudo,
+   uniquement avant le lancement) — le joueur exclu peut toujours rejoindre à nouveau avec le code.
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
    sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
    ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps

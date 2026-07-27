@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGameStore } from '../state/gameStore';
 import Lobby from '../components/Lobby';
@@ -39,6 +39,7 @@ export default function RoomPage() {
     joinRoom,
     leaveRoom,
     restartGame,
+    kickPlayer,
   } = useGameStore();
 
   const [nickname, setNickname] = useState(getDefaultNickname());
@@ -46,6 +47,8 @@ export default function RoomPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [kicked, setKicked] = useState(false);
+  const hadSelfRef = useRef(false);
 
   useEffect(() => {
     if (!code) return;
@@ -54,10 +57,20 @@ export default function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
+  useEffect(() => {
+    hadSelfRef.current = false;
+    setKicked(false);
+  }, [code]);
+
   const captionCountdown = useCountdown(roundStarted?.deadline, room?.settings.captionTimeSec ?? 60);
   const revealCountdown = useCountdown(revealMeme?.deadline, room?.settings.revealTimeSec ?? 5);
 
   const self = room?.players.find((p) => p.id === selfId) || null;
+
+  useEffect(() => {
+    if (self) hadSelfRef.current = true;
+    else if (hadSelfRef.current && room) setKicked(true);
+  }, [self, room]);
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -95,6 +108,18 @@ export default function RoomPage() {
         </h1>
         <div className="card center-note">Cette salle n'existe pas (ou plus).</div>
         <button className="btn btn-ghost" onClick={() => navigate('/')}>Retour à l'accueil</button>
+      </div>
+    );
+  }
+
+  if (kicked) {
+    return (
+      <div className="screen">
+        <h1 className="title">
+          Salle <span className="accent">{code}</span>
+        </h1>
+        <div className="card center-note">Tu as été exclu de cette salle par l'hôte.</div>
+        <button className="btn btn-ghost" onClick={handleLeave}>Retour à l'accueil</button>
       </div>
     );
   }
@@ -137,6 +162,7 @@ export default function RoomPage() {
           onSetRounds={setRounds}
           onSetMode={setMode}
           onSetMaxTemplateChanges={setMaxTemplateChanges}
+          onKick={kickPlayer}
         />
       )}
 
