@@ -84,7 +84,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '123999232': [{ xPct: 27, yPct: 70, widthPct: 42, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 42, heightPct: 12 }], // The Scroll Of Truth (scroll)
   '155067746': [{ xPct: 50, yPct: 9, widthPct: 88, heightPct: 8 }, { xPct: 50, yPct: 20, widthPct: 88, heightPct: 8 }, { xPct: 50, yPct: 31, widthPct: 88, heightPct: 8 }], // Surprised Pikachu (top lines)
   '221578498': [{ xPct: 48, yPct: 26, widthPct: 42, heightPct: 16 }, { xPct: 58, yPct: 82, widthPct: 50, heightPct: 12 }], // Grant Gustin over grave (tombstone + Grant)
-  '222403160': [{ xPct: 50, yPct: 14, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 30, widthPct: 84, heightPct: 12 }], // Bernie I Am Once Again Asking (top, avoid baked text)
+  '222403160': [{ xPct: 50, yPct: 77, widthPct: 84, heightPct: 7 }], // Bernie I Am Once Again Asking (bottom, subtitle-sized, just above the baked line)
   '284929871': [{ xPct: 30, yPct: 16, widthPct: 44, heightPct: 16 }, { xPct: 30, yPct: 38, widthPct: 44, heightPct: 14 }], // They don't know (lonely guy, left)
   '427308417': [{ xPct: 50, yPct: 78, widthPct: 86, heightPct: 10 }, { xPct: 50, yPct: 90, widthPct: 86, heightPct: 10 }], // 0 days without (bottom, avoid baked sign)
 };
