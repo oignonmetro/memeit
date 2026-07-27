@@ -59,7 +59,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '178591752': [{ xPct: 70, yPct: 26, widthPct: 52, heightPct: 34 }, { xPct: 70, yPct: 76, widthPct: 52, heightPct: 34 }], // Tuxedo Winnie The Pooh
   '180190441': [{ xPct: 30, yPct: 26, widthPct: 34, heightPct: 18 }, { xPct: 70, yPct: 26, widthPct: 34, heightPct: 18 }, { xPct: 50, yPct: 90, widthPct: 80, heightPct: 12 }], // They're The Same Picture
   '181913649': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // Drake Hotline Bling
-  '187102311': [{ xPct: 24, yPct: 26, widthPct: 28, heightPct: 18 }, { xPct: 50, yPct: 16, widthPct: 28, heightPct: 16 }, { xPct: 76, yPct: 26, widthPct: 28, heightPct: 18 }, { xPct: 50, yPct: 82, widthPct: 50, heightPct: 14 }], // Three-headed Dragon
+  '187102311': [{ xPct: 16, yPct: 12, widthPct: 30, heightPct: 16 }, { xPct: 48, yPct: 8, widthPct: 30, heightPct: 16 }, { xPct: 82, yPct: 11, widthPct: 30, heightPct: 16 }], // Three-headed Dragon (one label per head, no bottom box)
   '188390779': [{ xPct: 26, yPct: 22, widthPct: 44, heightPct: 30 }, { xPct: 75, yPct: 28, widthPct: 44, heightPct: 34 }], // Woman Yelling At Cat
   '195515965': [{ xPct: 68, yPct: 13, widthPct: 58, heightPct: 16 }, { xPct: 68, yPct: 38, widthPct: 58, heightPct: 16 }, { xPct: 68, yPct: 63, widthPct: 58, heightPct: 16 }, { xPct: 68, yPct: 88, widthPct: 58, heightPct: 16 }], // Clown Applying Makeup
   '206151308': [{ xPct: 24, yPct: 44, widthPct: 30, heightPct: 20 }, { xPct: 50, yPct: 18, widthPct: 34, heightPct: 16 }, { xPct: 76, yPct: 44, widthPct: 30, heightPct: 20 }], // Spider Man Triple
@@ -84,7 +84,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '123999232': [{ xPct: 27, yPct: 70, widthPct: 42, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 42, heightPct: 12 }], // The Scroll Of Truth (scroll)
   '155067746': [{ xPct: 50, yPct: 9, widthPct: 88, heightPct: 8 }, { xPct: 50, yPct: 20, widthPct: 88, heightPct: 8 }, { xPct: 50, yPct: 31, widthPct: 88, heightPct: 8 }], // Surprised Pikachu (top lines)
   '221578498': [{ xPct: 48, yPct: 26, widthPct: 42, heightPct: 16 }, { xPct: 58, yPct: 82, widthPct: 50, heightPct: 12 }], // Grant Gustin over grave (tombstone + Grant)
-  '222403160': [{ xPct: 50, yPct: 77, widthPct: 84, heightPct: 7 }], // Bernie I Am Once Again Asking (bottom, subtitle-sized, just above the baked line)
+  '222403160': [{ xPct: 50, yPct: 92, widthPct: 84, heightPct: 12 }], // Bernie I Am Once Again Asking (below the baked "I am once again asking" line, so the caption completes the sentence)
   '284929871': [{ xPct: 30, yPct: 16, widthPct: 44, heightPct: 16 }, { xPct: 30, yPct: 38, widthPct: 44, heightPct: 14 }], // They don't know (lonely guy, left)
   '427308417': [{ xPct: 50, yPct: 78, widthPct: 86, heightPct: 10 }, { xPct: 50, yPct: 90, widthPct: 86, heightPct: 10 }], // 0 days without (bottom, avoid baked sign)
 };
