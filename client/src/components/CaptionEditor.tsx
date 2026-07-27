@@ -61,15 +61,26 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {boxes.map((_, i) => (
-          <input
-            key={i}
-            type="text"
-            placeholder={boxLabel(boxes.length, i)}
-            value={texts[i]}
-            onChange={(e) => update(i, e.target.value)}
-            maxLength={120}
-            autoFocus={i === 0}
-          />
+          <div key={i} className="text-input-wrap">
+            <input
+              type="text"
+              placeholder={boxLabel(boxes.length, i)}
+              value={texts[i]}
+              onChange={(e) => update(i, e.target.value)}
+              maxLength={120}
+              autoFocus={i === 0}
+            />
+            {texts[i] && (
+              <button
+                type="button"
+                className="text-input-clear"
+                aria-label={`Vider ${boxLabel(boxes.length, i).toLowerCase()}`}
+                onClick={() => update(i, '')}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         ))}
       </div>
 
