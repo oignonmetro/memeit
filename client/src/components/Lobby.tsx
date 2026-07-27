@@ -3,6 +3,7 @@ import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
 import { CAPTION_TIME_OPTIONS, GAME_MODES, TEMPLATE_CHANGE_OPTIONS } from '../types';
 import { isChatVisible, setChatVisible } from '../lib/chatVisibility';
 import { listPersonalTemplates } from '../lib/templatePack';
+import TickSlider from './TickSlider';
 
 interface LobbyProps {
   room: RoomSnapshot;
@@ -122,17 +123,12 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
           Temps pour créer son meme : {formatTime(room.settings.captionTimeSec)}
         </div>
         {self.isHost ? (
-          <div className="setting-options">
-            {CAPTION_TIME_OPTIONS.map((sec) => (
-              <button
-                key={sec}
-                className={`setting-chip ${room.settings.captionTimeSec === sec ? 'selected' : ''}`}
-                onClick={() => onSetCaptionTime(sec)}
-              >
-                {formatTime(sec)}
-              </button>
-            ))}
-          </div>
+          <TickSlider
+            options={CAPTION_TIME_OPTIONS}
+            value={room.settings.captionTimeSec}
+            onChange={onSetCaptionTime}
+            formatLabel={formatTime}
+          />
         ) : (
           <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
         )}
@@ -143,17 +139,12 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
           Changements de template par manche : {room.settings.maxTemplateChanges}
         </div>
         {self.isHost ? (
-          <div className="setting-options">
-            {TEMPLATE_CHANGE_OPTIONS.map((n) => (
-              <button
-                key={n}
-                className={`setting-chip ${room.settings.maxTemplateChanges === n ? 'selected' : ''}`}
-                onClick={() => onSetMaxTemplateChanges(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
+          <TickSlider
+            options={TEMPLATE_CHANGE_OPTIONS}
+            value={room.settings.maxTemplateChanges}
+            onChange={onSetMaxTemplateChanges}
+            formatLabel={(n) => String(n)}
+          />
         ) : (
           <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
         )}
