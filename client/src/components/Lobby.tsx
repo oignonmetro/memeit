@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
 import { CAPTION_TIME_OPTIONS, GAME_MODES, ROUNDS_OPTIONS, TEMPLATE_CHANGE_OPTIONS } from '../types';
-import { isChatVisible, setChatVisible } from '../lib/chatVisibility';
 import { listPersonalTemplates } from '../lib/templatePack';
 import TickSlider from './TickSlider';
 
@@ -28,7 +27,6 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
   const [addingPack, setAddingPack] = useState(false);
   const [packAdded, setPackAdded] = useState(false);
   const [packCount, setPackCount] = useState(0);
-  const [chatShown, setChatShown] = useState(isChatVisible);
   const customCount = room.templates.filter((t) => t.source === 'upload').length;
   const currentMode = GAME_MODES.find((m) => m.id === room.settings.mode) ?? GAME_MODES[0];
 
@@ -146,21 +144,6 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
         ) : (
           <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
         )}
-      </div>
-
-      <div className="card">
-        <label className="chat-toggle">
-          <input
-            type="checkbox"
-            checked={chatShown}
-            onChange={() => {
-              const next = !chatShown;
-              setChatShown(next);
-              setChatVisible(next);
-            }}
-          />
-          Afficher le bouton de chat
-        </label>
       </div>
 
       <div className="card">

@@ -560,12 +560,3 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
 
 .chat-input { display: flex; gap: 0.5rem; align-items: center; }
 .chat-input input { flex: 1; min-width: 0; }
-
-.chat-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
-  cursor: pointer;
-}
-.chat-toggle input { width: 18px; height: 18px; }

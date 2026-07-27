@@ -196,9 +196,8 @@ jamais besoin de lire (ni d'exposer) le contenu des salles.
 Un bouton flottant (en bas à droite) ouvre un chat accessible à tout moment tant qu'on est
 dans une salle. Les messages sont stockés sous `rooms/{code}/chat` — donc synchronisés en temps
 réel comme le reste, sans infrastructure séparée. Compteur de non-lus quand le panneau est
-fermé, pseudo coloré par joueur (couleur stable selon l'ordre d'arrivée). Le bouton peut être
-masqué par appareil (réglage local dans le lobby, mémorisé en `localStorage`). Envoyer un
-message ne compte pas comme une action de jeu (ça ne perturbe pas les minuteurs de manche).
+fermé, pseudo coloré par joueur (couleur stable selon l'ordre d'arrivée). Envoyer un message ne
+compte pas comme une action de jeu (ça ne perturbe pas les minuteurs de manche).
 
 ## Templates persos
 

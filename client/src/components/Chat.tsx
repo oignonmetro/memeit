@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../state/gameStore';
-import { useChatVisible } from '../hooks/useChatVisible';
 import { useChatSize } from '../hooks/useChatSize';
 import { setChatSize } from '../lib/chatSize';
 import { playerColor } from '../lib/playerColor';
 import { MAX_CHAT_LENGTH } from '../types';
 
 export default function Chat() {
-  const visible = useChatVisible();
   const code = useGameStore((s) => s.code);
   const role = useGameStore((s) => s.role);
   const selfId = useGameStore((s) => s.selfId);
@@ -70,7 +68,7 @@ export default function Chat() {
   }
 
   // All hooks above run unconditionally; only now do we decide whether to render.
-  if (!visible || role !== 'player' || !code) return null;
+  if (role !== 'player' || !code) return null;
 
   return (
     <>
