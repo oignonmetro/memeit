@@ -1,4 +1,4 @@
-import type { DbRoom, RoomSettings, Template } from '../types';
+import type { DbPlayer, DbRoom, RoomSettings, Template } from '../types';
 
 // Pure game-state reducers, extracted from the Realtime Database transactions
 // in roomApi.ts so they can be reasoned about and unit-tested without Firebase.
@@ -223,4 +223,36 @@ export function reduceRoundResults(
     return { ...room, status: 'ended', winnerId, lastActivityAt: now };
   }
   return beginRound(room, libraryTemplates, customTemplates, room.currentRound + 1, now);
+}
+
+// Host replays with the same room/players: back to the lobby with scores reset,
+// keeping the room code and settings so nobody has to re-share the code.
+export function reduceRestartGame(room: DbRoom | null, now: number): DbRoom | null {
+  if (!room || room.status !== 'ended') return room;
+  const players: Record<string, DbPlayer> = {};
+  for (const [id, p] of Object.entries(room.players || {})) {
+    players[id] = { ...p, score: 0 };
+  }
+  return {
+    ...room,
+    status: 'lobby',
+    players,
+    currentRound: 0,
+    totalRounds: room.settings.rounds,
+    currentTemplate: null,
+    roundTemplates: {},
+    templateChanges: {},
+    usedTemplateIds: [],
+    roundDeadline: null,
+    submissions: {},
+    revealOrder: [],
+    revealIndex: -1,
+    revealDeadline: null,
+    voteDeadline: null,
+    favoriteVotes: {},
+    lastRoundVotes: {},
+    roundWinnerId: null,
+    winnerId: null,
+    lastActivityAt: now,
+  };
 }

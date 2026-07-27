@@ -8,6 +8,7 @@ import {
   reduceTally,
   reduceRoundResults,
   reduceChangeTemplate,
+  reduceRestartGame,
   buildPool,
 } from './gameLogic';
 import type { DbRoom, GameMode, Template } from '../types';
@@ -187,6 +188,38 @@ try {
 } catch (e) {
   ok = false;
   console.error('FAIL  réglage configurable:', (e as Error).message);
+}
+console.log('--- rejouer (même salle) ---');
+try {
+  let room = makeRoom('normal');
+  room = reduceStartGame(room, LIB, [], tick())!;
+  for (let r = 1; r <= 2; r++) {
+    room = playRound(room, r, 'normal');
+    room = reduceRoundResults(room, LIB, [], tick())!;
+  }
+  assert.equal(room.status, 'ended', 'jeu terminé avant de rejouer');
+  assert.ok(room.players.p2.score > 0, 'p2 a des points avant de rejouer');
+
+  const notEnded = makeRoom('normal');
+  assert.strictEqual(reduceRestartGame(notEnded, tick()), notEnded, 'reduceRestartGame ignore une salle qui n\'est pas "ended"');
+
+  const restarted = reduceRestartGame(room, tick())!;
+  assert.equal(restarted.status, 'lobby', 'retour au lobby');
+  assert.deepEqual(Object.keys(restarted.players), Object.keys(room.players), 'mêmes joueurs conservés');
+  assert.ok(Object.values(restarted.players).every((p) => p.score === 0), 'scores remis à zéro');
+  assert.equal(restarted.currentRound, 0, 'round remis à 0');
+  assert.deepEqual(restarted.submissions, {}, 'soumissions vidées');
+  assert.deepEqual(restarted.usedTemplateIds, [], 'templates déjà utilisés oubliés');
+  assert.equal(restarted.winnerId, null, 'vainqueur précédent effacé');
+
+  // The lobby can then start a brand-new game normally.
+  const secondGame = reduceStartGame(restarted, LIB, [], tick())!;
+  assert.equal(secondGame.status, 'caption', 'une nouvelle partie démarre normalement après le rejeu');
+
+  console.log('PASS  rejouer   → ended -> lobby (mêmes joueurs, scores à 0), puis redémarrage OK');
+} catch (e) {
+  ok = false;
+  console.error('FAIL  rejouer:', (e as Error).message);
 }
 console.log(ok ? '\nRESULT: PASS — les 3 modes bouclent une partie complète.' : '\nRESULT: FAIL');
 process.exit(ok ? 0 : 1);

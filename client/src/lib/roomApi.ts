@@ -26,6 +26,7 @@ import {
   reduceTally,
   reduceRoundResults,
   reduceChangeTemplate,
+  reduceRestartGame,
   buildPool,
 } from './gameLogic';
 import type { DbRoom, DbTemplates, RoomSettings, TextLayer, Template } from '../types';
@@ -284,6 +285,11 @@ export async function maybeTallyVotes(code: string): Promise<void> {
 export async function advanceAfterRoundResults(code: string): Promise<void> {
   const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
   await runTransaction(roomRef(code), (room: DbRoom | null) => reduceRoundResults(room, libraryTemplates, customTemplates, Date.now()));
+}
+
+// Host replays with the same room/players: back to the lobby, same code.
+export async function restartGame(code: string): Promise<void> {
+  await runTransaction(roomRef(code), (room: DbRoom | null) => reduceRestartGame(room, Date.now()));
 }
 
 // ---------- room lifetime (client-driven, no server) ----------

@@ -149,6 +149,10 @@ disponibles instantanément.
    classement s'affiche.
 6. Les étapes 2-5 se répètent pour le nombre de manches configuré, puis le classement final
    s'affiche.
+7. **Rejouer** — depuis l'écran de fin, l'hôte peut relancer une nouvelle partie dans la même
+   salle (même code, mêmes joueurs) via le bouton "Rejouer avec ce groupe" : la salle revient au
+   lobby, les scores sont remis à zéro, et les réglages (mode, temps, etc.) restent modifiables
+   avant de redémarrer.
 
 Il n'y a pas de serveur de jeu central : ce sont les appareils connectés à une salle qui
 coopèrent pour faire avancer la partie (déclenchement des transitions de phase via des

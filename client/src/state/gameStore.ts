@@ -9,6 +9,7 @@ import {
   markConnected,
   addCustomTemplate,
   startGame as apiStartGame,
+  restartGame as apiRestartGame,
   submitMeme as apiSubmitMeme,
   changeTemplate as apiChangeTemplate,
   castFavorite as apiCastFavorite,
@@ -50,6 +51,7 @@ interface GameState extends DerivedView {
   attachRoom: (code: string, role: Role) => void;
   detachRoom: () => void;
   startGame: () => Promise<void>;
+  restartGame: () => Promise<void>;
   setCaptionTime: (seconds: number) => Promise<void>;
   setMode: (mode: GameMode) => Promise<void>;
   setMaxTemplateChanges: (value: number) => Promise<void>;
@@ -206,6 +208,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code } = get();
     if (!code) return;
     await apiStartGame(code);
+  },
+
+  restartGame: async () => {
+    const { code } = get();
+    if (!code) return;
+    await apiRestartGame(code);
   },
 
   setCaptionTime: async (seconds) => {

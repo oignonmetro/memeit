@@ -36,12 +36,14 @@ export default function RoomPage() {
     castFavorite,
     joinRoom,
     leaveRoom,
+    restartGame,
   } = useGameStore();
 
   const [nickname, setNickname] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [restarting, setRestarting] = useState(false);
 
   useEffect(() => {
     if (!code) return;
@@ -245,7 +247,25 @@ export default function RoomPage() {
           ) : (
             <Leaderboard scores={gameEnded.scores} title="🏆 Résultats finaux" selfId={selfId} winnerId={gameEnded.winnerId} />
           )}
-          <button className="btn btn-primary" onClick={handleLeave}>
+          {self.isHost ? (
+            <button
+              className="btn btn-primary"
+              disabled={restarting}
+              onClick={async () => {
+                setRestarting(true);
+                try {
+                  await restartGame();
+                } finally {
+                  setRestarting(false);
+                }
+              }}
+            >
+              {restarting ? 'Préparation...' : '🔄 Rejouer avec ce groupe'}
+            </button>
+          ) : (
+            <div className="center-note">En attente que l'hôte relance une partie...</div>
+          )}
+          <button className="btn btn-ghost" onClick={handleLeave}>
             Retour à l'accueil
           </button>
         </>
