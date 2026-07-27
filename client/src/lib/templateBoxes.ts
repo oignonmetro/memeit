@@ -78,6 +78,15 @@ const CURATED: Record<string, TemplateBox[]> = {
   '354700819': [{ xPct: 30, yPct: 28, widthPct: 40, heightPct: 24 }, { xPct: 70, yPct: 72, widthPct: 40, heightPct: 24 }], // Two guys on a bus
   '360597639': [{ xPct: 50, yPct: 54, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 88, widthPct: 84, heightPct: 12 }], // whe i'm in a competition and my opponent is
   '533936279': [{ xPct: 16, yPct: 46, widthPct: 26, heightPct: 26 }, { xPct: 50, yPct: 28, widthPct: 30, heightPct: 20 }, { xPct: 84, yPct: 46, widthPct: 26, heightPct: 26 }], // Bell Curve
+  '21735': [{ xPct: 70, yPct: 12, widthPct: 46, heightPct: 12 }, { xPct: 70, yPct: 27, widthPct: 46, heightPct: 11 }], // The Rock Driving (speech bubbles)
+  '50421420': [{ xPct: 28, yPct: 26, widthPct: 46, heightPct: 22 }, { xPct: 28, yPct: 74, widthPct: 46, heightPct: 22 }], // Disappointed Black Guy (left column)
+  '91545132': [{ xPct: 52, yPct: 53, widthPct: 34, heightPct: 26 }, { xPct: 50, yPct: 13, widthPct: 78, heightPct: 12 }], // Trump Bill Signing (document)
+  '123999232': [{ xPct: 27, yPct: 70, widthPct: 42, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 42, heightPct: 12 }], // The Scroll Of Truth (scroll)
+  '155067746': [{ xPct: 50, yPct: 9, widthPct: 88, heightPct: 8 }, { xPct: 50, yPct: 20, widthPct: 88, heightPct: 8 }, { xPct: 50, yPct: 31, widthPct: 88, heightPct: 8 }], // Surprised Pikachu (top lines)
+  '221578498': [{ xPct: 48, yPct: 26, widthPct: 42, heightPct: 16 }, { xPct: 58, yPct: 82, widthPct: 50, heightPct: 12 }], // Grant Gustin over grave (tombstone + Grant)
+  '222403160': [{ xPct: 50, yPct: 14, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 30, widthPct: 84, heightPct: 12 }], // Bernie I Am Once Again Asking (top, avoid baked text)
+  '284929871': [{ xPct: 30, yPct: 16, widthPct: 44, heightPct: 16 }, { xPct: 30, yPct: 38, widthPct: 44, heightPct: 14 }], // They don't know (lonely guy, left)
+  '427308417': [{ xPct: 50, yPct: 78, widthPct: 86, heightPct: 10 }, { xPct: 50, yPct: 90, widthPct: 86, heightPct: 10 }], // 0 days without (bottom, avoid baked sign)
 };
 
 export function boxesForImgflip(imgflipId: string, boxCount: number): TemplateBox[] {
