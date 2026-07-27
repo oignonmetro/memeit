@@ -15,6 +15,7 @@ import {
   castFavorite as apiCastFavorite,
   sendChatMessage as apiSendChatMessage,
   setCaptionTime as apiSetCaptionTime,
+  setRounds as apiSetRounds,
   setMode as apiSetMode,
   setMaxTemplateChanges as apiSetMaxTemplateChanges,
   maybeAdvanceFromCaption,
@@ -53,6 +54,7 @@ interface GameState extends DerivedView {
   startGame: () => Promise<void>;
   restartGame: () => Promise<void>;
   setCaptionTime: (seconds: number) => Promise<void>;
+  setRounds: (rounds: number) => Promise<void>;
   setMode: (mode: GameMode) => Promise<void>;
   setMaxTemplateChanges: (value: number) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
@@ -220,6 +222,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code } = get();
     if (!code) return;
     await apiSetCaptionTime(code, seconds);
+  },
+
+  setRounds: async (rounds) => {
+    const { code } = get();
+    if (!code) return;
+    await apiSetRounds(code, rounds);
   },
 
   setMode: async (mode) => {

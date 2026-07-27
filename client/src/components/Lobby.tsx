@@ -10,6 +10,7 @@ interface LobbyProps {
   onStart: () => Promise<void>;
   onUpload: (dataUrl: string) => Promise<void>;
   onSetCaptionTime: (seconds: number) => Promise<void>;
+  onSetRounds: (rounds: number) => Promise<void>;
   onSetMode: (mode: GameMode) => Promise<void>;
   onSetMaxTemplateChanges: (value: number) => Promise<void>;
 }
@@ -21,7 +22,7 @@ function formatTime(sec: number): string {
   return s ? `${m}min${s}` : `${m}min`;
 }
 
-export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetMode, onSetMaxTemplateChanges }: LobbyProps) {
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [chatShown, setChatShown] = useState(isChatVisible);
@@ -88,6 +89,24 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
             <div style={{ fontWeight: 800 }}>{currentMode.label}</div>
             <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{currentMode.description}</div>
           </div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="subtitle" style={{ margin: '0 0 10px' }}>
+          Nombre de manches : {room.settings.rounds}
+        </div>
+        {self.isHost ? (
+          <input
+            type="range"
+            min={1}
+            max={8}
+            value={room.settings.rounds}
+            onChange={(e) => onSetRounds(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
+        ) : (
+          <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
         )}
       </div>
 

@@ -7,6 +7,7 @@ import FavoriteVotePanel from '../components/FavoriteVotePanel';
 import MemeRender from '../components/MemeRender';
 import Leaderboard from '../components/Leaderboard';
 import { useCountdown } from '../hooks/useCountdown';
+import { getDefaultNickname, setDefaultNickname } from '../lib/nickname';
 
 export default function RoomPage() {
   const { code = '' } = useParams();
@@ -28,6 +29,7 @@ export default function RoomPage() {
     detachRoom,
     startGame,
     setCaptionTime,
+    setRounds,
     setMode,
     setMaxTemplateChanges,
     uploadTemplate,
@@ -39,7 +41,7 @@ export default function RoomPage() {
     restartGame,
   } = useGameStore();
 
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(getDefaultNickname());
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +65,7 @@ export default function RoomPage() {
     setJoining(true);
     setJoinError(null);
     try {
+      setDefaultNickname(nickname.trim());
       await joinRoom(code, nickname.trim());
     } catch (err: any) {
       setJoinError(err.message || 'Impossible de rejoindre.');
@@ -131,6 +134,7 @@ export default function RoomPage() {
           onStart={startGame}
           onUpload={uploadTemplate}
           onSetCaptionTime={setCaptionTime}
+          onSetRounds={setRounds}
           onSetMode={setMode}
           onSetMaxTemplateChanges={setMaxTemplateChanges}
         />

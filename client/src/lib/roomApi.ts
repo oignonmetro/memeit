@@ -158,6 +158,7 @@ export async function setCaptionTime(code: string, seconds: number): Promise<voi
   });
 }
 
+// Host-only, lobby only — can also be changed for the next game after "Rejouer".
 export async function setRounds(code: string, rounds: number): Promise<void> {
   const clamped = Math.min(10, Math.max(1, Math.round(rounds)));
   await runTransaction(roomRef(code), (room: DbRoom | null) => {

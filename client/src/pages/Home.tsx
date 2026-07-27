@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../state/gameStore';
+import { getDefaultNickname, setDefaultNickname, clearDefaultNickname } from '../lib/nickname';
 
 type Mode = 'menu' | 'create' | 'join';
 
 export default function Home() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('menu');
-  const [nickname, setNickname] = useState('');
+  const savedNickname = getDefaultNickname();
+  const [nickname, setNickname] = useState(savedNickname);
+  const [rememberNickname, setRememberNickname] = useState(Boolean(savedNickname));
   const [code, setCode] = useState('');
-  const [rounds, setRounds] = useState(3);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function persistNicknamePref() {
+    if (rememberNickname) setDefaultNickname(nickname.trim());
+    else clearDefaultNickname();
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -19,7 +26,8 @@ export default function Home() {
     setBusy(true);
     setError(null);
     try {
-      const roomCode = await useGameStore.getState().createRoom(nickname.trim(), { rounds });
+      persistNicknamePref();
+      const roomCode = await useGameStore.getState().createRoom(nickname.trim(), {});
       navigate(`/room/${roomCode}`);
     } catch (err: any) {
       setError(err.message || 'Impossible de créer la salle.');
@@ -34,6 +42,7 @@ export default function Home() {
     setBusy(true);
     setError(null);
     try {
+      persistNicknamePref();
       await useGameStore.getState().joinRoom(code.trim(), nickname.trim());
       navigate(`/room/${code.trim().toUpperCase()}`);
     } catch (err: any) {
@@ -42,6 +51,16 @@ export default function Home() {
       setBusy(false);
     }
   }
+
+  const nicknameField = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} autoFocus />
+      <label className="chat-toggle" style={{ fontSize: '0.9rem' }}>
+        <input type="checkbox" checked={rememberNickname} onChange={(e) => setRememberNickname(e.target.checked)} />
+        Se souvenir de mon pseudo
+      </label>
+    </div>
+  );
 
   return (
     <div className="screen">
@@ -53,10 +72,11 @@ export default function Home() {
 
       {mode === 'menu' && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button className="btn btn-primary" onClick={() => setMode('create')}>
+          {nicknameField}
+          <button className="btn btn-primary" disabled={!nickname.trim()} onClick={() => setMode('create')}>
             Créer une partie
           </button>
-          <button className="btn btn-secondary" onClick={() => setMode('join')}>
+          <button className="btn btn-secondary" disabled={!nickname.trim()} onClick={() => setMode('join')}>
             Rejoindre une partie
           </button>
           <button className="btn btn-ghost" onClick={() => navigate('/tv')}>
@@ -67,18 +87,7 @@ export default function Home() {
 
       {mode === 'create' && (
         <form className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }} onSubmit={handleCreate}>
-          <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} autoFocus />
-          <div>
-            <div className="center-note" style={{ marginBottom: 6 }}>Nombre de manches : {rounds}</div>
-            <input
-              type="range"
-              min={1}
-              max={8}
-              value={rounds}
-              onChange={(e) => setRounds(Number(e.target.value))}
-              style={{ width: '100%' }}
-            />
-          </div>
+          <div className="center-note">Pseudo : <strong style={{ color: 'var(--text)' }}>{nickname}</strong></div>
           <button className="btn btn-primary" type="submit" disabled={busy || !nickname.trim()}>
             {busy ? 'Création...' : 'Créer la salle'}
           </button>
@@ -99,7 +108,7 @@ export default function Home() {
             style={{ textAlign: 'center', letterSpacing: '0.2em', fontWeight: 800, textTransform: 'uppercase' }}
             autoFocus
           />
-          <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} />
+          <div className="center-note">Pseudo : <strong style={{ color: 'var(--text)' }}>{nickname}</strong></div>
           <button className="btn btn-primary" type="submit" disabled={busy || !nickname.trim() || !code.trim()}>
             {busy ? 'Connexion...' : 'Rejoindre'}
           </button>

@@ -129,12 +129,16 @@ disponibles instantanément.
    - **Même meme** — tous les joueurs reçoivent le même meme.
    - **Détendu** — pas de points, pas de vote : on crée et on regarde les memes, sans classement.
 1. **Lobby** — l'hôte crée une salle (code à 4 lettres), les joueurs rejoignent depuis leur
-   téléphone avec le code (ou en scannant le QR code affiché sur la TV). Les templates de
-   base viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes) (les ~100
-   templates les plus utilisés du moment, mis en cache 6h côté client) — pas une bibliothèque
-   figée dans le code. Repli sur une petite bibliothèque locale si l'API est injoignable
-   (hors-ligne). Possibilité d'ajouter aussi ses propres images (stockées dans la salle,
-   visibles par tous les joueurs de cette salle).
+   téléphone avec le code (ou en scannant le QR code affiché sur la TV). Le pseudo se saisit une
+   fois sur la page d'accueil (avant de créer/rejoindre), avec une option "Se souvenir de mon
+   pseudo" qui le mémorise en local pour les prochaines parties. Tous les réglages de partie —
+   mode de jeu, **nombre de manches**, temps de légende, nombre de changements de template — se
+   règlent depuis le lobby par l'hôte, une fois la salle créée, et restent modifiables jusqu'au
+   lancement. Les templates de base viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes)
+   (les ~100 templates les plus utilisés du moment, mis en cache 6h côté client) — pas une
+   bibliothèque figée dans le code. Repli sur une petite bibliothèque locale si l'API est
+   injoignable (hors-ligne). Possibilité d'ajouter aussi ses propres images (stockées dans la
+   salle, visibles par tous les joueurs de cette salle).
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
    sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
    ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps
