@@ -130,15 +130,13 @@ disponibles instantanément.
    - **Détendu** — pas de points, pas de vote : on crée et on regarde les memes, sans classement.
 1. **Lobby** — l'hôte crée une salle (code à 4 lettres), les joueurs rejoignent depuis leur
    téléphone avec le code (ou en scannant le QR code affiché sur la TV). Le pseudo se saisit une
-   fois sur la page d'accueil (avant de créer/rejoindre), avec une option "Se souvenir de mon
-   pseudo" qui le mémorise en local pour les prochaines parties. Tous les réglages de partie —
-   mode de jeu, **nombre de manches**, temps de légende, nombre de changements de template — se
-   règlent depuis le lobby par l'hôte, une fois la salle créée, et restent modifiables jusqu'au
-   lancement. Les templates de base viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes)
-   (les ~100 templates les plus utilisés du moment, mis en cache 6h côté client) — pas une
-   bibliothèque figée dans le code. Repli sur une petite bibliothèque locale si l'API est
-   injoignable (hors-ligne). Possibilité d'ajouter aussi ses propres images (stockées dans la
-   salle, visibles par tous les joueurs de cette salle).
+   fois sur la page d'accueil (avant de créer/rejoindre) et est mémorisé automatiquement en local
+   pour les prochaines parties. Tous les réglages de partie — mode de jeu, **nombre de manches**,
+   temps de légende, nombre de changements de template — se règlent depuis le lobby par l'hôte,
+   une fois la salle créée, et restent modifiables jusqu'au lancement. Les templates de base
+   viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes) (les ~100 templates les
+   plus utilisés du moment, mis en cache 6h côté client) — pas une bibliothèque figée dans le
+   code. Repli sur une petite bibliothèque locale si l'API est injoignable (hors-ligne).
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
    sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
    ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps
@@ -201,6 +199,17 @@ réel comme le reste, sans infrastructure séparée. Compteur de non-lus quand l
 fermé, pseudo coloré par joueur (couleur stable selon l'ordre d'arrivée). Le bouton peut être
 masqué par appareil (réglage local dans le lobby, mémorisé en `localStorage`). Envoyer un
 message ne compte pas comme une action de jeu (ça ne perturbe pas les minuteurs de manche).
+
+## Templates persos
+
+Chaque joueur peut se constituer un pack de templates persos depuis la page d'accueil ("🖼️ Mes
+templates persos") : ajout d'images, suppression, et export/import du pack sous forme de fichier
+JSON téléchargeable. Ce pack est stocké **uniquement sur l'appareil du joueur** (IndexedDB, base
+`memeit` / table `templatePack`) — il n'y a pas de compte, donc pas de synchronisation entre
+appareils autrement que par l'export/import manuel du fichier. Une fois hôte d'une salle, le
+lobby propose un bouton "Ajouter mon pack" qui envoie en une fois tout le pack local vers la
+salle (`rooms/{code}/templates`), où il devient visible et utilisable par tous les joueurs de
+cette partie, comme n'importe quel template Imgflip.
 
 ## Structure du projet
 

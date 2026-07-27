@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
 import { CAPTION_TIME_OPTIONS, GAME_MODES, TEMPLATE_CHANGE_OPTIONS } from '../types';
-import { resizeImageFile } from '../lib/image';
 import { isChatVisible, setChatVisible } from '../lib/chatVisibility';
+import { listPersonalTemplates } from '../lib/templatePack';
 
 interface LobbyProps {
   room: RoomSnapshot;
@@ -24,24 +24,31 @@ function formatTime(sec: number): string {
 
 export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges }: LobbyProps) {
   const [starting, setStarting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [addingPack, setAddingPack] = useState(false);
+  const [packAdded, setPackAdded] = useState(false);
+  const [packCount, setPackCount] = useState(0);
   const [chatShown, setChatShown] = useState(isChatVisible);
-  const fileRef = useRef<HTMLInputElement>(null);
   const customCount = room.templates.filter((t) => t.source === 'upload').length;
   const currentMode = GAME_MODES.find((m) => m.id === room.settings.mode) ?? GAME_MODES[0];
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setUploading(true);
+  useEffect(() => {
+    if (!self.isHost) return;
+    listPersonalTemplates().then((pack) => setPackCount(pack.length)).catch(() => {});
+  }, [self.isHost]);
+
+  async function handleAddPack() {
+    setAddingPack(true);
     try {
-      const dataUrl = await resizeImageFile(file);
-      await onUpload(dataUrl);
+      const pack = await listPersonalTemplates();
+      for (const t of pack) {
+        // eslint-disable-next-line no-await-in-loop
+        await onUpload(t.dataUrl);
+      }
+      setPackAdded(true);
     } catch (err) {
       console.error(err);
     } finally {
-      setUploading(false);
+      setAddingPack(false);
     }
   }
 
@@ -171,10 +178,19 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
         <div className="subtitle" style={{ margin: '0 0 10px' }}>
           Templates ({room.templates.length}, dont {customCount} perso)
         </div>
-        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handleFile} />
-        <button className="btn btn-secondary" onClick={() => fileRef.current?.click()} disabled={uploading}>
-          {uploading ? 'Ajout en cours...' : '+ Ajouter mon template'}
-        </button>
+        {self.isHost ? (
+          packCount === 0 ? (
+            <div className="center-note" style={{ textAlign: 'left' }}>
+              Aucun template perso enregistré sur cet appareil (gérable depuis l'accueil).
+            </div>
+          ) : (
+            <button className="btn btn-secondary" onClick={handleAddPack} disabled={addingPack || packAdded}>
+              {addingPack ? 'Ajout en cours...' : packAdded ? '✅ Pack ajouté' : `📦 Ajouter mon pack (${packCount})`}
+            </button>
+          )
+        ) : (
+          <div className="center-note" style={{ textAlign: 'left' }}>Géré par l'hôte.</div>
+        )}
       </div>
 
       {self.isHost ? (
