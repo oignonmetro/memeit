@@ -197,6 +197,8 @@ export const TEMPLATE_CHANGE_OPTIONS = [5, 10, 15, 20];
 
 export const CAPTION_TIME_OPTIONS = [45, 60, 90, 120, 180, 300];
 
+export const ROUNDS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+
 export const GAME_MODES: { id: GameMode; label: string; description: string }[] = [
   { id: 'normal', label: 'Normal', description: 'Chaque joueur reçoit un meme aléatoire' },
   { id: 'meme', label: 'Même meme', description: 'Tous les joueurs reçoivent le même meme' },

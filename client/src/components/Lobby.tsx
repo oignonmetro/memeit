@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
-import { CAPTION_TIME_OPTIONS, GAME_MODES, TEMPLATE_CHANGE_OPTIONS } from '../types';
+import { CAPTION_TIME_OPTIONS, GAME_MODES, ROUNDS_OPTIONS, TEMPLATE_CHANGE_OPTIONS } from '../types';
 import { isChatVisible, setChatVisible } from '../lib/chatVisibility';
 import { listPersonalTemplates } from '../lib/templatePack';
 import TickSlider from './TickSlider';
@@ -105,13 +105,11 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
           Nombre de manches : {room.settings.rounds}
         </div>
         {self.isHost ? (
-          <input
-            type="range"
-            min={1}
-            max={8}
+          <TickSlider
+            options={ROUNDS_OPTIONS}
             value={room.settings.rounds}
-            onChange={(e) => onSetRounds(Number(e.target.value))}
-            style={{ width: '100%' }}
+            onChange={onSetRounds}
+            formatLabel={(n) => String(n)}
           />
         ) : (
           <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>

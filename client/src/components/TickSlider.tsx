@@ -6,28 +6,25 @@ interface TickSliderProps {
   disabled?: boolean;
 }
 
-// A single-axis slider snapped to a fixed set of values, with a tick + label
-// under each stop (the value itself drives the step, not a linear index).
+// A discrete, numeric axis: each stop is a tap target on a line, no dragging
+// and no in-between positions — picking a value jumps straight to it.
 export default function TickSlider({ options, value, onChange, formatLabel, disabled }: TickSliderProps) {
   const idx = Math.max(0, options.indexOf(value));
   return (
     <div className="tick-slider">
-      <input
-        type="range"
-        className="tick-slider__input"
-        min={0}
-        max={options.length - 1}
-        step={1}
-        value={idx}
-        disabled={disabled}
-        onChange={(e) => onChange(options[Number(e.target.value)])}
-      />
-      <div className="tick-slider__ticks">
+      <div className="tick-slider__track">
         {options.map((opt, i) => (
-          <div key={opt} className={`tick-slider__tick ${i === idx ? 'active' : ''}`}>
+          <button
+            key={opt}
+            type="button"
+            className={`tick-slider__tick ${i === idx ? 'active' : ''}`}
+            disabled={disabled}
+            aria-pressed={i === idx}
+            onClick={() => onChange(opt)}
+          >
             <span className="tick-slider__dot" />
             <span className="tick-slider__label">{formatLabel(opt)}</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>
