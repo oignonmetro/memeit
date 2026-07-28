@@ -10,9 +10,7 @@ interface CaptionEditorProps {
   onChangeTemplate: () => Promise<void>;
 }
 
-function boxLabel(count: number, i: number): string {
-  if (count === 1) return 'Texte';
-  if (count === 2) return i === 0 ? 'Texte du haut' : 'Texte du bas';
+function boxLabel(i: number): string {
   return `Texte ${i + 1}`;
 }
 
@@ -33,7 +31,7 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
 
   // Preview shows the real position of each zone, with a faint placeholder when empty.
   const previewLayers: TextLayer[] = useMemo(
-    () => boxes.map((b, i) => ({ ...b, text: texts[i]?.trim() ? texts[i] : boxLabel(boxes.length, i) })),
+    () => boxes.map((b, i) => ({ ...b, text: texts[i]?.trim() ? texts[i] : boxLabel(i) })),
     [boxes, texts]
   );
 
@@ -64,7 +62,7 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
           <div key={i} className="text-input-wrap">
             <input
               type="text"
-              placeholder={boxLabel(boxes.length, i)}
+              placeholder={boxLabel(i)}
               value={texts[i]}
               onChange={(e) => update(i, e.target.value)}
               maxLength={120}
@@ -74,7 +72,7 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
               <button
                 type="button"
                 className="text-input-clear"
-                aria-label={`Vider ${boxLabel(boxes.length, i).toLowerCase()}`}
+                aria-label={`Vider ${boxLabel(i).toLowerCase()}`}
                 onClick={() => update(i, '')}
               >
                 ✕
