@@ -30,6 +30,7 @@ export function genericBoxes(count: number): TemplateBox[] {
 const CURATED: Record<string, TemplateBox[]> = {
   '438680': [{ xPct: 28, yPct: 20, widthPct: 40, heightPct: 26 }, { xPct: 73, yPct: 20, widthPct: 40, heightPct: 26 }], // Batman Slapping Robin
   '1035805': [{ xPct: 50, yPct: 10, widthPct: 80, heightPct: 12 }, { xPct: 25, yPct: 60, widthPct: 26, heightPct: 16 }, { xPct: 49, yPct: 60, widthPct: 26, heightPct: 16 }, { xPct: 73, yPct: 60, widthPct: 26, heightPct: 16 }], // Boardroom Meeting Suggestion
+  '55311130': [{ xPct: 25, yPct: 10, widthPct: 46, heightPct: 18 }, { xPct: 50, yPct: 90, widthPct: 94, heightPct: 16 }], // This Is Fine (top text over left panel only, clear of the baked "THIS IS FINE." bubble)
   '67452763': [{ xPct: 20, yPct: 12, widthPct: 38, heightPct: 20 }, { xPct: 70, yPct: 66, widthPct: 48, heightPct: 20 }], // Squidward window (text 1 over Squidward on the left, text 2 lower-right below SpongeBob & Patrick)
   '72525473': [{ xPct: 50, yPct: 16, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 84, widthPct: 84, heightPct: 14 }], // say the line bart! simpsons
   '79132341': [{ xPct: 50, yPct: 15, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 85, widthPct: 84, heightPct: 14 }], // Bike Fall
@@ -38,6 +39,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '87743020': [{ xPct: 33, yPct: 14, widthPct: 40, heightPct: 12 }, { xPct: 63, yPct: 22, widthPct: 40, heightPct: 12 }, { xPct: 50, yPct: 88, widthPct: 86, heightPct: 16 }], // Two Buttons
   '91998305': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // Drake Blank
   '93895088': [{ xPct: 27, yPct: 12, widthPct: 46, heightPct: 18 }, { xPct: 27, yPct: 37, widthPct: 46, heightPct: 18 }, { xPct: 27, yPct: 62, widthPct: 46, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 46, heightPct: 18 }], // Expanding Brain
+  '99683372': [{ xPct: 25, yPct: 25, widthPct: 46, heightPct: 40 }, { xPct: 25, yPct: 75, widthPct: 46, heightPct: 40 }], // Sleeping Shaq / I sleep real shit (blank left column, one caption per face)
   '100777631': [{ xPct: 24, yPct: 42, widthPct: 34, heightPct: 20 }, { xPct: 72, yPct: 20, widthPct: 30, heightPct: 16 }, { xPct: 50, yPct: 90, widthPct: 80, heightPct: 12 }], // Is This A Pigeon
   '104893621': [{ xPct: 20, yPct: 20, widthPct: 26, heightPct: 18 }, { xPct: 45, yPct: 20, widthPct: 24, heightPct: 18 }, { xPct: 70, yPct: 20, widthPct: 24, heightPct: 18 }], // Grim Reaper Knocking Door
   '110133729': [{ xPct: 26, yPct: 22, widthPct: 40, heightPct: 24 }, { xPct: 74, yPct: 22, widthPct: 40, heightPct: 24 }], // spiderman pointing at spiderman
@@ -51,6 +53,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '131940431': [{ xPct: 30, yPct: 20, widthPct: 40, heightPct: 20 }, { xPct: 80, yPct: 20, widthPct: 40, heightPct: 20 }, { xPct: 30, yPct: 66, widthPct: 40, heightPct: 20 }, { xPct: 80, yPct: 66, widthPct: 40, heightPct: 20 }], // Gru's Plan
   '135256802': [{ xPct: 22, yPct: 42, widthPct: 34, heightPct: 22 }, { xPct: 78, yPct: 42, widthPct: 34, heightPct: 22 }, { xPct: 50, yPct: 82, widthPct: 50, heightPct: 18 }], // Epic Handshake
   '135678846': [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 86, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 95, widthPct: 84, heightPct: 8 }], // Who Killed Hannibal
+  '137501417': [{ xPct: 81, yPct: 7, widthPct: 40, heightPct: 12 }, { xPct: 49, yPct: 32, widthPct: 20, heightPct: 13 }], // Friendship ended (text over the baked "MUDASIR" / "SALMAN" names)
   '142009471': [{ xPct: 24, yPct: 42, widthPct: 34, heightPct: 20 }, { xPct: 72, yPct: 20, widthPct: 30, heightPct: 16 }, { xPct: 50, yPct: 90, widthPct: 80, heightPct: 12 }], // is this butterfly
   '145139900': [{ xPct: 28, yPct: 22, widthPct: 42, heightPct: 18 }, { xPct: 72, yPct: 22, widthPct: 42, heightPct: 18 }, { xPct: 28, yPct: 72, widthPct: 42, heightPct: 18 }, { xPct: 72, yPct: 72, widthPct: 42, heightPct: 18 }], // Scooby doo mask reveal
   '161865971': [{ xPct: 50, yPct: 13, widthPct: 84, heightPct: 12 }, { xPct: 50, yPct: 68, widthPct: 66, heightPct: 9 }], // Marked Safe From
@@ -79,6 +82,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '354700819': [{ xPct: 30, yPct: 28, widthPct: 40, heightPct: 24 }, { xPct: 70, yPct: 72, widthPct: 40, heightPct: 24 }], // Two guys on a bus
   '360597639': [{ xPct: 50, yPct: 54, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 88, widthPct: 84, heightPct: 12 }], // whe i'm in a competition and my opponent is
   '533936279': [{ xPct: 16, yPct: 46, widthPct: 26, heightPct: 26 }, { xPct: 50, yPct: 28, widthPct: 30, heightPct: 20 }, { xPct: 84, yPct: 46, widthPct: 26, heightPct: 26 }], // Bell Curve
+  '657846647': [{ xPct: 50, yPct: 8, widthPct: 90, heightPct: 14 }], // Empire State Building climbers (single caption above the climbers)
   '21735': [{ xPct: 70, yPct: 12, widthPct: 46, heightPct: 12 }, { xPct: 70, yPct: 27, widthPct: 46, heightPct: 11 }], // The Rock Driving (speech bubbles)
   '50421420': [{ xPct: 28, yPct: 26, widthPct: 46, heightPct: 22 }, { xPct: 28, yPct: 74, widthPct: 46, heightPct: 22 }], // Disappointed Black Guy (left column)
   '91545132': [{ xPct: 52, yPct: 53, widthPct: 34, heightPct: 26 }, { xPct: 50, yPct: 13, widthPct: 78, heightPct: 12 }], // Trump Bill Signing (document)
