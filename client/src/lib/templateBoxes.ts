@@ -30,6 +30,7 @@ export function genericBoxes(count: number): TemplateBox[] {
 const CURATED: Record<string, TemplateBox[]> = {
   '438680': [{ xPct: 28, yPct: 20, widthPct: 40, heightPct: 26 }, { xPct: 73, yPct: 20, widthPct: 40, heightPct: 26 }], // Batman Slapping Robin
   '1035805': [{ xPct: 50, yPct: 10, widthPct: 80, heightPct: 12 }, { xPct: 25, yPct: 60, widthPct: 26, heightPct: 16 }, { xPct: 49, yPct: 60, widthPct: 26, heightPct: 16 }, { xPct: 73, yPct: 60, widthPct: 26, heightPct: 16 }], // Boardroom Meeting Suggestion
+  '67452763': [{ xPct: 20, yPct: 12, widthPct: 38, heightPct: 20 }, { xPct: 70, yPct: 66, widthPct: 48, heightPct: 20 }], // Squidward window (text 1 over Squidward on the left, text 2 lower-right below SpongeBob & Patrick)
   '72525473': [{ xPct: 50, yPct: 16, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 84, widthPct: 84, heightPct: 14 }], // say the line bart! simpsons
   '79132341': [{ xPct: 50, yPct: 15, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 85, widthPct: 84, heightPct: 14 }], // Bike Fall
   '80707627': [{ xPct: 50, yPct: 20, widthPct: 80, heightPct: 14 }, { xPct: 27, yPct: 80, widthPct: 40, heightPct: 14 }, { xPct: 73, yPct: 80, widthPct: 40, heightPct: 14 }], // Sad Pablo Escobar
