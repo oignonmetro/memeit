@@ -46,7 +46,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '112126428': [{ xPct: 30, yPct: 72, widthPct: 26, heightPct: 20 }, { xPct: 58, yPct: 50, widthPct: 26, heightPct: 20 }, { xPct: 86, yPct: 58, widthPct: 24, heightPct: 20 }], // Distracted Boyfriend
   '114585149': [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 36, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 60, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 86, widthPct: 84, heightPct: 12 }], // Inhaling Seagull
   '119215120': [{ xPct: 28, yPct: 82, widthPct: 30, heightPct: 12 }, { xPct: 72, yPct: 82, widthPct: 32, heightPct: 14 }], // Types of Headaches meme
-  '124822590': [{ xPct: 34, yPct: 20, widthPct: 30, heightPct: 20 }, { xPct: 62, yPct: 20, widthPct: 34, heightPct: 20 }, { xPct: 40, yPct: 82, widthPct: 34, heightPct: 16 }], // Left Exit 12 Off Ramp
+  '124822590': [{ xPct: 33, yPct: 20, widthPct: 26, heightPct: 20 }, { xPct: 63, yPct: 20, widthPct: 26, heightPct: 20 }, { xPct: 40, yPct: 82, widthPct: 34, heightPct: 16 }], // Left Exit 12 Off Ramp (narrower boxes so the two top labels don't overlap)
   '129242436': [{ xPct: 50, yPct: 14, widthPct: 80, heightPct: 14 }, { xPct: 50, yPct: 72, widthPct: 42, heightPct: 12 }], // Change My Mind
   '129315248': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // No - Yes
   '131087935': [{ xPct: 28, yPct: 22, widthPct: 34, heightPct: 14 }, { xPct: 66, yPct: 16, widthPct: 30, heightPct: 12 }, { xPct: 28, yPct: 80, widthPct: 34, heightPct: 14 }, { xPct: 66, yPct: 74, widthPct: 30, heightPct: 12 }, { xPct: 50, yPct: 48, widthPct: 30, heightPct: 10 }], // Running Away Balloon
@@ -65,7 +65,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '181913649': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // Drake Hotline Bling
   '187102311': [{ xPct: 16, yPct: 12, widthPct: 30, heightPct: 16 }, { xPct: 48, yPct: 8, widthPct: 30, heightPct: 16 }, { xPct: 82, yPct: 11, widthPct: 30, heightPct: 16 }], // Three-headed Dragon (one label per head, no bottom box)
   '188390779': [{ xPct: 26, yPct: 22, widthPct: 44, heightPct: 30 }, { xPct: 75, yPct: 28, widthPct: 44, heightPct: 34 }], // Woman Yelling At Cat
-  '195515965': [{ xPct: 68, yPct: 13, widthPct: 58, heightPct: 16 }, { xPct: 68, yPct: 38, widthPct: 58, heightPct: 16 }, { xPct: 68, yPct: 63, widthPct: 58, heightPct: 16 }, { xPct: 68, yPct: 88, widthPct: 58, heightPct: 16 }], // Clown Applying Makeup
+  '195515965': [{ xPct: 30, yPct: 12, widthPct: 54, heightPct: 18 }, { xPct: 30, yPct: 37, widthPct: 54, heightPct: 18 }, { xPct: 30, yPct: 62, widthPct: 54, heightPct: 18 }, { xPct: 30, yPct: 87, widthPct: 54, heightPct: 18 }], // Clown Applying Makeup (text in the blank space left of each face, not on top of it)
   '206151308': [{ xPct: 24, yPct: 44, widthPct: 30, heightPct: 20 }, { xPct: 50, yPct: 18, widthPct: 34, heightPct: 16 }, { xPct: 76, yPct: 44, widthPct: 30, heightPct: 20 }], // Spider Man Triple
   '217743513': [{ xPct: 27, yPct: 30, widthPct: 42, heightPct: 34 }, { xPct: 74, yPct: 58, widthPct: 46, heightPct: 30 }], // UNO Draw 25 Cards
   '224514655': [{ xPct: 70, yPct: 20, widthPct: 44, heightPct: 14 }, { xPct: 35, yPct: 75, widthPct: 44, heightPct: 16 }], // Anime Girl Hiding from Terminator
