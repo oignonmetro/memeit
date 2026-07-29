@@ -128,10 +128,10 @@ disponibles instantanément.
    - **Normal** — chaque joueur reçoit un meme (template) aléatoire, différent des autres.
    - **Même meme** — tous les joueurs reçoivent le même meme.
    - **Détendu** — pas de points, pas de vote : on crée et on regarde les memes, sans classement.
-1. **Lobby** — l'hôte crée une salle (code à 4 lettres), les joueurs rejoignent depuis leur
-   téléphone avec le code (ou en scannant le QR code affiché sur la TV). Le pseudo se saisit une
-   fois sur la page d'accueil (avant de créer/rejoindre) et est mémorisé automatiquement en local
-   pour les prochaines parties. Tous les réglages de partie — mode de jeu, **nombre de manches**,
+1. **Lobby** — sur la page d'accueil, un seul écran suffit : pseudo (mémorisé automatiquement en
+   local pour les prochaines parties), bouton "Créer une partie", ou champ code + bouton
+   "Rejoindre" — sans étape intermédiaire. Les joueurs rejoignent depuis leur téléphone avec le
+   code à 4 lettres (ou en scannant le QR code affiché sur la TV). Tous les réglages de partie — mode de jeu, **nombre de manches**,
    temps de légende, nombre de changements de template — se règlent depuis le lobby par l'hôte,
    une fois la salle créée, et restent modifiables jusqu'au lancement. Les templates de base
    viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes) (les ~100 templates les

@@ -12,14 +12,14 @@ import {
   type PersonalTemplate,
 } from '../lib/templatePack';
 
-type Mode = 'menu' | 'create' | 'join' | 'templates';
+type Mode = 'menu' | 'templates';
 
 export default function Home() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('menu');
   const [nickname, setNickname] = useState(getDefaultNickname());
   const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'create' | 'join' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [pack, setPack] = useState<PersonalTemplate[]>([]);
@@ -39,10 +39,9 @@ export default function Home() {
     if (nickname.trim()) setDefaultNickname(nickname.trim());
   }, [nickname]);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nickname.trim()) return;
-    setBusy(true);
+  async function handleCreate() {
+    if (!nickname.trim() || busy) return;
+    setBusy('create');
     setError(null);
     try {
       const roomCode = await useGameStore.getState().createRoom(nickname.trim(), {});
@@ -50,14 +49,13 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message || 'Impossible de créer la salle.');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
-  async function handleJoin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nickname.trim() || !code.trim()) return;
-    setBusy(true);
+  async function handleJoin() {
+    if (!nickname.trim() || !code.trim() || busy) return;
+    setBusy('join');
     setError(null);
     try {
       await useGameStore.getState().joinRoom(code.trim(), nickname.trim());
@@ -65,7 +63,7 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message || 'Impossible de rejoindre la salle.');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -120,10 +118,6 @@ export default function Home() {
     }
   }
 
-  const nicknameField = (
-    <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} autoFocus />
-  );
-
   return (
     <div className="screen">
       <img src="/icons/icon-192.png" alt="MemeIt" className="home-logo" />
@@ -134,13 +128,32 @@ export default function Home() {
 
       {mode === 'menu' && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {nicknameField}
-          <button className="btn btn-primary" disabled={!nickname.trim()} onClick={() => setMode('create')}>
-            Créer une partie
+          <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} autoFocus />
+
+          <button className="btn btn-primary" disabled={!nickname.trim() || Boolean(busy)} onClick={handleCreate}>
+            {busy === 'create' ? 'Création...' : 'Créer une partie'}
           </button>
-          <button className="btn btn-secondary" disabled={!nickname.trim()} onClick={() => setMode('join')}>
-            Rejoindre une partie
-          </button>
+
+          <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Code"
+              value={code}
+              maxLength={4}
+              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
+              onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+              style={{ textAlign: 'center', letterSpacing: '0.2em', fontWeight: 800, textTransform: 'uppercase' }}
+            />
+            <button
+              className="btn btn-secondary"
+              style={{ width: 'auto', flexShrink: 0, padding: '16px 20px' }}
+              disabled={!nickname.trim() || !code.trim() || Boolean(busy)}
+              onClick={handleJoin}
+            >
+              {busy === 'join' ? '...' : 'Rejoindre'}
+            </button>
+          </div>
+
           <button className="btn btn-ghost" onClick={() => navigate('/tv')}>
             📺 Afficher sur une TV
           </button>
@@ -148,39 +161,6 @@ export default function Home() {
             🖼️ Mes templates persos
           </button>
         </div>
-      )}
-
-      {mode === 'create' && (
-        <form className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }} onSubmit={handleCreate}>
-          <div className="center-note">Pseudo : <strong style={{ color: 'var(--text)' }}>{nickname}</strong></div>
-          <button className="btn btn-primary" type="submit" disabled={busy || !nickname.trim()}>
-            {busy ? 'Création...' : 'Créer la salle'}
-          </button>
-          <button className="btn btn-ghost" type="button" onClick={() => setMode('menu')}>
-            Retour
-          </button>
-        </form>
-      )}
-
-      {mode === 'join' && (
-        <form className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }} onSubmit={handleJoin}>
-          <input
-            type="text"
-            placeholder="Code de la salle"
-            value={code}
-            maxLength={4}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
-            style={{ textAlign: 'center', letterSpacing: '0.2em', fontWeight: 800, textTransform: 'uppercase' }}
-            autoFocus
-          />
-          <div className="center-note">Pseudo : <strong style={{ color: 'var(--text)' }}>{nickname}</strong></div>
-          <button className="btn btn-primary" type="submit" disabled={busy || !nickname.trim() || !code.trim()}>
-            {busy ? 'Connexion...' : 'Rejoindre'}
-          </button>
-          <button className="btn btn-ghost" type="button" onClick={() => setMode('menu')}>
-            Retour
-          </button>
-        </form>
       )}
 
       {mode === 'templates' && (
