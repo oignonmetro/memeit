@@ -150,7 +150,10 @@ disponibles instantanément.
    limité (réglable par l'hôte dans le lobby). Chaque joueur peut re-roller son propre template
    jusqu'à 5 fois par manche (dans tous les modes).
 3. **Manche — Révélation** — tous les memes de la manche sont montrés un par un à tout le monde
-   (y compris sur la TV si connectée), sans révéler leur auteur.
+   (y compris sur la TV si connectée), sans révéler leur auteur. Un bouton permet de télécharger
+   en PNG le meme affiché à cet instant (uniquement pendant cette phase) : l'image est
+   reconstruite dans un canvas à la résolution native du template, pas capturée à la taille de
+   l'écran.
 4. **Manche — Vote** — une fois tous les memes vus, chaque joueur choisit son meme préféré de la
    manche (un seul vote, impossible de voter pour le sien).
 5. **Score** — chaque meme rapporte à son auteur autant de points que de votes reçus, cumulés

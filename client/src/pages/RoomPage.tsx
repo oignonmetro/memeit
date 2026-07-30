@@ -8,6 +8,7 @@ import MemeRender from '../components/MemeRender';
 import Leaderboard from '../components/Leaderboard';
 import { useCountdown } from '../hooks/useCountdown';
 import { getDefaultNickname, setDefaultNickname } from '../lib/nickname';
+import { downloadMeme } from '../lib/memeImage';
 
 export default function RoomPage() {
   const { code = '' } = useParams();
@@ -48,6 +49,8 @@ export default function RoomPage() {
   const [submitting, setSubmitting] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [kicked, setKicked] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const hadSelfRef = useRef(false);
 
   useEffect(() => {
@@ -90,6 +93,23 @@ export default function RoomPage() {
   function handleLeave() {
     leaveRoom();
     navigate('/');
+  }
+
+  async function handleDownloadRevealed() {
+    if (!revealMeme || downloading) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadMeme(
+        revealMeme.template.url,
+        revealMeme.meme.layers,
+        `memeit-${code.toUpperCase()}-${revealMeme.index + 1}.png`
+      );
+    } catch (err: any) {
+      setDownloadError(err?.message || 'Téléchargement impossible.');
+    } finally {
+      setDownloading(false);
+    }
   }
 
   if (!loaded) {
@@ -212,6 +232,12 @@ export default function RoomPage() {
               Découverte des memes — {revealMeme.index + 1} / {revealMeme.total}
             </div>
             <MemeRender templateUrl={revealMeme.template.url} layers={revealMeme.meme.layers} />
+            <button className="btn btn-secondary" onClick={handleDownloadRevealed} disabled={downloading}>
+              {downloading ? 'Préparation...' : '⬇️ Télécharger ce meme'}
+            </button>
+            {downloadError && (
+              <div className="center-note" style={{ color: 'var(--accent2)' }}>{downloadError}</div>
+            )}
             <div className="timer-bar">
               <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
             </div>
