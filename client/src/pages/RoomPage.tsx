@@ -237,7 +237,7 @@ export default function RoomPage() {
 
       {room.phase === 'round_results' && roundScoreboard && (
         <>
-          {room.settings.mode === 'detendu' ? (
+          {room.effectiveMode === 'detendu' ? (
             <div className="card center-note" style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
               Manche {roundScoreboard.roundNumber} terminée 🎉
             </div>
@@ -262,7 +262,7 @@ export default function RoomPage() {
           )}
           <div className="center-note">
             {roundScoreboard.roundNumber >= roundScoreboard.totalRounds
-              ? (room.settings.mode === 'detendu' ? 'Fin de la partie...' : 'Calcul du classement final...')
+              ? (room.effectiveMode === 'detendu' ? 'Fin de la partie...' : 'Calcul du classement final...')
               : 'Prochaine manche dans quelques secondes...'}
           </div>
         </>
@@ -270,7 +270,7 @@ export default function RoomPage() {
 
       {room.phase === 'ended' && gameEnded && (
         <>
-          {room.settings.mode === 'detendu' ? (
+          {room.effectiveMode === 'detendu' ? (
             <div className="card center-note" style={{ fontSize: '1.2rem', color: 'var(--text)' }}>
               Partie terminée — merci d'avoir joué ! 🎉
             </div>

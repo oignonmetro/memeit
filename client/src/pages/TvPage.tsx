@@ -154,7 +154,7 @@ export default function TvPage() {
   }
 
   if (room.phase === 'round_results' && roundScoreboard) {
-    if (room.settings.mode === 'detendu') {
+    if (room.effectiveMode === 'detendu') {
       return (
         <div className="tv-screen">
           <div className="subtitle" style={{ fontSize: '1.8rem', color: 'var(--text)' }}>
@@ -186,7 +186,7 @@ export default function TvPage() {
   }
 
   if (room.phase === 'ended' && gameEnded) {
-    if (room.settings.mode === 'detendu') {
+    if (room.effectiveMode === 'detendu') {
       return (
         <div className="tv-screen">
           <div className="subtitle" style={{ fontSize: '1.8rem', color: 'var(--text)' }}>

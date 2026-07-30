@@ -9,6 +9,7 @@ import {
   reduceRoundResults,
   reduceChangeTemplate,
   reduceRestartGame,
+  effectiveMode,
   buildPool,
 } from './gameLogic';
 import type { DbRoom, GameMode, Template } from '../types';
@@ -220,6 +221,37 @@ try {
 } catch (e) {
   ok = false;
   console.error('FAIL  rejouer:', (e as Error).message);
+}
+console.log('--- 2 joueurs : mode forcé en détendu ---');
+try {
+  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' }, 2), 'detendu', 'normal + 2 joueurs -> détendu');
+  assert.equal(effectiveMode({ mode: 'meme', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' }, 2), 'detendu', 'meme + 2 joueurs -> détendu');
+  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' }, 3), 'normal', 'normal + 3 joueurs -> inchangé');
+
+  for (const storedMode of ['normal', 'meme'] as GameMode[]) {
+    let room = makeRoom(storedMode);
+    delete (room.players as any).p3;
+    room = reduceStartGame(room, LIB, [], tick())!;
+    assert.equal(room.status, 'caption', `[2p ${storedMode}] démarre bien à 2 joueurs`);
+
+    for (const id of ['p1', 'p2']) room.submissions[id] = { layers: [{ text: `meme ${id}`, xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }] };
+    room = reduceCaption(room, tick())!;
+    assert.equal(room.status, 'reveal', `[2p ${storedMode}] caption -> reveal`);
+
+    let guard = 0;
+    while (room.status === 'reveal' && guard++ < 10) room = reduceReveal(room, tick())!;
+    // No vote phase at all: reveal goes straight to round_results, skipping "vote".
+    assert.equal(room.status, 'round_results', `[2p ${storedMode}] pas de phase de vote, direct au résultat`);
+    assert.deepEqual(room.lastRoundVotes, {}, `[2p ${storedMode}] aucun vote enregistré`);
+    assert.equal(room.roundWinnerId, null, `[2p ${storedMode}] pas de vainqueur de manche`);
+    assert.equal(room.players.p1.score, 0, `[2p ${storedMode}] p1 n'a pas marqué de point`);
+    assert.equal(room.players.p2.score, 0, `[2p ${storedMode}] p2 n'a pas marqué de point`);
+  }
+
+  console.log('PASS  2 joueurs → mode toujours ramené à "détendu" (pas de vote, pas de points), quel que soit le réglage stocké');
+} catch (e) {
+  ok = false;
+  console.error('FAIL  2 joueurs (mode forcé):', (e as Error).message);
 }
 console.log(ok ? '\nRESULT: PASS — les 3 modes bouclent une partie complète.' : '\nRESULT: FAIL');
 process.exit(ok ? 0 : 1);

@@ -12,6 +12,7 @@ import type {
   ChatMessage,
 } from '../types';
 import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
+import { effectiveMode } from './gameLogic';
 
 export interface DerivedView {
   room: RoomSnapshot | null;
@@ -74,10 +75,12 @@ export function deriveView(
 
   const templates = buildTemplates(libraryTemplates, dbTemplates);
   const players = buildPlayers(dbRoom);
+  const connectedCount = players.filter((p) => p.connected).length;
   const room: RoomSnapshot = {
     code,
     phase: dbRoom.status,
     settings: dbRoom.settings,
+    effectiveMode: effectiveMode(dbRoom.settings, connectedCount),
     players,
     currentRound: dbRoom.currentRound,
     totalRounds: dbRoom.totalRounds,

@@ -1,4 +1,4 @@
-import type { DbPlayer, DbRoom, RoomSettings, Template } from '../types';
+import type { DbPlayer, DbRoom, GameMode, RoomSettings, Template } from '../types';
 
 // Pure game-state reducers, extracted from the Realtime Database transactions
 // in roomApi.ts so they can be reasoned about and unit-tested without Firebase.
@@ -20,6 +20,15 @@ export function buildPool(settings: RoomSettings, libraryTemplates: Template[], 
   if (settings.templateSource === 'library') return libraryTemplates;
   if (settings.templateSource === 'upload') return customTemplates.length ? customTemplates : libraryTemplates;
   return [...libraryTemplates, ...customTemplates];
+}
+
+// With only 2 (connected) players, a favorite-vote round is meaningless —
+// each player only ever has ONE other meme to vote for, so there's no real
+// choice and no fair scoring. Force "détendu" in that case, without
+// persisting it, so the host's chosen mode comes back on its own once a
+// 3rd player joins.
+export function effectiveMode(settings: RoomSettings, connectedCount: number): GameMode {
+  return connectedCount <= 2 ? 'detendu' : settings.mode;
 }
 
 function pickOne(pool: Template[], usedIds: string[]): Template {
@@ -66,7 +75,9 @@ export function beginRound(
 ): DbRoom {
   const pool = buildPool(room.settings, libraryTemplates, customTemplates);
   const playerIds = Object.keys(room.players || {});
-  const { roundTemplates, sharedTemplate, newlyUsed } = assignTemplates(room.settings, playerIds, pool, room.usedTemplateIds || []);
+  const connectedCount = Object.values(room.players || {}).filter((p) => p.connected).length;
+  const roundSettings = { ...room.settings, mode: effectiveMode(room.settings, connectedCount) };
+  const { roundTemplates, sharedTemplate, newlyUsed } = assignTemplates(roundSettings, playerIds, pool, room.usedTemplateIds || []);
   return {
     ...room,
     status: 'caption',
@@ -153,7 +164,8 @@ export function reduceReveal(room: DbRoom | null, now: number): DbRoom | null {
   const nextIndex = room.revealIndex + 1;
   if (nextIndex >= (room.revealOrder || []).length) {
     // Détendu mode has no vote and no scoring — go straight to the round wrap-up.
-    if (room.settings.mode === 'detendu') {
+    const connectedCount = Object.values(room.players || {}).filter((p) => p.connected).length;
+    if (effectiveMode(room.settings, connectedCount) === 'detendu') {
       return { ...room, status: 'round_results', lastRoundVotes: {}, roundWinnerId: null, lastActivityAt: now };
     }
     return {

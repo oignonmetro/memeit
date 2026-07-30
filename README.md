@@ -128,6 +128,11 @@ disponibles instantanément.
    - **Normal** — chaque joueur reçoit un meme (template) aléatoire, différent des autres.
    - **Même meme** — tous les joueurs reçoivent le même meme.
    - **Détendu** — pas de points, pas de vote : on crée et on regarde les memes, sans classement.
+
+   À 2 joueurs seulement, le mode est automatiquement forcé sur **Détendu** (le sélecteur est
+   verrouillé) : avec un seul autre meme possible, voter n'a pas de sens et un système de points
+   serait trivial. Dès qu'un 3ᵉ joueur rejoint, le mode choisi par l'hôte reprend la main tout
+   seul, sans rien à reconfigurer.
 1. **Lobby** — sur la page d'accueil, un seul écran suffit : pseudo (mémorisé automatiquement en
    local pour les prochaines parties), bouton "Créer une partie", ou champ code + bouton
    "Rejoindre" — sans étape intermédiaire. Les joueurs rejoignent depuis leur téléphone avec le

@@ -30,7 +30,9 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
   const [packCount, setPackCount] = useState(0);
   const [kicking, setKicking] = useState<string | null>(null);
   const customCount = room.templates.filter((t) => t.source === 'upload').length;
-  const currentMode = GAME_MODES.find((m) => m.id === room.settings.mode) ?? GAME_MODES[0];
+  const connectedCount = room.players.filter((p) => p.connected).length;
+  const modeLocked = connectedCount <= 2;
+  const currentMode = GAME_MODES.find((m) => m.id === room.effectiveMode) ?? GAME_MODES[0];
 
   useEffect(() => {
     if (!self.isHost) return;
@@ -103,7 +105,15 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
 
       <div className="card">
         <div className="subtitle" style={{ margin: '0 0 10px' }}>Mode de jeu</div>
-        {self.isHost ? (
+        {modeLocked ? (
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontWeight: 800 }}>{currentMode.label}</div>
+            <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>
+              Mode imposé à 2 joueurs : pas de système de points possible (chacun ne peut voter
+              que pour l'autre). Rejoins avec un 3ᵉ joueur pour débloquer les autres modes.
+            </div>
+          </div>
+        ) : self.isHost ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {GAME_MODES.map((m) => (
               <button

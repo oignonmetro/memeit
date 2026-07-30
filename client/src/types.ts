@@ -114,6 +114,9 @@ export interface RoomSnapshot {
   code: string;
   phase: Phase;
   settings: RoomSettings;
+  // The mode actually applied to the current/next round: forced to "detendu"
+  // whenever 2 or fewer players are connected, regardless of settings.mode.
+  effectiveMode: GameMode;
   players: PublicPlayer[];
   currentRound: number;
   totalRounds: number;
