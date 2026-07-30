@@ -68,7 +68,7 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
               maxLength={120}
               autoFocus={i === 0}
             />
-            {texts[i] && (
+            {texts[i]?.trim() && (
               <button
                 type="button"
                 className="text-input-clear"
