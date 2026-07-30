@@ -95,6 +95,13 @@ button, input, select {
 .btn-good { background: var(--good); color: #06281f; }
 .btn-danger { background: var(--accent2); color: #2c0512; }
 .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid rgba(255,255,255,0.15); }
+.btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+.field-label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
 
 input[type="text"] {
   width: 100%;

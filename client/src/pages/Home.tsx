@@ -127,17 +127,32 @@ export default function Home() {
       <p className="subtitle">Un template, tout le monde crée son meme, la salle vote au pouce levé.</p>
 
       {mode === 'menu' && (
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input type="text" placeholder="Ton pseudo" value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} autoFocus />
-
-          <button className="btn btn-primary" disabled={!nickname.trim() || Boolean(busy)} onClick={handleCreate}>
-            {busy === 'create' ? 'Création...' : 'Créer une partie'}
-          </button>
-
-          <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+        <>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            <label className="field-label" htmlFor="home-nickname">Ton pseudo</label>
             <input
+              id="home-nickname"
               type="text"
-              placeholder="Code"
+              placeholder="Ton pseudo"
+              value={nickname}
+              maxLength={20}
+              onChange={(e) => setNickname(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="card" style={{ width: '100%' }}>
+            <button className="btn btn-primary" disabled={!nickname.trim() || Boolean(busy)} onClick={handleCreate}>
+              {busy === 'create' ? 'Création...' : 'Créer une partie'}
+            </button>
+          </div>
+
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            <label className="field-label" htmlFor="home-code">Rejoindre avec un code</label>
+            <input
+              id="home-code"
+              type="text"
+              placeholder="Ex. AB3X"
               value={code}
               maxLength={4}
               onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
@@ -146,21 +161,20 @@ export default function Home() {
             />
             <button
               className="btn btn-secondary"
-              style={{ width: 'auto', flexShrink: 0, padding: '16px 20px' }}
               disabled={!nickname.trim() || !code.trim() || Boolean(busy)}
               onClick={handleJoin}
             >
-              {busy === 'join' ? '...' : 'Rejoindre'}
+              {busy === 'join' ? 'Connexion...' : 'Rejoindre'}
             </button>
           </div>
 
           <button className="btn btn-ghost" onClick={() => navigate('/tv')}>
             📺 Afficher sur une TV
           </button>
-          <button className="btn btn-ghost" onClick={() => setMode('templates')}>
-            🖼️ Mes templates persos
+          <button className="btn btn-outline" onClick={() => setMode('templates')}>
+            🖼️ Gérer mes templates persos
           </button>
-        </div>
+        </>
       )}
 
       {mode === 'templates' && (
