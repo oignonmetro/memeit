@@ -37,7 +37,7 @@ function makeRoom(mode: GameMode): DbRoom {
     createdAt: 0,
     lastActivityAt: 0,
     hostId: 'p1',
-    settings: { mode, rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' },
+    settings: { mode, rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' },
     status: 'lobby',
     players,
     currentRound: 0,
@@ -224,9 +224,9 @@ try {
 }
 console.log('--- 2 joueurs : mode forcé en détendu ---');
 try {
-  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' }, 2), 'detendu', 'normal + 2 joueurs -> détendu');
-  assert.equal(effectiveMode({ mode: 'meme', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' }, 2), 'detendu', 'meme + 2 joueurs -> détendu');
-  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library' }, 3), 'normal', 'normal + 3 joueurs -> inchangé');
+  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' }, 2), 'detendu', 'normal + 2 joueurs -> détendu');
+  assert.equal(effectiveMode({ mode: 'meme', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' }, 2), 'detendu', 'meme + 2 joueurs -> détendu');
+  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' }, 3), 'normal', 'normal + 3 joueurs -> inchangé');
 
   for (const storedMode of ['normal', 'meme'] as GameMode[]) {
     let room = makeRoom(storedMode);
@@ -252,6 +252,36 @@ try {
 } catch (e) {
   ok = false;
   console.error('FAIL  2 joueurs (mode forcé):', (e as Error).message);
+}
+console.log('--- packs de templates ---');
+try {
+  const { TEMPLATE_PACKS, getPackTemplates } = await import('./packs/index.ts');
+  assert.ok(TEMPLATE_PACKS.length >= 2, 'au moins 2 packs déclarés');
+  assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'classiques'), 'le pack "classiques" existe');
+  assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'pepites'), 'le pack "pepites" existe');
+
+  const seenIds = new Set<string>();
+  for (const pack of TEMPLATE_PACKS) {
+    const templates = getPackTemplates(pack.id);
+    assert.ok(templates.length > 0, `[${pack.id}] pack non vide`);
+    for (const t of templates) {
+      assert.ok(!seenIds.has(t.id), `[${pack.id}] id de template unique (${t.id})`);
+      seenIds.add(t.id);
+      assert.ok(t.url.startsWith('http'), `[${pack.id}] "${t.name}" a une URL valide`);
+      assert.ok(t.boxes.length > 0, `[${pack.id}] "${t.name}" a au moins une zone de texte`);
+      for (const b of t.boxes) {
+        for (const key of ['xPct', 'yPct', 'widthPct', 'heightPct'] as const) {
+          assert.ok(b[key] > 0 && b[key] <= 100, `[${pack.id}] "${t.name}" ${key}=${b[key]} dans (0,100]`);
+        }
+      }
+    }
+  }
+  assert.equal(getPackTemplates('inconnu'), getPackTemplates('classiques'), 'pack inconnu -> repli sur "classiques"');
+
+  console.log(`PASS  packs      → ${TEMPLATE_PACKS.map((p: any) => `${p.name} (${getPackTemplates(p.id).length})`).join(', ')}, ids uniques (${seenIds.size} templates)`);
+} catch (e) {
+  ok = false;
+  console.error('FAIL  packs:', (e as Error).message);
 }
 console.log(ok ? '\nRESULT: PASS — les 3 modes bouclent une partie complète.' : '\nRESULT: FAIL');
 process.exit(ok ? 0 : 1);

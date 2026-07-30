@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['templates/library/*.svg', 'icons/favicon.png'],
+      includeAssets: ['icons/favicon.png'],
       manifest: {
         name: 'MemeIt',
         short_name: 'MemeIt',

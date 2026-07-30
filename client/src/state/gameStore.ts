@@ -19,6 +19,7 @@ import {
   setRounds as apiSetRounds,
   setMode as apiSetMode,
   setMaxTemplateChanges as apiSetMaxTemplateChanges,
+  setTemplatePack as apiSetTemplatePack,
   maybeAdvanceFromCaption,
   advanceReveal,
   maybeTallyVotes,
@@ -27,10 +28,9 @@ import {
   sweepStaleRooms,
 } from '../lib/roomApi';
 import { getOrCreatePlayerId } from '../lib/playerId';
-import { getPopularTemplates } from '../lib/imgflip';
 import { requestWakeLock, releaseWakeLock } from '../lib/wakeLock';
 import { deriveView, type DerivedView } from '../lib/deriveView';
-import type { DbRoom, DbTemplates, GameMode, RoomSettings, Template } from '../types';
+import type { DbRoom, DbTemplates, GameMode, RoomSettings } from '../types';
 import { ROUND_TRANSITION_PAUSE_SEC } from '../types';
 
 type Role = 'player' | 'tv' | null;
@@ -58,6 +58,7 @@ interface GameState extends DerivedView {
   setRounds: (rounds: number) => Promise<void>;
   setMode: (mode: GameMode) => Promise<void>;
   setMaxTemplateChanges: (value: number) => Promise<void>;
+  setTemplatePack: (packId: string) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
   submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
   changeTemplate: () => Promise<void>;
@@ -73,7 +74,6 @@ let tickHandle: ReturnType<typeof setInterval> | null = null;
 let tickCount = 0;
 let latestDbRoom: DbRoom | null = null;
 let latestDbTemplates: DbTemplates = {};
-let latestLibraryTemplates: Template[] = [];
 let activeCode: string | null = null;
 
 function onVisibilityCatchUp() {
@@ -170,17 +170,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (role === 'player' && room && room.players?.[selfId] && !room.players[selfId].connected) {
         markConnected(code, selfId).catch(() => {});
       }
-      set({ ...deriveView(code, room, latestDbTemplates, latestLibraryTemplates, selfId), loaded: true });
+      set({ ...deriveView(code, room, latestDbTemplates, selfId), loaded: true });
     });
     unsubTemplates = subscribeTemplates(code, (templates) => {
       latestDbTemplates = templates;
-      set({ ...deriveView(code, latestDbRoom, templates, latestLibraryTemplates, selfId) });
-    });
-    getPopularTemplates().then((templates) => {
-      latestLibraryTemplates = templates;
-      if (get().code === code) {
-        set({ ...deriveView(code, latestDbRoom, latestDbTemplates, templates, selfId) });
-      }
+      set({ ...deriveView(code, latestDbRoom, templates, selfId) });
     });
     tickHandle = setInterval(() => driveGameForward(code), TICK_MS);
   },
@@ -242,6 +236,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code } = get();
     if (!code) return;
     await apiSetMaxTemplateChanges(code, value);
+  },
+
+  setTemplatePack: async (packId) => {
+    const { code } = get();
+    if (!code) return;
+    await apiSetTemplatePack(code, packId);
   },
 
   uploadTemplate: async (dataUrl) => {

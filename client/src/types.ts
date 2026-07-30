@@ -38,6 +38,8 @@ export interface RoomSettings {
   voteTimeSec: number;
   maxTemplateChanges: number;
   templateSource: 'library' | 'upload' | 'both';
+  // Which built-in template pack to draw from (see client/src/lib/packs).
+  templatePackId: string;
 }
 
 export interface PublicPlayer {
@@ -193,6 +195,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   voteTimeSec: 25,
   maxTemplateChanges: 5,
   templateSource: 'both',
+  templatePackId: 'classiques',
 };
 
 // Allowed values for the per-round template re-roll limit (host-configurable).

@@ -33,6 +33,7 @@ export default function RoomPage() {
     setRounds,
     setMode,
     setMaxTemplateChanges,
+    setTemplatePack,
     uploadTemplate,
     submitMeme,
     changeTemplate,
@@ -182,6 +183,7 @@ export default function RoomPage() {
           onSetRounds={setRounds}
           onSetMode={setMode}
           onSetMaxTemplateChanges={setMaxTemplateChanges}
+          onSetTemplatePack={setTemplatePack}
           onKick={kickPlayer}
         />
       )}

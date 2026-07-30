@@ -13,6 +13,7 @@ import type {
 } from '../types';
 import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 import { effectiveMode } from './gameLogic';
+import { getPackTemplates } from './packs';
 
 export interface DerivedView {
   room: RoomSnapshot | null;
@@ -40,7 +41,7 @@ const EMPTY_VIEW: DerivedView = {
   chatOrder: [],
 };
 
-function buildTemplates(libraryTemplates: Template[], dbTemplates: DbTemplates | null): Template[] {
+function buildTemplates(packId: string, dbTemplates: DbTemplates | null): Template[] {
   const uploads: Template[] = Object.entries(dbTemplates || {}).map(([id, t]) => ({
     id,
     url: t.url,
@@ -48,7 +49,7 @@ function buildTemplates(libraryTemplates: Template[], dbTemplates: DbTemplates |
     source: 'upload',
     boxes: DEFAULT_UPLOAD_BOXES,
   }));
-  return [...libraryTemplates, ...uploads];
+  return [...getPackTemplates(packId), ...uploads];
 }
 
 function buildPlayers(dbRoom: DbRoom): PublicPlayer[] {
@@ -68,12 +69,11 @@ export function deriveView(
   code: string,
   dbRoom: DbRoom | null,
   dbTemplates: DbTemplates | null,
-  libraryTemplates: Template[],
   selfId: string
 ): DerivedView {
   if (!dbRoom) return EMPTY_VIEW;
 
-  const templates = buildTemplates(libraryTemplates, dbTemplates);
+  const templates = buildTemplates(dbRoom.settings.templatePackId, dbTemplates);
   const players = buildPlayers(dbRoom);
   const connectedCount = players.filter((p) => p.connected).length;
   const room: RoomSnapshot = {

@@ -137,13 +137,10 @@ disponibles instantanément.
    local pour les prochaines parties), bouton "Créer une partie", ou champ code + bouton
    "Rejoindre" — sans étape intermédiaire. Les joueurs rejoignent depuis leur téléphone avec le
    code à 4 lettres (ou en scannant le QR code affiché sur la TV). Tous les réglages de partie — mode de jeu, **nombre de manches**,
-   temps de légende, nombre de changements de template — se règlent depuis le lobby par l'hôte,
-   une fois la salle créée, et restent modifiables jusqu'au lancement. Les templates de base
-   viennent de l'[API publique Imgflip](https://api.imgflip.com/get_memes) (les ~100 templates les
-   plus utilisés du moment, mis en cache 6h côté client) — pas une bibliothèque figée dans le
-   code. Repli sur une petite bibliothèque locale si l'API est injoignable (hors-ligne).
-   L'hôte peut aussi exclure un joueur de la salle (petit bouton rouge à côté de son pseudo,
-   uniquement avant le lancement) — le joueur exclu peut toujours rejoindre à nouveau avec le code.
+   temps de légende, nombre de changements de template, **pack de templates** — se règlent depuis
+   le lobby par l'hôte, une fois la salle créée, et restent modifiables jusqu'au lancement. L'hôte
+   peut aussi exclure un joueur de la salle (petit bouton rouge à côté de son pseudo, uniquement
+   avant le lancement) — le joueur exclu peut toujours rejoindre à nouveau avec le code.
 2. **Manche — Légende** — un template est tiré au sort et affiché à tous. Chaque joueur compose
    sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
    ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps
@@ -208,6 +205,25 @@ dans une salle. Les messages sont stockés sous `rooms/{code}/chat` — donc syn
 réel comme le reste, sans infrastructure séparée. Compteur de non-lus quand le panneau est
 fermé, pseudo coloré par joueur (couleur stable selon l'ordre d'arrivée). Envoyer un message ne
 compte pas comme une action de jeu (ça ne perturbe pas les minuteurs de manche).
+
+## Packs de templates intégrés
+
+Les templates de base ne sont plus récupérés en direct depuis l'API Imgflip à chaque partie :
+ils sont regroupés en **packs statiques**, choisis par l'hôte dans le lobby (`client/src/lib/packs/`) :
+
+- **Classiques** (`classiques.ts`) — les ~100 templates les plus utilisés sur Imgflip au moment
+  de la capture (nom, image, nombre de zones), figés dans le code. Le placement des zones de
+  texte de chacun reste résolu via `templateBoxes.ts` (positions vérifiées une à une en rendant
+  l'image réelle avec des légendes d'exemple) — ce fichier reste la source de vérité pour la mise
+  en page, `classiques.ts` ne fige que la liste des templates eux-mêmes.
+- **Pépites** (`pepites.ts`) — une sélection complémentaire de memes cultes qui ne faisaient pas
+  partie du instantané "Classiques", récupérés directement sur Imgflip et curés avec la même
+  méthode (positions vérifiées par rendu réel).
+
+Comme ces packs sont des données statiques embarquées dans l'application, il n'y a plus aucun
+appel réseau ni cache à gérer pour charger les templates de base — l'app fonctionne même hors
+ligne pour cette partie-là. Ajouter un pack revient à créer un nouveau fichier dans
+`client/src/lib/packs/` et à l'enregistrer dans `packs/index.ts`.
 
 ## Templates persos
 

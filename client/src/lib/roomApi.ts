@@ -17,7 +17,7 @@ import {
 } from 'firebase/database';
 import { db } from './firebase';
 import { generateRoomCode } from './codes';
-import { getPopularTemplates } from './imgflip';
+import { getPackTemplates, TEMPLATE_PACKS } from './packs';
 import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 import {
   reduceStartGame,
@@ -198,6 +198,14 @@ export async function setMaxTemplateChanges(code: string, value: number): Promis
   });
 }
 
+export async function setTemplatePack(code: string, packId: string): Promise<void> {
+  if (!TEMPLATE_PACKS.some((p) => p.id === packId)) return;
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room || room.status !== 'lobby') return room;
+    return { ...room, settings: { ...room.settings, templatePackId: packId }, lastActivityAt: Date.now() };
+  });
+}
+
 // ---------- templates ----------
 
 export async function addCustomTemplate(code: string, dataUrl: string): Promise<string> {
@@ -251,8 +259,12 @@ async function getCustomTemplates(code: string): Promise<Template[]> {
 }
 
 export async function startGame(code: string): Promise<void> {
-  const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
-  await runTransaction(roomRef(code), (room: DbRoom | null) => reduceStartGame(room, libraryTemplates, customTemplates, Date.now()));
+  const customTemplates = await getCustomTemplates(code);
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room) return room;
+    const libraryTemplates = getPackTemplates(room.settings.templatePackId);
+    return reduceStartGame(room, libraryTemplates, customTemplates, Date.now());
+  });
 }
 
 export async function submitMeme(code: string, playerId: string, layers: TextLayer[]): Promise<void> {
@@ -265,9 +277,10 @@ export async function submitMeme(code: string, playerId: string, layers: TextLay
 
 // Re-roll the player's own template during the caption phase (all modes).
 export async function changeTemplate(code: string, playerId: string): Promise<void> {
-  const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
+  const customTemplates = await getCustomTemplates(code);
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room) return room;
+    const libraryTemplates = getPackTemplates(room.settings.templatePackId);
     const pool = buildPool(room.settings, libraryTemplates, customTemplates);
     return reduceChangeTemplate(room, playerId, pool, Date.now());
   });
@@ -299,8 +312,12 @@ export async function maybeTallyVotes(code: string): Promise<void> {
 }
 
 export async function advanceAfterRoundResults(code: string): Promise<void> {
-  const [libraryTemplates, customTemplates] = await Promise.all([getPopularTemplates(), getCustomTemplates(code)]);
-  await runTransaction(roomRef(code), (room: DbRoom | null) => reduceRoundResults(room, libraryTemplates, customTemplates, Date.now()));
+  const customTemplates = await getCustomTemplates(code);
+  await runTransaction(roomRef(code), (room: DbRoom | null) => {
+    if (!room) return room;
+    const libraryTemplates = getPackTemplates(room.settings.templatePackId);
+    return reduceRoundResults(room, libraryTemplates, customTemplates, Date.now());
+  });
 }
 
 // Host replays with the same room/players: back to the lobby, same code.

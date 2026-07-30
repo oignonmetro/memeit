@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { RoomSnapshot, PublicPlayer, GameMode } from '../types';
 import { CAPTION_TIME_OPTIONS, GAME_MODES, ROUNDS_OPTIONS, TEMPLATE_CHANGE_OPTIONS } from '../types';
 import { listPersonalTemplates } from '../lib/templatePack';
+import { TEMPLATE_PACKS } from '../lib/packs';
 import TickSlider from './TickSlider';
 
 interface LobbyProps {
@@ -13,6 +14,7 @@ interface LobbyProps {
   onSetRounds: (rounds: number) => Promise<void>;
   onSetMode: (mode: GameMode) => Promise<void>;
   onSetMaxTemplateChanges: (value: number) => Promise<void>;
+  onSetTemplatePack: (packId: string) => Promise<void>;
   onKick: (playerId: string) => Promise<void>;
 }
 
@@ -23,7 +25,7 @@ function formatTime(sec: number): string {
   return s ? `${m}min${s}` : `${m}min`;
 }
 
-export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges, onKick }: LobbyProps) {
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges, onSetTemplatePack, onKick }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [addingPack, setAddingPack] = useState(false);
   const [packAdded, setPackAdded] = useState(false);
@@ -33,6 +35,7 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
   const connectedCount = room.players.filter((p) => p.connected).length;
   const modeLocked = connectedCount <= 2;
   const currentMode = GAME_MODES.find((m) => m.id === room.effectiveMode) ?? GAME_MODES[0];
+  const currentPack = TEMPLATE_PACKS.find((p) => p.id === room.settings.templatePackId) ?? TEMPLATE_PACKS[0];
 
   useEffect(() => {
     if (!self.isHost) return;
@@ -179,6 +182,29 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
           />
         ) : (
           <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="subtitle" style={{ margin: '0 0 10px' }}>Pack de templates</div>
+        {self.isHost ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {TEMPLATE_PACKS.map((p) => (
+              <button
+                key={p.id}
+                className={`mode-option ${room.settings.templatePackId === p.id ? 'selected' : ''}`}
+                onClick={() => onSetTemplatePack(p.id)}
+              >
+                <span className="mode-option__label">{p.name}</span>
+                <span className="mode-option__desc">{p.description}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontWeight: 800 }}>{currentPack.name}</div>
+            <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{currentPack.description}</div>
+          </div>
         )}
       </div>
 
