@@ -7,6 +7,17 @@ interface MemeRenderProps {
   frameClassName?: string;
 }
 
+// The outline scales with the font size instead of a flat pixel value — a
+// fixed stroke looks hair-thin once a long caption shrinks the font, and
+// looks overly thin on big short captions. 6% of the font size matches
+// imgflip's classic bold-outline look at every size; the 1px floor keeps
+// very small text from turning into an illegible blob.
+const STROKE_RATIO = 0.06;
+const MIN_STROKE = 1;
+function strokeWidthFor(fontSize: number): number {
+  return Math.max(MIN_STROKE, fontSize * STROKE_RATIO);
+}
+
 // A single text zone whose font size auto-shrinks to fit its box — mimicking
 // imgflip, where captions fill the box and get smaller as they get longer.
 //
@@ -37,13 +48,20 @@ function MemeTextLayer({ layer, frameW, frameH }: { layer: TextLayer; frameW: nu
       }
     }
     el.style.fontSize = `${best}px`;
+    el.style.webkitTextStrokeWidth = `${strokeWidthFor(best)}px`;
   }, [layer.text, layer.widthPct, layer.heightPct, frameW, frameH]);
 
   return (
     <div
       ref={ref}
       className="meme-text-layer"
-      style={{ left: `${layer.xPct}%`, top: `${layer.yPct}%`, width: `${layer.widthPct}%`, fontSize: `${startSize}px` }}
+      style={{
+        left: `${layer.xPct}%`,
+        top: `${layer.yPct}%`,
+        width: `${layer.widthPct}%`,
+        fontSize: `${startSize}px`,
+        WebkitTextStrokeWidth: `${strokeWidthFor(startSize)}px`,
+      }}
     >
       {layer.text}
     </div>

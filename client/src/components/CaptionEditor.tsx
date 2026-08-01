@@ -50,7 +50,7 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
       <MemeRender templateUrl={template.url} layers={previewLayers} />
 
       <button
-        className="btn btn-secondary"
+        className="btn btn-secondary btn-sm"
         onClick={handleChange}
         disabled={changing || changesLeft <= 0}
       >

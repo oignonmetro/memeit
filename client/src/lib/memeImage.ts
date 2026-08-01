@@ -5,10 +5,12 @@ import type { TextLayer } from '../types';
 // outline, same auto-shrinking font size per zone — but at the image's natural
 // resolution so the downloaded file isn't limited to the on-screen size.
 
-// The CSS outline is a flat 1.5px at display size; scaling it against a typical
-// phone card width keeps the downloaded meme visually identical rather than
-// hair-thin on a large template.
-const REFERENCE_DISPLAY_WIDTH = 400;
+// The outline scales with each layer's fitted font size (6%, floored at 1px) —
+// same ratio as MemeRender's DOM version — so the downloaded PNG matches what
+// was shown on screen instead of a flat pixel width that reads hair-thin on
+// short captions and blobby on long ones.
+const STROKE_RATIO = 0.06;
+const MIN_STROKE = 1;
 const FONT_STACK = "Impact, 'Arial Narrow', Haettenschweiler, sans-serif";
 const LINE_HEIGHT = 1.05;
 
@@ -86,7 +88,6 @@ export async function renderMemeToBlob(templateUrl: string, layers: TextLayer[])
   ctx.strokeStyle = '#000';
   ctx.lineJoin = 'round';
   ctx.miterLimit = 2;
-  const strokeScale = width / REFERENCE_DISPLAY_WIDTH;
 
   for (const layer of layers) {
     const text = (layer.text || '').trim().toUpperCase();
@@ -97,7 +98,7 @@ export async function renderMemeToBlob(templateUrl: string, layers: TextLayer[])
     const { fontSize, lines } = fitLayer(ctx, text, maxW, maxH, width);
 
     ctx.font = `900 ${fontSize}px ${FONT_STACK}`;
-    ctx.lineWidth = 1.5 * strokeScale;
+    ctx.lineWidth = Math.max(MIN_STROKE, fontSize * STROKE_RATIO);
 
     const cx = (width * layer.xPct) / 100;
     const cy = (height * layer.yPct) / 100;

@@ -234,7 +234,7 @@ export default function RoomPage() {
               Découverte des memes — {revealMeme.index + 1} / {revealMeme.total}
             </div>
             <MemeRender templateUrl={revealMeme.template.url} layers={revealMeme.meme.layers} />
-            <button className="btn btn-secondary" onClick={handleDownloadRevealed} disabled={downloading}>
+            <button className="btn btn-secondary btn-sm" onClick={handleDownloadRevealed} disabled={downloading}>
               {downloading ? 'Préparation...' : '⬇️ Télécharger ce meme'}
             </button>
             {downloadError && (
