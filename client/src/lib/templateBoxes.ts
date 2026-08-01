@@ -80,7 +80,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '322841258': [{ xPct: 26, yPct: 26, widthPct: 46, heightPct: 40 }, { xPct: 74, yPct: 26, widthPct: 46, heightPct: 40 }, { xPct: 74, yPct: 76, widthPct: 46, heightPct: 40 }], // Anakin Padme 4 Panel
   '342785297': [{ xPct: 50, yPct: 16, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 84, widthPct: 84, heightPct: 14 }], // Gus Fring we are not the same
   '354700819': [{ xPct: 30, yPct: 28, widthPct: 40, heightPct: 24 }, { xPct: 70, yPct: 72, widthPct: 40, heightPct: 24 }], // Two guys on a bus
-  '360597639': [{ xPct: 50, yPct: 61, widthPct: 92, heightPct: 12 }, { xPct: 50, yPct: 88, widthPct: 92, heightPct: 12 }], // whe i'm in a competition and my opponent is (les deux zones dans l'image du bas, sous le bandeau blanc déjà légendé)
+  '360597639': [{ xPct: 50, yPct: 18, widthPct: 88, heightPct: 14 }, { xPct: 77, yPct: 44, widthPct: 40, heightPct: 12 }], // whe i'm in a competition and my opponent is (le texte incrusté est coupé en deux : zone 1 dans le trou entre les deux lignes, zone 2 juste après "opponent is" → "when i'm in a [1] competition and my opponent is [2]")
   '533936279': [{ xPct: 16, yPct: 46, widthPct: 26, heightPct: 26 }, { xPct: 50, yPct: 28, widthPct: 30, heightPct: 20 }, { xPct: 84, yPct: 46, widthPct: 26, heightPct: 26 }], // Bell Curve
   '657846647': [{ xPct: 50, yPct: 8, widthPct: 90, heightPct: 14 }], // Empire State Building climbers (single caption above the climbers)
   '21735': [{ xPct: 77, yPct: 13, widthPct: 40, heightPct: 14 }, { xPct: 78, yPct: 45, widthPct: 38, heightPct: 13 }], // The Rock Driving (une zone par bulle : la 2e bulle est dans la case du milieu, pas juste sous la 1re)
