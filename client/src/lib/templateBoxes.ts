@@ -49,7 +49,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '124822590': [{ xPct: 33, yPct: 20, widthPct: 26, heightPct: 20 }, { xPct: 63, yPct: 20, widthPct: 26, heightPct: 20 }, { xPct: 40, yPct: 82, widthPct: 34, heightPct: 16 }], // Left Exit 12 Off Ramp (narrower boxes so the two top labels don't overlap)
   '129242436': [{ xPct: 50, yPct: 14, widthPct: 80, heightPct: 14 }, { xPct: 50, yPct: 72, widthPct: 42, heightPct: 12 }], // Change My Mind
   '129315248': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // No - Yes
-  '131087935': [{ xPct: 28, yPct: 22, widthPct: 34, heightPct: 14 }, { xPct: 66, yPct: 16, widthPct: 30, heightPct: 12 }, { xPct: 28, yPct: 80, widthPct: 34, heightPct: 14 }, { xPct: 66, yPct: 74, widthPct: 30, heightPct: 12 }, { xPct: 50, yPct: 48, widthPct: 30, heightPct: 10 }], // Running Away Balloon
+  '131087935': [{ xPct: 27, yPct: 7, widthPct: 50, heightPct: 12 }, { xPct: 80, yPct: 18, widthPct: 36, heightPct: 20 }, { xPct: 14, yPct: 84, widthPct: 27, heightPct: 16 }, { xPct: 87, yPct: 68, widthPct: 24, heightPct: 22 }, { xPct: 53, yPct: 56, widthPct: 42, heightPct: 9 }], // Running Away Balloon (labels dans le ciel au-dessus des personnages et au centre des ballons, aucune zone sur la séparation des deux cases)
   '131940431': [{ xPct: 30, yPct: 20, widthPct: 40, heightPct: 20 }, { xPct: 80, yPct: 20, widthPct: 40, heightPct: 20 }, { xPct: 30, yPct: 66, widthPct: 40, heightPct: 20 }, { xPct: 80, yPct: 66, widthPct: 40, heightPct: 20 }], // Gru's Plan
   '135256802': [{ xPct: 22, yPct: 42, widthPct: 34, heightPct: 22 }, { xPct: 78, yPct: 42, widthPct: 34, heightPct: 22 }, { xPct: 50, yPct: 82, widthPct: 50, heightPct: 18 }], // Epic Handshake
   '135678846': [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 86, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 95, widthPct: 84, heightPct: 8 }], // Who Killed Hannibal
@@ -80,10 +80,10 @@ const CURATED: Record<string, TemplateBox[]> = {
   '322841258': [{ xPct: 26, yPct: 26, widthPct: 46, heightPct: 40 }, { xPct: 74, yPct: 26, widthPct: 46, heightPct: 40 }, { xPct: 74, yPct: 76, widthPct: 46, heightPct: 40 }], // Anakin Padme 4 Panel
   '342785297': [{ xPct: 50, yPct: 16, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 84, widthPct: 84, heightPct: 14 }], // Gus Fring we are not the same
   '354700819': [{ xPct: 30, yPct: 28, widthPct: 40, heightPct: 24 }, { xPct: 70, yPct: 72, widthPct: 40, heightPct: 24 }], // Two guys on a bus
-  '360597639': [{ xPct: 50, yPct: 54, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 88, widthPct: 84, heightPct: 12 }], // whe i'm in a competition and my opponent is
+  '360597639': [{ xPct: 50, yPct: 61, widthPct: 92, heightPct: 12 }, { xPct: 50, yPct: 88, widthPct: 92, heightPct: 12 }], // whe i'm in a competition and my opponent is (les deux zones dans l'image du bas, sous le bandeau blanc déjà légendé)
   '533936279': [{ xPct: 16, yPct: 46, widthPct: 26, heightPct: 26 }, { xPct: 50, yPct: 28, widthPct: 30, heightPct: 20 }, { xPct: 84, yPct: 46, widthPct: 26, heightPct: 26 }], // Bell Curve
   '657846647': [{ xPct: 50, yPct: 8, widthPct: 90, heightPct: 14 }], // Empire State Building climbers (single caption above the climbers)
-  '21735': [{ xPct: 70, yPct: 12, widthPct: 46, heightPct: 12 }, { xPct: 70, yPct: 27, widthPct: 46, heightPct: 11 }], // The Rock Driving (speech bubbles)
+  '21735': [{ xPct: 77, yPct: 13, widthPct: 40, heightPct: 14 }, { xPct: 78, yPct: 45, widthPct: 38, heightPct: 13 }], // The Rock Driving (une zone par bulle : la 2e bulle est dans la case du milieu, pas juste sous la 1re)
   '50421420': [{ xPct: 28, yPct: 26, widthPct: 46, heightPct: 22 }, { xPct: 28, yPct: 74, widthPct: 46, heightPct: 22 }], // Disappointed Black Guy (left column)
   '91545132': [{ xPct: 52, yPct: 53, widthPct: 34, heightPct: 26 }, { xPct: 50, yPct: 13, widthPct: 78, heightPct: 12 }], // Trump Bill Signing (document)
   '123999232': [{ xPct: 27, yPct: 70, widthPct: 42, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 42, heightPct: 12 }], // The Scroll Of Truth (scroll)
