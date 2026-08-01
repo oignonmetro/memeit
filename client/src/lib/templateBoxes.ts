@@ -45,7 +45,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '110133729': [{ xPct: 26, yPct: 22, widthPct: 40, heightPct: 24 }, { xPct: 74, yPct: 22, widthPct: 40, heightPct: 24 }], // spiderman pointing at spiderman
   '112126428': [{ xPct: 30, yPct: 72, widthPct: 26, heightPct: 20 }, { xPct: 58, yPct: 50, widthPct: 26, heightPct: 20 }, { xPct: 86, yPct: 58, widthPct: 24, heightPct: 20 }], // Distracted Boyfriend
   '114585149': [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 36, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 60, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 86, widthPct: 84, heightPct: 12 }], // Inhaling Seagull
-  '119215120': [{ xPct: 28, yPct: 82, widthPct: 30, heightPct: 12 }, { xPct: 72, yPct: 82, widthPct: 32, heightPct: 14 }], // Types of Headaches meme
+  '119215120': [{ xPct: 72, yPct: 82, widthPct: 32, heightPct: 14 }], // Types of Headaches meme (la tête "Stress" a déjà son label incrusté, une seule zone reste pour la tête rouge sans nom)
   '124822590': [{ xPct: 33, yPct: 20, widthPct: 26, heightPct: 20 }, { xPct: 63, yPct: 20, widthPct: 26, heightPct: 20 }, { xPct: 40, yPct: 82, widthPct: 34, heightPct: 16 }], // Left Exit 12 Off Ramp (narrower boxes so the two top labels don't overlap)
   '129242436': [{ xPct: 50, yPct: 14, widthPct: 80, heightPct: 14 }, { xPct: 50, yPct: 72, widthPct: 42, heightPct: 12 }], // Change My Mind
   '129315248': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // No - Yes
