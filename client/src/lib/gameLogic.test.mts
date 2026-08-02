@@ -171,13 +171,32 @@ for (const mode of ['normal', 'meme', 'detendu'] as GameMode[]) {
   }
 }
 console.log('--- changement de template ---');
-for (const mode of ['normal', 'meme', 'detendu'] as GameMode[]) {
+// "même meme" partage UN template entre tous les joueurs : le changement de
+// template y est désactivé (voir le test dédié plus bas), donc exclu d'ici.
+for (const mode of ['normal', 'detendu'] as GameMode[]) {
   try {
     console.log(testTemplateChanges(mode));
   } catch (e) {
     ok = false;
     console.error(`FAIL  ${mode} (template):`, (e as Error).message);
   }
+}
+try {
+  let room = makeRoom('meme');
+  room = reduceStartGame(room, LIB, [], tick())!;
+  const pool = buildPool(room.settings, LIB, []);
+  assert.ok(room.currentTemplate, '[meme] template partagé défini pour la manche');
+  const before = room.roundTemplates.p1.id;
+
+  const after = reduceChangeTemplate(room, 'p1', pool, tick())!;
+  assert.equal(after, room, '[meme] reduceChangeTemplate est un no-op (même référence renvoyée)');
+  assert.equal(after.roundTemplates.p1.id, before, '[meme] le template de p1 ne change pas');
+  assert.equal(after.templateChanges.p1 ?? 0, 0, '[meme] aucun changement compté');
+
+  console.log('PASS  meme       → changement de template désactivé (un seul template partagé par tous)');
+} catch (e) {
+  ok = false;
+  console.error('FAIL  meme (template désactivé):', (e as Error).message);
 }
 // The cap follows the room setting (e.g. 10, not the hardcoded 5).
 try {

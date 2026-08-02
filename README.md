@@ -146,7 +146,9 @@ disponibles instantanément.
    sa légende en tapant dans les zones de texte prédéfinies du template (façon imgflip : haut/bas
    ou zones spécifiques selon le meme, texte blanc à contour noir auto-dimensionné), avec un temps
    limité (réglable par l'hôte dans le lobby). Chaque joueur peut re-roller son propre template
-   jusqu'à 5 fois par manche (dans tous les modes).
+   jusqu'à 5 fois par manche — sauf en mode **Même meme**, où tout le monde légende le même
+   template : le re-roll y est désactivé (bouton et réglage absents) puisqu'il casserait le
+   principe du mode en changeant le template d'un seul joueur.
 3. **Manche — Révélation** — tous les memes de la manche sont montrés un par un à tout le monde
    (y compris sur la TV si connectée), sans révéler leur auteur. Un bouton permet de télécharger
    en PNG le meme affiché à cet instant (uniquement pendant cette phase) : l'image est

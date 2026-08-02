@@ -177,21 +177,23 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
         )}
       </div>
 
-      <div className="card">
-        <div className="subtitle" style={{ margin: '0 0 10px' }}>
-          Changements de template par manche : {room.settings.maxTemplateChanges}
+      {room.settings.mode !== 'meme' && (
+        <div className="card">
+          <div className="subtitle" style={{ margin: '0 0 10px' }}>
+            Changements de template par manche : {room.settings.maxTemplateChanges}
+          </div>
+          {self.isHost ? (
+            <TickSlider
+              options={TEMPLATE_CHANGE_OPTIONS}
+              value={room.settings.maxTemplateChanges}
+              onChange={onSetMaxTemplateChanges}
+              formatLabel={(n) => String(n)}
+            />
+          ) : (
+            <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
+          )}
         </div>
-        {self.isHost ? (
-          <TickSlider
-            options={TEMPLATE_CHANGE_OPTIONS}
-            value={room.settings.maxTemplateChanges}
-            onChange={onSetMaxTemplateChanges}
-            formatLabel={(n) => String(n)}
-          />
-        ) : (
-          <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
-        )}
-      </div>
+      )}
 
       <div className="card">
         <div className="subtitle" style={{ margin: '0 0 10px' }}>

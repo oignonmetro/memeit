@@ -111,10 +111,14 @@ export function reduceStartGame(
   return beginRound(room, libraryTemplates, customTemplates, 1, now);
 }
 
-// A player re-rolls their own template during the caption phase (any mode).
+// A player re-rolls their own template during the caption phase. Disabled
+// when this round shares ONE template across every player ("même meme"
+// actually in effect, signalled by currentTemplate being set) — re-rolling
+// just one player's copy would silently break that premise.
 // `pool` is the available template pool. Capped at MAX_TEMPLATE_CHANGES.
 export function reduceChangeTemplate(room: DbRoom | null, playerId: string, pool: Template[], now: number): DbRoom | null {
   if (!room || room.status !== 'caption') return room;
+  if (room.currentTemplate) return room;
   const max = room.settings.maxTemplateChanges || 5;
   const changes = room.templateChanges?.[playerId] || 0;
   if (changes >= max) return room;

@@ -134,6 +134,10 @@ export interface RoundStartedPayload {
   totalRounds: number;
   template: Template | null; // the viewer's own template (null on TV in non-meme modes)
   changesLeft: number; // template re-rolls the viewer still has this round
+  // True when this round assigned the SAME template to every player ("même
+  // meme" mode actually in effect). Re-rolling one's own template is disabled
+  // then — it would silently break the "everyone gets the same meme" premise.
+  isSharedTemplate: boolean;
   deadline: number;
 }
 
