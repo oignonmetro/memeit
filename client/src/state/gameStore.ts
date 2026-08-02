@@ -19,9 +19,10 @@ import {
   setRounds as apiSetRounds,
   setMode as apiSetMode,
   setMaxTemplateChanges as apiSetMaxTemplateChanges,
-  setTemplatePack as apiSetTemplatePack,
+  setTemplatePacks as apiSetTemplatePacks,
   maybeAdvanceFromCaption,
   advanceReveal,
+  markMemeSeen as apiMarkMemeSeen,
   maybeTallyVotes,
   advanceAfterRoundResults,
   touchActivity,
@@ -58,11 +59,12 @@ interface GameState extends DerivedView {
   setRounds: (rounds: number) => Promise<void>;
   setMode: (mode: GameMode) => Promise<void>;
   setMaxTemplateChanges: (value: number) => Promise<void>;
-  setTemplatePack: (packId: string) => Promise<void>;
+  setTemplatePacks: (packIds: string[]) => Promise<void>;
   uploadTemplate: (dataUrl: string) => Promise<void>;
   submitMeme: (layers: import('../types').TextLayer[]) => Promise<void>;
   changeTemplate: () => Promise<void>;
   castFavorite: (authorId: string) => Promise<void>;
+  markMemeSeen: () => Promise<void>;
   sendChat: (text: string) => Promise<void>;
   kickPlayer: (playerId: string) => Promise<void>;
   leaveRoom: () => void;
@@ -238,10 +240,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     await apiSetMaxTemplateChanges(code, value);
   },
 
-  setTemplatePack: async (packId) => {
+  setTemplatePacks: async (packIds) => {
     const { code } = get();
     if (!code) return;
-    await apiSetTemplatePack(code, packId);
+    await apiSetTemplatePacks(code, packIds);
   },
 
   uploadTemplate: async (dataUrl) => {
@@ -266,6 +268,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code, selfId } = get();
     if (!code) return;
     await apiCastFavorite(code, selfId, authorId);
+  },
+
+  markMemeSeen: async () => {
+    const { code, selfId } = get();
+    if (!code) return;
+    await apiMarkMemeSeen(code, selfId);
   },
 
   sendChat: async (text) => {

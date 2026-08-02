@@ -33,11 +33,12 @@ export default function RoomPage() {
     setRounds,
     setMode,
     setMaxTemplateChanges,
-    setTemplatePack,
+    setTemplatePacks,
     uploadTemplate,
     submitMeme,
     changeTemplate,
     castFavorite,
+    markMemeSeen,
     joinRoom,
     leaveRoom,
     restartGame,
@@ -52,6 +53,7 @@ export default function RoomPage() {
   const [kicked, setKicked] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [marking, setMarking] = useState(false);
   const hadSelfRef = useRef(false);
 
   useEffect(() => {
@@ -110,6 +112,16 @@ export default function RoomPage() {
       setDownloadError(err?.message || 'Téléchargement impossible.');
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function handleMarkSeen() {
+    if (!revealMeme || revealMeme.selfSeen || marking) return;
+    setMarking(true);
+    try {
+      await markMemeSeen();
+    } finally {
+      setMarking(false);
     }
   }
 
@@ -183,7 +195,7 @@ export default function RoomPage() {
           onSetRounds={setRounds}
           onSetMode={setMode}
           onSetMaxTemplateChanges={setMaxTemplateChanges}
-          onSetTemplatePack={setTemplatePack}
+          onSetTemplatePacks={setTemplatePacks}
           onKick={kickPlayer}
         />
       )}
@@ -234,16 +246,25 @@ export default function RoomPage() {
               Découverte des memes — {revealMeme.index + 1} / {revealMeme.total}
             </div>
             <MemeRender templateUrl={revealMeme.template.url} layers={revealMeme.meme.layers} />
-            <button className="btn btn-secondary btn-sm" onClick={handleDownloadRevealed} disabled={downloading}>
-              {downloading ? 'Préparation...' : '⬇️ Télécharger ce meme'}
-            </button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="btn btn-secondary btn-sm" onClick={handleDownloadRevealed} disabled={downloading}>
+                {downloading ? 'Préparation...' : '⬇️ Télécharger ce meme'}
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={handleMarkSeen} disabled={marking || revealMeme.selfSeen}>
+                {revealMeme.selfSeen ? `👀 Vu (${revealMeme.seenCount}/${revealMeme.seenTotal})` : '👀 Vu'}
+              </button>
+            </div>
             {downloadError && (
               <div className="center-note" style={{ color: 'var(--accent2)' }}>{downloadError}</div>
             )}
             <div className="timer-bar">
               <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
             </div>
-            <div className="center-note">Le vote arrive quand tous les memes sont passés.</div>
+            <div className="center-note">
+              {revealMeme.selfSeen
+                ? `En attente des autres (${revealMeme.seenCount}/${revealMeme.seenTotal} ont vu)...`
+                : 'Le vote arrive quand tous les memes sont passés. Clique "Vu" pour accélérer.'}
+            </div>
           </div>
         ) : (
           <div className="center-note" style={{ marginTop: 40 }}>Préparation...</div>

@@ -38,8 +38,9 @@ export interface RoomSettings {
   voteTimeSec: number;
   maxTemplateChanges: number;
   templateSource: 'library' | 'upload' | 'both';
-  // Which built-in template pack to draw from (see client/src/lib/packs).
-  templatePackId: string;
+  // Which built-in template pack(s) to draw from (see client/src/lib/packs).
+  // Templates from every selected pack are pooled together.
+  templatePackIds: string[];
 }
 
 export interface PublicPlayer {
@@ -85,6 +86,9 @@ export interface DbRoom {
   revealOrder: string[];
   revealIndex: number;
   revealDeadline: number | null;
+  // Which connected players have hit "Vu" on the meme currently on screen.
+  // Reset every time revealIndex moves to the next meme.
+  revealSeenBy: Record<string, boolean>;
   voteDeadline: number | null;
   // favoriteVotes[voterId] = authorId the voter picked as favorite this round.
   favoriteVotes: Record<string, string>;
@@ -139,6 +143,12 @@ export interface RevealMemePayload {
   template: Template;
   meme: { authorId: string; layers: TextLayer[] };
   deadline: number;
+  // How many connected players have hit "Vu" on the currently displayed meme.
+  // Once seenCount reaches seenTotal, the room advances immediately instead
+  // of waiting for the deadline.
+  seenCount: number;
+  seenTotal: number;
+  selfSeen: boolean;
 }
 
 export interface VoteMeme {
@@ -195,7 +205,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   voteTimeSec: 25,
   maxTemplateChanges: 5,
   templateSource: 'both',
-  templatePackId: 'classiques',
+  templatePackIds: ['classiques'],
 };
 
 // Allowed values for the per-round template re-roll limit (host-configurable).

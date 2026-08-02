@@ -127,6 +127,7 @@ export default function TvPage() {
         <div className="timer-bar" style={{ maxWidth: 480 }}>
           <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
         </div>
+        <div className="subtitle">👀 {revealMeme.seenCount} / {revealMeme.seenTotal} ont vu</div>
       </div>
     );
   }

@@ -17,12 +17,13 @@ import {
 } from 'firebase/database';
 import { db } from './firebase';
 import { generateRoomCode } from './codes';
-import { getPackTemplates, TEMPLATE_PACKS } from './packs';
+import { getPackTemplates, TEMPLATE_PACKS, DEFAULT_PACK_ID } from './packs';
 import { DEFAULT_UPLOAD_BOXES } from './templateBoxes';
 import {
   reduceStartGame,
   reduceCaption,
   reduceReveal,
+  reduceMarkSeen,
   reduceTally,
   reduceRoundResults,
   reduceChangeTemplate,
@@ -80,6 +81,7 @@ export async function createRoom(playerId: string, nickname: string, settings: P
       revealOrder: [],
       revealIndex: -1,
       revealDeadline: null,
+      revealSeenBy: {},
       voteDeadline: null,
       favoriteVotes: {},
       lastRoundVotes: {},
@@ -198,11 +200,16 @@ export async function setMaxTemplateChanges(code: string, value: number): Promis
   });
 }
 
-export async function setTemplatePack(code: string, packId: string): Promise<void> {
-  if (!TEMPLATE_PACKS.some((p) => p.id === packId)) return;
+// Host-only, lobby only. Accepts the full new selection (not a single toggle)
+// so the Lobby UI can just send its current checkbox state; an empty or
+// fully-invalid selection falls back to the default pack rather than leaving
+// the room with no templates at all.
+export async function setTemplatePacks(code: string, packIds: string[]): Promise<void> {
+  const valid = (packIds || []).filter((id) => TEMPLATE_PACKS.some((p) => p.id === id));
+  const next = valid.length ? valid : [DEFAULT_PACK_ID];
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room || room.status !== 'lobby') return room;
-    return { ...room, settings: { ...room.settings, templatePackId: packId }, lastActivityAt: Date.now() };
+    return { ...room, settings: { ...room.settings, templatePackIds: next }, lastActivityAt: Date.now() };
   });
 }
 
@@ -262,7 +269,7 @@ export async function startGame(code: string): Promise<void> {
   const customTemplates = await getCustomTemplates(code);
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room) return room;
-    const libraryTemplates = getPackTemplates(room.settings.templatePackId);
+    const libraryTemplates = getPackTemplates(room.settings.templatePackIds);
     return reduceStartGame(room, libraryTemplates, customTemplates, Date.now());
   });
 }
@@ -280,7 +287,7 @@ export async function changeTemplate(code: string, playerId: string): Promise<vo
   const customTemplates = await getCustomTemplates(code);
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room) return room;
-    const libraryTemplates = getPackTemplates(room.settings.templatePackId);
+    const libraryTemplates = getPackTemplates(room.settings.templatePackIds);
     const pool = buildPool(room.settings, libraryTemplates, customTemplates);
     return reduceChangeTemplate(room, playerId, pool, Date.now());
   });
@@ -294,6 +301,13 @@ export async function maybeAdvanceFromCaption(code: string): Promise<void> {
 // memes have been shown one by one.
 export async function advanceReveal(code: string): Promise<void> {
   await runTransaction(roomRef(code), (room: DbRoom | null) => reduceReveal(room, Date.now()));
+}
+
+// A player marks the meme currently on screen as "seen". Once every
+// connected player has, the reducer advances immediately — no need to wait
+// for the cooldown deadline.
+export async function markMemeSeen(code: string, playerId: string): Promise<void> {
+  await runTransaction(roomRef(code), (room: DbRoom | null) => reduceMarkSeen(room, playerId, Date.now()));
 }
 
 // Vote phase: each player picks their single favorite meme of the round
@@ -315,7 +329,7 @@ export async function advanceAfterRoundResults(code: string): Promise<void> {
   const customTemplates = await getCustomTemplates(code);
   await runTransaction(roomRef(code), (room: DbRoom | null) => {
     if (!room) return room;
-    const libraryTemplates = getPackTemplates(room.settings.templatePackId);
+    const libraryTemplates = getPackTemplates(room.settings.templatePackIds);
     return reduceRoundResults(room, libraryTemplates, customTemplates, Date.now());
   });
 }

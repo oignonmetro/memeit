@@ -41,7 +41,7 @@ const EMPTY_VIEW: DerivedView = {
   chatOrder: [],
 };
 
-function buildTemplates(packId: string, dbTemplates: DbTemplates | null): Template[] {
+function buildTemplates(packIds: string[], dbTemplates: DbTemplates | null): Template[] {
   const uploads: Template[] = Object.entries(dbTemplates || {}).map(([id, t]) => ({
     id,
     url: t.url,
@@ -49,7 +49,7 @@ function buildTemplates(packId: string, dbTemplates: DbTemplates | null): Templa
     source: 'upload',
     boxes: DEFAULT_UPLOAD_BOXES,
   }));
-  return [...getPackTemplates(packId), ...uploads];
+  return [...getPackTemplates(packIds), ...uploads];
 }
 
 function buildPlayers(dbRoom: DbRoom): PublicPlayer[] {
@@ -73,7 +73,7 @@ export function deriveView(
 ): DerivedView {
   if (!dbRoom) return EMPTY_VIEW;
 
-  const templates = buildTemplates(dbRoom.settings.templatePackId, dbTemplates);
+  const templates = buildTemplates(dbRoom.settings.templatePackIds, dbTemplates);
   const players = buildPlayers(dbRoom);
   const connectedCount = players.filter((p) => p.connected).length;
   const room: RoomSnapshot = {
@@ -112,12 +112,17 @@ export function deriveView(
     const submission = authorId ? dbRoom.submissions?.[authorId] : undefined;
     const template = authorId ? templateFor(authorId) : null;
     if (authorId && submission && template) {
+      const seenBy = dbRoom.revealSeenBy || {};
+      const connectedIds = players.filter((p) => p.connected).map((p) => p.id);
       revealMeme = {
         index: dbRoom.revealIndex,
         total: (dbRoom.revealOrder || []).length,
         template,
         meme: { authorId, layers: submission.layers || [] },
         deadline: dbRoom.revealDeadline || Date.now(),
+        seenCount: connectedIds.filter((id) => seenBy[id]).length,
+        seenTotal: connectedIds.length,
+        selfSeen: Boolean(seenBy[selfId]),
       };
     }
   }

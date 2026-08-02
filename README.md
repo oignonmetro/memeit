@@ -137,7 +137,8 @@ disponibles instantanément.
    local pour les prochaines parties), bouton "Créer une partie", ou champ code + bouton
    "Rejoindre" — sans étape intermédiaire. Les joueurs rejoignent depuis leur téléphone avec le
    code à 4 lettres (ou en scannant le QR code affiché sur la TV). Tous les réglages de partie — mode de jeu, **nombre de manches**,
-   temps de légende, nombre de changements de template, **pack de templates** — se règlent depuis
+   temps de légende, nombre de changements de template, **packs de templates** (plusieurs à la fois
+   possibles, cumulés dans le même pool) — se règlent depuis
    le lobby par l'hôte, une fois la salle créée, et restent modifiables jusqu'au lancement. L'hôte
    peut aussi exclure un joueur de la salle (petit bouton rouge à côté de son pseudo, uniquement
    avant le lancement) — le joueur exclu peut toujours rejoindre à nouveau avec le code.
@@ -150,7 +151,10 @@ disponibles instantanément.
    (y compris sur la TV si connectée), sans révéler leur auteur. Un bouton permet de télécharger
    en PNG le meme affiché à cet instant (uniquement pendant cette phase) : l'image est
    reconstruite dans un canvas à la résolution native du template, pas capturée à la taille de
-   l'écran.
+   l'écran. Un second bouton "👀 Vu" laisse chaque joueur signaler qu'il a fini de regarder le
+   meme affiché ; dès que tous les joueurs connectés ont cliqué, la salle passe au meme suivant
+   immédiatement, sans attendre la fin du minuteur (utile pour ne pas subir le cooldown complet
+   quand tout le monde a déjà vu).
 4. **Manche — Vote** — une fois tous les memes vus, chaque joueur choisit son meme préféré de la
    manche (un seul vote, impossible de voter pour le sien).
 5. **Score** — chaque meme rapporte à son auteur autant de points que de votes reçus, cumulés
@@ -209,7 +213,9 @@ compte pas comme une action de jeu (ça ne perturbe pas les minuteurs de manche)
 ## Packs de templates intégrés
 
 Les templates de base ne sont plus récupérés en direct depuis l'API Imgflip à chaque partie :
-ils sont regroupés en **packs statiques**, choisis par l'hôte dans le lobby (`client/src/lib/packs/`) :
+ils sont regroupés en **packs statiques**, sélectionnables (plusieurs à la fois) par l'hôte dans le
+lobby (`client/src/lib/packs/`) — les templates de tous les packs cochés sont réunis dans le même
+pool, sans doublon :
 
 - **Classiques** (`classiques.ts`) — les ~100 templates les plus utilisés sur Imgflip au moment
   de la capture (nom, image, nombre de zones), figés dans le code. Le placement des zones de

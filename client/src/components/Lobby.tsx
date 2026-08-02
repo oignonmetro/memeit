@@ -14,7 +14,7 @@ interface LobbyProps {
   onSetRounds: (rounds: number) => Promise<void>;
   onSetMode: (mode: GameMode) => Promise<void>;
   onSetMaxTemplateChanges: (value: number) => Promise<void>;
-  onSetTemplatePack: (packId: string) => Promise<void>;
+  onSetTemplatePacks: (packIds: string[]) => Promise<void>;
   onKick: (playerId: string) => Promise<void>;
 }
 
@@ -25,7 +25,7 @@ function formatTime(sec: number): string {
   return s ? `${m}min${s}` : `${m}min`;
 }
 
-export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges, onSetTemplatePack, onKick }: LobbyProps) {
+export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime, onSetRounds, onSetMode, onSetMaxTemplateChanges, onSetTemplatePacks, onKick }: LobbyProps) {
   const [starting, setStarting] = useState(false);
   const [addingPack, setAddingPack] = useState(false);
   const [packAdded, setPackAdded] = useState(false);
@@ -35,7 +35,15 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
   const connectedCount = room.players.filter((p) => p.connected).length;
   const modeLocked = connectedCount <= 2;
   const currentMode = GAME_MODES.find((m) => m.id === room.effectiveMode) ?? GAME_MODES[0];
-  const currentPack = TEMPLATE_PACKS.find((p) => p.id === room.settings.templatePackId) ?? TEMPLATE_PACKS[0];
+  const selectedPackIds = room.settings.templatePackIds?.length ? room.settings.templatePackIds : [TEMPLATE_PACKS[0].id];
+  const currentPacks = TEMPLATE_PACKS.filter((p) => selectedPackIds.includes(p.id));
+
+  async function handleTogglePack(packId: string) {
+    const isSelected = selectedPackIds.includes(packId);
+    if (isSelected && selectedPackIds.length <= 1) return; // au moins un pack doit rester sélectionné
+    const next = isSelected ? selectedPackIds.filter((id) => id !== packId) : [...selectedPackIds, packId];
+    await onSetTemplatePacks(next);
+  }
 
   useEffect(() => {
     if (!self.isHost) return;
@@ -186,24 +194,38 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
       </div>
 
       <div className="card">
-        <div className="subtitle" style={{ margin: '0 0 10px' }}>Pack de templates</div>
+        <div className="subtitle" style={{ margin: '0 0 10px' }}>
+          Packs de templates {self.isHost && '(plusieurs possibles)'}
+        </div>
         {self.isHost ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {TEMPLATE_PACKS.map((p) => (
-              <button
-                key={p.id}
-                className={`mode-option ${room.settings.templatePackId === p.id ? 'selected' : ''}`}
-                onClick={() => onSetTemplatePack(p.id)}
-              >
-                <span className="mode-option__label">{p.name}</span>
-                <span className="mode-option__desc">{p.description}</span>
-              </button>
-            ))}
+            {TEMPLATE_PACKS.map((p) => {
+              const selected = selectedPackIds.includes(p.id);
+              const lockedOn = selected && selectedPackIds.length <= 1;
+              return (
+                <button
+                  key={p.id}
+                  className={`mode-option ${selected ? 'selected' : ''}`}
+                  onClick={() => handleTogglePack(p.id)}
+                  disabled={lockedOn}
+                  aria-pressed={selected}
+                  style={lockedOn ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                  title={lockedOn ? 'Au moins un pack doit rester sélectionné' : undefined}
+                >
+                  <span className="mode-option__label">{selected ? '✅ ' : ''}{p.name}</span>
+                  <span className="mode-option__desc">{p.description}</span>
+                </button>
+              );
+            })}
           </div>
         ) : (
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontWeight: 800 }}>{currentPack.name}</div>
-            <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{currentPack.description}</div>
+          <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {currentPacks.map((p) => (
+              <div key={p.id}>
+                <div style={{ fontWeight: 800 }}>{p.name}</div>
+                <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{p.description}</div>
+              </div>
+            ))}
           </div>
         )}
       </div>

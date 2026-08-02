@@ -151,20 +151,28 @@ export function reduceCaption(room: DbRoom | null, now: number): DbRoom | null {
     revealOrder,
     revealIndex: 0,
     revealDeadline: now + room.settings.revealTimeSec * 1000,
+    revealSeenBy: {},
     voteDeadline: null,
     favoriteVotes: {},
     lastActivityAt: now,
   };
 }
 
+// Advances the reveal once either the cooldown deadline has passed, or every
+// connected player has hit "Vu" on the meme currently shown — whichever
+// comes first, so a fast-reading group isn't stuck waiting out the timer.
 export function reduceReveal(room: DbRoom | null, now: number): DbRoom | null {
   if (!room || room.status !== 'reveal') return room;
+  const connectedIds = Object.entries(room.players || {})
+    .filter(([, p]) => p.connected)
+    .map(([id]) => id);
   const deadlinePassed = room.revealDeadline != null && now >= room.revealDeadline;
-  if (!deadlinePassed) return room;
+  const allSeen = connectedIds.length > 0 && connectedIds.every((id) => room.revealSeenBy?.[id]);
+  if (!deadlinePassed && !allSeen) return room;
   const nextIndex = room.revealIndex + 1;
   if (nextIndex >= (room.revealOrder || []).length) {
     // Détendu mode has no vote and no scoring — go straight to the round wrap-up.
-    const connectedCount = Object.values(room.players || {}).filter((p) => p.connected).length;
+    const connectedCount = connectedIds.length;
     if (effectiveMode(room.settings, connectedCount) === 'detendu') {
       return { ...room, status: 'round_results', lastRoundVotes: {}, roundWinnerId: null, lastActivityAt: now };
     }
@@ -176,7 +184,23 @@ export function reduceReveal(room: DbRoom | null, now: number): DbRoom | null {
       lastActivityAt: now,
     };
   }
-  return { ...room, revealIndex: nextIndex, revealDeadline: now + room.settings.revealTimeSec * 1000, lastActivityAt: now };
+  return {
+    ...room,
+    revealIndex: nextIndex,
+    revealDeadline: now + room.settings.revealTimeSec * 1000,
+    revealSeenBy: {},
+    lastActivityAt: now,
+  };
+}
+
+// A player marks the currently displayed meme as "seen". Immediately
+// re-checks the advance condition so the round skips ahead the moment the
+// last connected player clicks, instead of waiting for the next tick.
+export function reduceMarkSeen(room: DbRoom | null, playerId: string, now: number): DbRoom | null {
+  if (!room || room.status !== 'reveal') return room;
+  if (room.revealSeenBy?.[playerId]) return room;
+  const marked = { ...room, revealSeenBy: { ...(room.revealSeenBy || {}), [playerId]: true }, lastActivityAt: now };
+  return reduceReveal(marked, now);
 }
 
 export function reduceTally(room: DbRoom | null, now: number): DbRoom | null {
@@ -260,6 +284,7 @@ export function reduceRestartGame(room: DbRoom | null, now: number): DbRoom | nu
     revealOrder: [],
     revealIndex: -1,
     revealDeadline: null,
+    revealSeenBy: {},
     voteDeadline: null,
     favoriteVotes: {},
     lastRoundVotes: {},

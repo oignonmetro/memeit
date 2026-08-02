@@ -5,6 +5,7 @@ import {
   reduceStartGame,
   reduceCaption,
   reduceReveal,
+  reduceMarkSeen,
   reduceTally,
   reduceRoundResults,
   reduceChangeTemplate,
@@ -37,7 +38,7 @@ function makeRoom(mode: GameMode): DbRoom {
     createdAt: 0,
     lastActivityAt: 0,
     hostId: 'p1',
-    settings: { mode, rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' },
+    settings: { mode, rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackIds: ['classiques'] },
     status: 'lobby',
     players,
     currentRound: 0,
@@ -50,6 +51,7 @@ function makeRoom(mode: GameMode): DbRoom {
     revealOrder: [],
     revealIndex: -1,
     revealDeadline: null,
+    revealSeenBy: {},
     voteDeadline: null,
     favoriteVotes: {},
     lastRoundVotes: {},
@@ -224,9 +226,9 @@ try {
 }
 console.log('--- 2 joueurs : mode forcé en détendu ---');
 try {
-  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' }, 2), 'detendu', 'normal + 2 joueurs -> détendu');
-  assert.equal(effectiveMode({ mode: 'meme', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' }, 2), 'detendu', 'meme + 2 joueurs -> détendu');
-  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackId: 'classiques' }, 3), 'normal', 'normal + 3 joueurs -> inchangé');
+  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackIds: ['classiques'] }, 2), 'detendu', 'normal + 2 joueurs -> détendu');
+  assert.equal(effectiveMode({ mode: 'meme', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackIds: ['classiques'] }, 2), 'detendu', 'meme + 2 joueurs -> détendu');
+  assert.equal(effectiveMode({ mode: 'normal', rounds: 2, captionTimeSec: 90, revealTimeSec: 5, voteTimeSec: 30, maxTemplateChanges: MAX, templateSource: 'library', templatePackIds: ['classiques'] }, 3), 'normal', 'normal + 3 joueurs -> inchangé');
 
   for (const storedMode of ['normal', 'meme'] as GameMode[]) {
     let room = makeRoom(storedMode);
@@ -262,7 +264,7 @@ try {
 
   const seenIds = new Set<string>();
   for (const pack of TEMPLATE_PACKS) {
-    const templates = getPackTemplates(pack.id);
+    const templates = getPackTemplates([pack.id]);
     assert.ok(templates.length > 0, `[${pack.id}] pack non vide`);
     for (const t of templates) {
       assert.ok(!seenIds.has(t.id), `[${pack.id}] id de template unique (${t.id})`);
@@ -276,12 +278,66 @@ try {
       }
     }
   }
-  assert.equal(getPackTemplates('inconnu'), getPackTemplates('classiques'), 'pack inconnu -> repli sur "classiques"');
+  const classiquesIds = getPackTemplates(['classiques']).map((t: any) => t.id);
+  assert.deepEqual(getPackTemplates(['inconnu']).map((t: any) => t.id), classiquesIds, 'pack inconnu -> repli sur "classiques"');
+  assert.deepEqual(getPackTemplates([]).map((t: any) => t.id), classiquesIds, 'sélection vide -> repli sur "classiques"');
 
-  console.log(`PASS  packs      → ${TEMPLATE_PACKS.map((p: any) => `${p.name} (${getPackTemplates(p.id).length})`).join(', ')}, ids uniques (${seenIds.size} templates)`);
+  // Plusieurs packs sélectionnés à la fois : le pool est la réunion des deux,
+  // sans doublon, quel que soit l'ordre des ids.
+  const allIds = TEMPLATE_PACKS.map((p: any) => p.id);
+  const combined = getPackTemplates(allIds);
+  const expectedTotal = TEMPLATE_PACKS.reduce((sum: number, p: any) => sum + getPackTemplates([p.id]).length, 0);
+  assert.equal(combined.length, expectedTotal, 'plusieurs packs sélectionnés -> réunion complète, sans doublon');
+  assert.equal(new Set(combined.map((t: any) => t.id)).size, combined.length, 'aucun id dupliqué dans la réunion');
+  assert.deepEqual(
+    getPackTemplates([...allIds].reverse()).map((t: any) => t.id).sort(),
+    combined.map((t: any) => t.id).sort(),
+    'même contenu quel que soit l\'ordre des packs sélectionnés'
+  );
+
+  console.log(`PASS  packs      → ${TEMPLATE_PACKS.map((p: any) => `${p.name} (${getPackTemplates([p.id]).length})`).join(', ')}, réunion (${combined.length} templates)`);
 } catch (e) {
   ok = false;
   console.error('FAIL  packs:', (e as Error).message);
+}
+console.log('--- bouton "vu" pendant le reveal ---');
+try {
+  // 3 joueurs connectés : tant que tout le monde n'a pas cliqué "vu", le
+  // deadline (non atteint ici) reste seul déclencheur.
+  let room = makeRoom('normal');
+  room = reduceStartGame(room, LIB, [], tick())!;
+  for (const id of ['p1', 'p2', 'p3']) room.submissions[id] = { layers: [{ text: `meme ${id}`, xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }] };
+  room = reduceCaption(room, tick())!;
+  assert.equal(room.status, 'reveal', 'caption -> reveal');
+  const startIndex = room.revealIndex;
+  const farFromDeadline = room.revealDeadline! - 1000; // avant l'échéance
+
+  room = reduceMarkSeen(room, 'p1', farFromDeadline)!;
+  assert.equal(room.revealIndex, startIndex, 'un seul "vu" sur 3 ne fait pas avancer');
+  assert.deepEqual(room.revealSeenBy, { p1: true }, 'le clic de p1 est enregistré');
+
+  room = reduceMarkSeen(room, 'p1', farFromDeadline)!; // double-clic, ignoré
+  assert.deepEqual(room.revealSeenBy, { p1: true }, 'un second clic du même joueur ne change rien');
+
+  room = reduceMarkSeen(room, 'p2', farFromDeadline)!;
+  assert.equal(room.revealIndex, startIndex, 'deux "vu" sur 3 ne font pas encore avancer');
+
+  room = reduceMarkSeen(room, 'p3', farFromDeadline)!;
+  assert.equal(room.revealIndex, startIndex + 1, 'le 3e et dernier "vu" fait avancer immédiatement, avant le deadline');
+  assert.deepEqual(room.revealSeenBy, {}, 'le suivi "vu" est réinitialisé pour le meme suivant');
+
+  // Un joueur déconnecté ne compte pas dans le total requis.
+  room.players.p3.connected = false;
+  room = reduceMarkSeen(room, 'p1', farFromDeadline)!;
+  const afterP1 = room.revealIndex;
+  assert.equal(afterP1, startIndex + 1, 'p1 seul ne suffit pas encore (p2 connecté doit aussi cliquer)');
+  room = reduceMarkSeen(room, 'p2', farFromDeadline)!;
+  assert.equal(room.revealIndex, afterP1 + 1, 'avec p3 déconnecté, seuls p1+p2 suffisent à avancer');
+
+  console.log('PASS  vu         → tous les joueurs connectés cliquent "vu" -> avance avant le deadline, déconnectés exclus du total');
+} catch (e) {
+  ok = false;
+  console.error('FAIL  vu:', (e as Error).message);
 }
 console.log(ok ? '\nRESULT: PASS — les 3 modes bouclent une partie complète.' : '\nRESULT: FAIL');
 process.exit(ok ? 0 : 1);
