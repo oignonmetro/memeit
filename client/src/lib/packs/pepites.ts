@@ -214,7 +214,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://imgflip.com/s/meme/Hard-To-Swallow-Pills.jpg',
     name: 'Hard To Swallow Pills',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 9, widthPct: 84, heightPct: 14 }],
+    boxes: [{ xPct: 50, yPct: 56, widthPct: 80, heightPct: 10 }],
   },
   {
     id: 'pepites-third-world-skeptical-kid',
