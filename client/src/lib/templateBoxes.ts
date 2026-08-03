@@ -40,7 +40,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '91998305': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // Drake Blank
   '93895088': [{ xPct: 27, yPct: 12, widthPct: 46, heightPct: 18 }, { xPct: 27, yPct: 37, widthPct: 46, heightPct: 18 }, { xPct: 27, yPct: 62, widthPct: 46, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 46, heightPct: 18 }], // Expanding Brain
   '99683372': [{ xPct: 25, yPct: 25, widthPct: 46, heightPct: 40 }, { xPct: 25, yPct: 75, widthPct: 46, heightPct: 40 }], // Sleeping Shaq / I sleep real shit (blank left column, one caption per face)
-  '100777631': [{ xPct: 24, yPct: 42, widthPct: 34, heightPct: 20 }, { xPct: 72, yPct: 20, widthPct: 30, heightPct: 16 }, { xPct: 50, yPct: 90, widthPct: 80, heightPct: 12 }], // Is This A Pigeon
+  '100777631': [{ xPct: 24, yPct: 42, widthPct: 34, heightPct: 20 }, { xPct: 72, yPct: 20, widthPct: 30, heightPct: 16 }], // Is This A Pigeon (2 zones seulement, la 3e était redondante)
   '104893621': [{ xPct: 20, yPct: 20, widthPct: 26, heightPct: 18 }, { xPct: 45, yPct: 20, widthPct: 24, heightPct: 18 }, { xPct: 70, yPct: 20, widthPct: 24, heightPct: 18 }], // Grim Reaper Knocking Door
   '110133729': [{ xPct: 26, yPct: 22, widthPct: 40, heightPct: 24 }, { xPct: 74, yPct: 22, widthPct: 40, heightPct: 24 }], // spiderman pointing at spiderman
   '112126428': [{ xPct: 30, yPct: 72, widthPct: 26, heightPct: 20 }, { xPct: 58, yPct: 50, widthPct: 26, heightPct: 20 }, { xPct: 86, yPct: 58, widthPct: 24, heightPct: 20 }], // Distracted Boyfriend
@@ -54,7 +54,6 @@ const CURATED: Record<string, TemplateBox[]> = {
   '135256802': [{ xPct: 22, yPct: 42, widthPct: 34, heightPct: 22 }, { xPct: 78, yPct: 42, widthPct: 34, heightPct: 22 }, { xPct: 50, yPct: 82, widthPct: 50, heightPct: 18 }], // Epic Handshake
   '135678846': [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 86, widthPct: 84, heightPct: 10 }, { xPct: 50, yPct: 95, widthPct: 84, heightPct: 8 }], // Who Killed Hannibal
   '137501417': [{ xPct: 81, yPct: 7, widthPct: 40, heightPct: 12 }, { xPct: 49, yPct: 32, widthPct: 20, heightPct: 13 }], // Friendship ended (text over the baked "MUDASIR" / "SALMAN" names)
-  '142009471': [{ xPct: 24, yPct: 42, widthPct: 34, heightPct: 20 }, { xPct: 72, yPct: 20, widthPct: 30, heightPct: 16 }], // is this butterfly (2 zones seulement, la 3e était redondante)
   '145139900': [{ xPct: 28, yPct: 22, widthPct: 42, heightPct: 18 }, { xPct: 72, yPct: 22, widthPct: 42, heightPct: 18 }, { xPct: 28, yPct: 72, widthPct: 42, heightPct: 18 }, { xPct: 72, yPct: 72, widthPct: 42, heightPct: 18 }], // Scooby doo mask reveal
   '161865971': [{ xPct: 50, yPct: 13, widthPct: 84, heightPct: 12 }, { xPct: 50, yPct: 68, widthPct: 66, heightPct: 9 }], // Marked Safe From
   '162372564': [{ xPct: 22, yPct: 42, widthPct: 34, heightPct: 26 }, { xPct: 72, yPct: 40, widthPct: 44, heightPct: 30 }], // Domino Effect

@@ -281,13 +281,24 @@ try {
   assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'classiques'), 'le pack "classiques" existe');
   assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'pepites'), 'le pack "pepites" existe');
 
+  // Un même meme présent deux fois (même sous deux ids/noms différents) peut
+  // sortir deux fois dans la même partie : on vérifie l'unicité de l'id, mais
+  // aussi de l'URL et du nom normalisé, tous packs confondus.
   const seenIds = new Set<string>();
+  const seenUrls = new Map<string, string>();
+  const seenNames = new Map<string, string>();
+  const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   for (const pack of TEMPLATE_PACKS) {
     const templates = getPackTemplates([pack.id]);
     assert.ok(templates.length > 0, `[${pack.id}] pack non vide`);
     for (const t of templates) {
       assert.ok(!seenIds.has(t.id), `[${pack.id}] id de template unique (${t.id})`);
       seenIds.add(t.id);
+      assert.ok(!seenUrls.has(t.url), `[${pack.id}] "${t.name}" réutilise l'URL de "${seenUrls.get(t.url)}"`);
+      seenUrls.set(t.url, t.name);
+      const nn = normName(t.name);
+      assert.ok(!seenNames.has(nn), `[${pack.id}] "${t.name}" a le même nom que "${seenNames.get(nn)}"`);
+      seenNames.set(nn, t.name);
       assert.ok(t.url.startsWith('http'), `[${pack.id}] "${t.name}" a une URL valide`);
       assert.ok(t.boxes.length > 0, `[${pack.id}] "${t.name}" a au moins une zone de texte`);
       for (const b of t.boxes) {
