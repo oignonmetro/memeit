@@ -330,6 +330,65 @@ try {
   ok = false;
   console.error('FAIL  packs:', (e as Error).message);
 }
+console.log('--- empreintes visuelles (anti-doublon à l\'import) ---');
+try {
+  const { TEMPLATE_PACKS, getPackTemplates } = await import('./packs/index.ts');
+  const { TEMPLATE_FINGERPRINTS, dhashDistance, DHASH_DUPLICATE_MAX_DISTANCE } = await import('./packs/fingerprints.ts');
+
+  const all = TEMPLATE_PACKS.flatMap((pack: any) =>
+    getPackTemplates([pack.id]).map((t: any) => ({ packId: pack.id, t }))
+  );
+
+  // Toute entrée ajoutée à un pack doit avoir son empreinte : sans ça, un
+  // nouveau template échapperait silencieusement au contrôle de doublon.
+  for (const { packId, t } of all) {
+    assert.ok(
+      TEMPLATE_FINGERPRINTS[t.id],
+      `[${packId}] "${t.name}" n'a pas d'empreinte — lance: npm run templates:fingerprint --workspace client`
+    );
+  }
+  assert.equal(
+    Object.keys(TEMPLATE_FINGERPRINTS).length,
+    all.length,
+    'empreintes orphelines — lance: npm run templates:fingerprint --workspace client'
+  );
+
+  // Le vrai contrôle : deux entrées ne doivent pas désigner la même image,
+  // même sous des id / URL / noms différents (le cas "Is This A Pigeon" vs
+  // "is this butterfly", que la comparaison de métadonnées laissait passer).
+  let closest = Infinity;
+  let closestPair = '';
+  for (let i = 0; i < all.length; i += 1) {
+    for (let j = i + 1; j < all.length; j += 1) {
+      const a = all[i];
+      const b = all[j];
+      const fa = TEMPLATE_FINGERPRINTS[a.t.id];
+      const fb = TEMPLATE_FINGERPRINTS[b.t.id];
+      assert.notEqual(
+        fa.sha256,
+        fb.sha256,
+        `[${a.packId}] "${a.t.name}" et [${b.packId}] "${b.t.name}" sont le MÊME fichier image`
+      );
+      const d = dhashDistance(fa.dhash, fb.dhash);
+      assert.ok(
+        d > DHASH_DUPLICATE_MAX_DISTANCE,
+        `[${a.packId}] "${a.t.name}" et [${b.packId}] "${b.t.name}" sont le même visuel (dhash ${d} <= ${DHASH_DUPLICATE_MAX_DISTANCE})`
+      );
+      if (d < closest) {
+        closest = d;
+        closestPair = `"${a.t.name}" / "${b.t.name}"`;
+      }
+    }
+  }
+
+  console.log(
+    `PASS  empreintes → ${all.length} images distinctes, seuil ${DHASH_DUPLICATE_MAX_DISTANCE}, ` +
+    `paire la plus proche à ${closest} (${closestPair})`
+  );
+} catch (e) {
+  ok = false;
+  console.error('FAIL  empreintes:', (e as Error).message);
+}
 console.log('--- bouton "vu" pendant le reveal ---');
 try {
   // 3 joueurs connectés : tant que tout le monde n'a pas cliqué "vu", le

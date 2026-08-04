@@ -233,6 +233,48 @@ appel réseau ni cache à gérer pour charger les templates de base — l'app fo
 ligne pour cette partie-là. Ajouter un pack revient à créer un nouveau fichier dans
 `client/src/lib/packs/` et à l'enregistrer dans `packs/index.ts`.
 
+### Anti-doublon à l'import de nouveaux templates
+
+Un même meme peut exister sur Imgflip sous **plusieurs ids, URLs et noms différents** : c'est
+arrivé, `Is This A Pigeon` et `is this butterfly` pointaient vers le même fichier image et
+pouvaient donc sortir deux fois dans la même partie. Comparer les métadonnées ne suffit pas —
+on compare **l'image elle-même**, via deux empreintes calculées une fois pour toutes :
+
+- **`sha256`** des octets du fichier — détecte les fichiers strictement identiques, sans seuil
+  ni ambiguïté.
+- **`dhash`** perceptuel 16×16 (256 bits) — détecte le même visuel ré-encodé ou redimensionné.
+  Mesuré sur les packs actuels : deux ré-encodages d'une même image restent à une distance de
+  0 à 2 (même redimensionnée à 25 % en JPEG qualité 40), alors que les deux memes *distincts*
+  les plus proches sont à 30. Le seuil est fixé à **16**, à mi-chemin.
+
+Ces empreintes sont figées dans `packs/fingerprints.generated.ts` (fichier généré) et
+comparées par `packs/fingerprints.ts`. Rien dans le code de l'appli ne les importe : elles ne
+partent pas dans le bundle.
+
+Deux garde-fous, l'un actif et l'autre passif :
+
+```bash
+# 1) Filtrer des candidats AVANT de les ajouter à un pack.
+#    candidats.json : [{ "name": "...", "url": "https://..." }, ...]
+npm run templates:import --workspace client -- candidats.json
+```
+
+Le script télécharge chaque candidat et écarte ceux qui réutilisent une URL, un nom, ou —
+surtout — une image déjà présente dans un pack, en indiquant à chaque fois de quel template
+existant il s'agit. Il déduplique aussi *à l'intérieur* du lot. Pour les candidats retenus, il
+imprime des entrées prêtes à coller (les zones de texte restent bien sûr à caler en vérifiant
+le rendu réel).
+
+```bash
+# 2) Après avoir ajouté des templates à un pack, régénérer les empreintes.
+npm run templates:fingerprint --workspace client
+```
+
+Cette commande recalcule toutes les empreintes et **échoue** si deux entrées des packs
+désignent la même image. Enfin, `npm test` relit les empreintes figées et refuse aussi bien un
+doublon d'image qu'un template ajouté sans avoir régénéré le fichier — le contrôle reste donc
+hors-ligne et instantané au moment des tests, seul l'import a besoin du réseau.
+
 ## Templates persos
 
 Chaque joueur peut se constituer un pack de templates persos depuis la page d'accueil ("🖼️ Mes
