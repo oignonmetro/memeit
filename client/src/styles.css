@@ -365,6 +365,7 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
 .setting-options {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -376,12 +377,18 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
   padding: 8px 14px;
   font-weight: 700;
   cursor: pointer;
+  text-align: center;
 }
 
 .setting-chip.selected {
   background: var(--accent);
   color: #23150a;
   border-color: var(--accent);
+}
+
+.setting-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ---------- Tick slider (numeric axis: tap a stop, no dragging/in-between) ---------- */
@@ -452,28 +459,7 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
   font-weight: 800;
 }
 
-.mode-option {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  text-align: left;
-  width: 100%;
-  border: 2px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
-  border-radius: 12px;
-  padding: 12px 14px;
-  cursor: pointer;
-}
-
-.mode-option.selected {
-  border-color: var(--accent);
-  background: rgba(255,209,102,0.12);
-}
-
-.mode-option__label { font-weight: 800; }
-.mode-option__desc { font-size: 0.85rem; color: var(--text-dim); }
+.chip-desc-highlight { color: var(--text); font-weight: 800; }
 
 @media (min-width: 900px) {
   .title { font-size: 2.6rem; }

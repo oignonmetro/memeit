@@ -117,30 +117,35 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
       <div className="card">
         <div className="subtitle" style={{ margin: '0 0 10px' }}>Mode de jeu</div>
         {modeLocked ? (
-          <div style={{ textAlign: 'left' }}>
+          <div>
             <div style={{ fontWeight: 800 }}>{currentMode.label}</div>
-            <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>
+            <div className="center-note" style={{ margin: '4px 0 0' }}>
               Mode imposé à 2 joueurs : pas de système de points possible (chacun ne peut voter
               que pour l'autre). Rejoins avec un 3ᵉ joueur pour débloquer les autres modes.
             </div>
           </div>
         ) : self.isHost ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {GAME_MODES.map((m) => (
-              <button
-                key={m.id}
-                className={`mode-option ${room.settings.mode === m.id ? 'selected' : ''}`}
-                onClick={() => onSetMode(m.id)}
-              >
-                <span className="mode-option__label">{m.label}</span>
-                <span className="mode-option__desc">{m.description}</span>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="setting-options">
+              {GAME_MODES.map((m) => (
+                <button
+                  key={m.id}
+                  className={`setting-chip ${room.settings.mode === m.id ? 'selected' : ''}`}
+                  aria-pressed={room.settings.mode === m.id}
+                  onClick={() => onSetMode(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <div className="center-note" style={{ margin: '10px 0 0' }}>
+              <strong className="chip-desc-highlight">{currentMode.label}</strong> — {currentMode.description}
+            </div>
+          </>
         ) : (
-          <div style={{ textAlign: 'left' }}>
+          <div>
             <div style={{ fontWeight: 800 }}>{currentMode.label}</div>
-            <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{currentMode.description}</div>
+            <div className="center-note" style={{ margin: '4px 0 0' }}>{currentMode.description}</div>
           </div>
         )}
       </div>
@@ -150,7 +155,7 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
           <div className="subtitle" style={{ margin: '0 0 14px' }}>Réglages de partie</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
-              <div className="field-label" style={{ marginBottom: 8 }}>
+              <div className="field-label" style={{ marginBottom: 8, textAlign: 'center' }}>
                 Nombre de manches : {room.settings.rounds}
               </div>
               <TickSlider
@@ -161,7 +166,7 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
               />
             </div>
             <div>
-              <div className="field-label" style={{ marginBottom: 8 }}>
+              <div className="field-label" style={{ marginBottom: 8, textAlign: 'center' }}>
                 Temps pour créer son meme : {formatTime(room.settings.captionTimeSec)}
               </div>
               <TickSlider
@@ -173,7 +178,7 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
             </div>
             {room.settings.mode !== 'meme' && (
               <div>
-                <div className="field-label" style={{ marginBottom: 8 }}>
+                <div className="field-label" style={{ marginBottom: 8, textAlign: 'center' }}>
                   Changements de template par manche : {room.settings.maxTemplateChanges}
                 </div>
                 <TickSlider
@@ -222,25 +227,30 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
           <div className="subtitle" style={{ margin: '0 0 10px' }}>
             Packs de templates (plusieurs possibles)
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="setting-options">
             {TEMPLATE_PACKS.map((p) => {
               const selected = selectedPackIds.includes(p.id);
               const lockedOn = selected && selectedPackIds.length <= 1;
               return (
                 <button
                   key={p.id}
-                  className={`mode-option ${selected ? 'selected' : ''}`}
+                  className={`setting-chip ${selected ? 'selected' : ''}`}
                   onClick={() => handleTogglePack(p.id)}
                   disabled={lockedOn}
                   aria-pressed={selected}
-                  style={lockedOn ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                   title={lockedOn ? 'Au moins un pack doit rester sélectionné' : undefined}
                 >
-                  <span className="mode-option__label">{selected ? '✅ ' : ''}{p.name}</span>
-                  <span className="mode-option__desc">{p.description}</span>
+                  {selected ? '✅ ' : ''}{p.name}
                 </button>
               );
             })}
+          </div>
+          <div className="center-note" style={{ margin: '10px 0 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {currentPacks.map((p) => (
+              <div key={p.id}>
+                <strong className="chip-desc-highlight">{p.name}</strong> — {p.description}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -251,7 +261,7 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
             Templates ({room.templates.length}, dont {customCount} perso)
           </div>
           {packCount === 0 ? (
-            <div className="center-note" style={{ textAlign: 'left' }}>
+            <div className="center-note">
               Aucun template perso enregistré sur cet appareil (gérable depuis l'accueil).
             </div>
           ) : (
