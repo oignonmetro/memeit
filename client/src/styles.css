@@ -246,6 +246,14 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }
 
+.settings-recap-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.settings-recap-row > span:last-child { font-weight: 700; text-align: right; }
+
 .error-toast {
   position: fixed;
   bottom: 16px;

@@ -145,61 +145,83 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
         )}
       </div>
 
-      <div className="card">
-        <div className="subtitle" style={{ margin: '0 0 10px' }}>
-          Nombre de manches : {room.settings.rounds}
-        </div>
-        {self.isHost ? (
-          <TickSlider
-            options={ROUNDS_OPTIONS}
-            value={room.settings.rounds}
-            onChange={onSetRounds}
-            formatLabel={(n) => String(n)}
-          />
-        ) : (
-          <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
-        )}
-      </div>
-
-      <div className="card">
-        <div className="subtitle" style={{ margin: '0 0 10px' }}>
-          Temps pour créer son meme : {formatTime(room.settings.captionTimeSec)}
-        </div>
-        {self.isHost ? (
-          <TickSlider
-            options={CAPTION_TIME_OPTIONS}
-            value={room.settings.captionTimeSec}
-            onChange={onSetCaptionTime}
-            formatLabel={formatTime}
-          />
-        ) : (
-          <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
-        )}
-      </div>
-
-      {room.settings.mode !== 'meme' && (
+      {self.isHost ? (
         <div className="card">
-          <div className="subtitle" style={{ margin: '0 0 10px' }}>
-            Changements de template par manche : {room.settings.maxTemplateChanges}
+          <div className="subtitle" style={{ margin: '0 0 14px' }}>Réglages de partie</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div>
+              <div className="field-label" style={{ marginBottom: 8 }}>
+                Nombre de manches : {room.settings.rounds}
+              </div>
+              <TickSlider
+                options={ROUNDS_OPTIONS}
+                value={room.settings.rounds}
+                onChange={onSetRounds}
+                formatLabel={(n) => String(n)}
+              />
+            </div>
+            <div>
+              <div className="field-label" style={{ marginBottom: 8 }}>
+                Temps pour créer son meme : {formatTime(room.settings.captionTimeSec)}
+              </div>
+              <TickSlider
+                options={CAPTION_TIME_OPTIONS}
+                value={room.settings.captionTimeSec}
+                onChange={onSetCaptionTime}
+                formatLabel={formatTime}
+              />
+            </div>
+            {room.settings.mode !== 'meme' && (
+              <div>
+                <div className="field-label" style={{ marginBottom: 8 }}>
+                  Changements de template par manche : {room.settings.maxTemplateChanges}
+                </div>
+                <TickSlider
+                  options={TEMPLATE_CHANGE_OPTIONS}
+                  value={room.settings.maxTemplateChanges}
+                  onChange={onSetMaxTemplateChanges}
+                  formatLabel={(n) => String(n)}
+                />
+              </div>
+            )}
           </div>
-          {self.isHost ? (
-            <TickSlider
-              options={TEMPLATE_CHANGE_OPTIONS}
-              value={room.settings.maxTemplateChanges}
-              onChange={onSetMaxTemplateChanges}
-              formatLabel={(n) => String(n)}
-            />
-          ) : (
-            <div className="center-note" style={{ textAlign: 'left' }}>Réglé par l'hôte.</div>
-          )}
+        </div>
+      ) : (
+        <div className="card">
+          <div className="subtitle" style={{ margin: '0 0 12px' }}>Réglages de partie</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+            <div className="settings-recap-row">
+              <span className="field-label">Manches</span>
+              <span>{room.settings.rounds}</span>
+            </div>
+            <div className="settings-recap-row">
+              <span className="field-label">Temps pour créer son meme</span>
+              <span>{formatTime(room.settings.captionTimeSec)}</span>
+            </div>
+            {room.settings.mode !== 'meme' && (
+              <div className="settings-recap-row">
+                <span className="field-label">Changements de template</span>
+                <span>{room.settings.maxTemplateChanges} / manche</span>
+              </div>
+            )}
+            <div className="settings-recap-row">
+              <span className="field-label">Packs de templates</span>
+              <span>{currentPacks.map((p) => p.name).join(', ')}</span>
+            </div>
+            <div className="settings-recap-row">
+              <span className="field-label">Templates</span>
+              <span>{room.templates.length} (dont {customCount} perso)</span>
+            </div>
+          </div>
+          <div className="center-note" style={{ marginTop: 12 }}>Réglé par l'hôte.</div>
         </div>
       )}
 
-      <div className="card">
-        <div className="subtitle" style={{ margin: '0 0 10px' }}>
-          Packs de templates {self.isHost && '(plusieurs possibles)'}
-        </div>
-        {self.isHost ? (
+      {self.isHost && (
+        <div className="card">
+          <div className="subtitle" style={{ margin: '0 0 10px' }}>
+            Packs de templates (plusieurs possibles)
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {TEMPLATE_PACKS.map((p) => {
               const selected = selectedPackIds.includes(p.id);
@@ -220,24 +242,15 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
               );
             })}
           </div>
-        ) : (
-          <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {currentPacks.map((p) => (
-              <div key={p.id}>
-                <div style={{ fontWeight: 800 }}>{p.name}</div>
-                <div className="center-note" style={{ textAlign: 'left', margin: 0 }}>{p.description}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="card">
-        <div className="subtitle" style={{ margin: '0 0 10px' }}>
-          Templates ({room.templates.length}, dont {customCount} perso)
         </div>
-        {self.isHost ? (
-          packCount === 0 ? (
+      )}
+
+      {self.isHost && (
+        <div className="card">
+          <div className="subtitle" style={{ margin: '0 0 10px' }}>
+            Templates ({room.templates.length}, dont {customCount} perso)
+          </div>
+          {packCount === 0 ? (
             <div className="center-note" style={{ textAlign: 'left' }}>
               Aucun template perso enregistré sur cet appareil (gérable depuis l'accueil).
             </div>
@@ -245,11 +258,9 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
             <button className="btn btn-secondary" onClick={handleAddPack} disabled={addingPack || packAdded}>
               {addingPack ? 'Ajout en cours...' : packAdded ? '✅ Pack ajouté' : `📦 Ajouter mon pack (${packCount})`}
             </button>
-          )
-        ) : (
-          <div className="center-note" style={{ textAlign: 'left' }}>Géré par l'hôte.</div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {self.isHost ? (
         <button
