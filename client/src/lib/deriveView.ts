@@ -98,6 +98,7 @@ export function deriveView(
       totalRounds: dbRoom.totalRounds,
       template: templateFor(selfId),
       changesLeft: Math.max(0, (dbRoom.settings.maxTemplateChanges || 5) - (dbRoom.templateChanges?.[selfId] || 0)),
+      isFirstTemplate: (dbRoom.templateChanges?.[selfId] || 0) === 0,
       isSharedTemplate: dbRoom.currentTemplate != null,
       deadline: dbRoom.roundDeadline || Date.now(),
     };

@@ -223,6 +223,7 @@ export default function RoomPage() {
               template={roundStarted.template}
               submitting={submitting}
               changesLeft={roundStarted.changesLeft}
+              isFirstTemplate={roundStarted.isFirstTemplate}
               isSharedTemplate={roundStarted.isSharedTemplate}
               onChangeTemplate={changeTemplate}
               onSubmit={async (layers) => {

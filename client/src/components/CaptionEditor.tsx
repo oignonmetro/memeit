@@ -7,6 +7,7 @@ interface CaptionEditorProps {
   onSubmit: (layers: TextLayer[]) => void;
   submitting: boolean;
   changesLeft: number;
+  isFirstTemplate: boolean;
   isSharedTemplate: boolean;
   onChangeTemplate: () => Promise<void>;
 }
@@ -15,7 +16,7 @@ function boxLabel(i: number): string {
   return `Texte ${i + 1}`;
 }
 
-export default function CaptionEditor({ template, onSubmit, submitting, changesLeft, isSharedTemplate, onChangeTemplate }: CaptionEditorProps) {
+export default function CaptionEditor({ template, onSubmit, submitting, changesLeft, isFirstTemplate, isSharedTemplate, onChangeTemplate }: CaptionEditorProps) {
   const boxes = template.boxes && template.boxes.length ? template.boxes : [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }];
   const [texts, setTexts] = useState<string[]>(() => boxes.map(() => ''));
   const [changing, setChanging] = useState(false);
@@ -51,13 +52,16 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
       <MemeRender templateUrl={template.url} layers={previewLayers} />
 
       {!isSharedTemplate && (
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={handleChange}
-          disabled={changing || changesLeft <= 0}
-        >
-          {changesLeft > 0 ? `🎲 Changer de template (${changesLeft} restant${changesLeft > 1 ? 's' : ''})` : 'Plus de changement possible'}
-        </button>
+        <>
+          {isFirstTemplate && <div className="center-note" style={{ fontSize: '0.75rem', margin: 0 }}>1er template</div>}
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleChange}
+            disabled={changing || changesLeft <= 0}
+          >
+            {changesLeft > 0 ? `🎲 Changer de template (${changesLeft} restant${changesLeft > 1 ? 's' : ''})` : 'Plus de changement possible'}
+          </button>
+        </>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
