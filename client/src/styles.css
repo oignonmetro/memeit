@@ -171,6 +171,14 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
   margin-left: 6px;
 }
 
+.first-template-badge {
+  text-align: center;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .kick-btn {
   width: 22px;
   height: 22px;
