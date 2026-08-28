@@ -218,7 +218,6 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
               <span>{room.templates.length} (dont {customCount} perso)</span>
             </div>
           </div>
-          <div className="center-note" style={{ marginTop: 12 }}>Réglé par l'hôte.</div>
         </div>
       )}
 
