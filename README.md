@@ -233,6 +233,43 @@ appel réseau ni cache à gérer pour charger les templates de base — l'app fo
 ligne pour cette partie-là. Ajouter un pack revient à créer un nouveau fichier dans
 `client/src/lib/packs/` et à l'enregistrer dans `packs/index.ts`.
 
+### Éditeur visuel des zones de texte
+
+Positionner une zone de texte est une tâche de manipulation directe : la décrire en prose
+("un peu plus à gauche, au-dessus de la tête") pour la traduire ensuite en `xPct`/`yPct` est
+lent et approximatif. D'où un éditeur qui écrit directement dans les fichiers source :
+
+```bash
+npm run boxes:edit --workspace client    # puis ouvrir /dev-boxes.html
+```
+
+- L'aperçu utilise le **vrai composant `MemeRender`**, pas une approximation : ce qu'on voit en
+  éditant est exactement ce que voient les joueurs (même police, même contour, même calcul de
+  taille de police). Un éditeur qui rendrait "à peu près" pareil ferait corriger contre une
+  cible fausse.
+- On glisse le cadre pour déplacer, les poignées pour redimensionner (le bord opposé reste
+  fixe). Flèches : nudge 1 % (Maj : 5 %). `1`-`9` sélectionne une zone, `[` / `]` change de
+  template, `s` enregistre, `r` marque le template comme relu.
+- L'enregistrement réécrit **le bon fichier selon le pack** : entrée `CURATED` de
+  `templateBoxes.ts` pour les Classiques (créée si le template était encore sur la disposition
+  générique, commentaire de fin de ligne conservé), bloc `boxes:` de `pepites.ts` pour les
+  Pépites. Le format de chaque fichier est respecté, donc les diffs restent minimaux.
+- Les légendes d'exemple se basculent entre courtes, longues et numéros. **Les longues sont le
+  vrai test** : c'est le texte long qui révèle les chevauchements.
+- Filtre "jamais revus" + bouton "marquer revu" (`scripts/boxes-reviewed.json`) : sans ça, rien
+  ne distingue un template *vérifié et correct sur la disposition générique* d'un template
+  *jamais regardé*. 86 des 149 templates sont encore sur la disposition générique.
+- Si l'image du template ne se charge pas (URL morte, hors-ligne), l'édition est désactivée :
+  le cadre serait plat et les coordonnées calculées seraient aberrantes.
+
+`vite --host` permet d'ouvrir la page depuis un téléphone, pour corriger au doigt une position
+repérée en jouant.
+
+L'éditeur est un **outil de développement** : il vit dans son propre point d'entrée
+(`dev-boxes.html` + `src/dev/`), que le build de production ne prend jamais en entrée. Ce n'est
+pas une élimination de code mort mais une séparation structurelle, verrouillée par un test qui
+échoue si la moindre trace de l'éditeur apparaît dans `dist/`.
+
 ### Anti-doublon à l'import de nouveaux templates
 
 Un même meme peut exister sur Imgflip sous **plusieurs ids, URLs et noms différents** : c'est
@@ -293,6 +330,8 @@ client/                  PWA React — pages Home / Room (joueur) / Tv (grand é
 client/src/lib/firebase.ts   Initialisation Firebase (conditionnelle)
 client/src/lib/roomApi.ts    Toute la logique de salle : create/join, transactions de phase, votes
 client/src/lib/playerId.ts   Identité joueur (UUID en localStorage)
+client/src/dev/           Éditeur visuel des zones de texte (dev uniquement, hors build)
+client/dev-boxes.html     Point d'entrée de cet éditeur, servi par vite dev seulement
 client/.env.example       Variables d'environnement Firebase à copier vers client/.env
 firebase.json              Config Firebase Hosting + emplacement des règles Database
 database.rules.json        Règles de sécurité Realtime Database

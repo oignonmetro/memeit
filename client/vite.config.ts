@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { boxEditorPlugin } from './scripts/boxEditorPlugin.mts';
 
 export default defineConfig({
   plugins: [
     react(),
+    // Écriture des zones de texte depuis /dev/boxes. Actif en dev seulement.
+    boxEditorPlugin(),
     VitePWA({
       // 'prompt' plutôt que 'autoUpdate' : un rechargement silencieux
       // couperait une partie en cours (caption à moitié écrite, vote en
