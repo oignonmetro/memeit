@@ -21,6 +21,17 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Découpe en lignes sans `\r` de fin (source.split('\n') seul laisse un `\r`
+// traînant sur un fichier à fins de ligne Windows, ce qui casse à la fois les
+// comparaisons strictes du type `l === '};'` et les `$` de fin de regex — sur
+// un checkout Windows/autocrlf, TOUTES les lignes auraient un `\r` final).
+// L'EOL détecté est réutilisé à l'écriture pour ne pas transformer un fichier
+// CRLF en LF (et produire un diff illisible sur chaque ligne).
+function splitLines(source: string): { lines: string[]; eol: '\n' | '\r\n' } {
+  const eol = source.includes('\r\n') ? '\r\n' : '\n';
+  return { lines: source.split(/\r?\n/), eol };
+}
+
 /**
  * Met à jour (ou crée) l'entrée CURATED d'un template Imgflip dans
  * templateBoxes.ts. Le commentaire de fin de ligne existant est conservé ;
@@ -33,7 +44,7 @@ export function writeCuratedBoxes(
   templateName: string
 ): string {
   const inline = `[${boxes.map(formatBox).join(', ')}]`;
-  const lines = source.split('\n');
+  const { lines, eol } = splitLines(source);
 
   const entryRe = new RegExp(`^  '${escapeRe(imgflipId)}': \\[.*\\],(\\s*//.*)?$`);
   const existing = lines.findIndex((l) => entryRe.test(l));
@@ -41,7 +52,7 @@ export function writeCuratedBoxes(
   if (existing !== -1) {
     const comment = lines[existing].match(entryRe)![1] ?? '';
     lines[existing] = `  '${imgflipId}': ${inline},${comment}`;
-    return lines.join('\n');
+    return lines.join(eol);
   }
 
   // Nouvelle entrée : insertion juste avant la fermeture de l'objet CURATED.
@@ -51,7 +62,7 @@ export function writeCuratedBoxes(
   if (closeIdx === -1) throw new Error('Fin de CURATED introuvable dans templateBoxes.ts');
 
   lines.splice(closeIdx, 0, `  '${imgflipId}': ${inline}, // ${templateName}`);
-  return lines.join('\n');
+  return lines.join(eol);
 }
 
 /**
@@ -60,7 +71,7 @@ export function writeCuratedBoxes(
  * deux zones ou plus sont réparties une par ligne.
  */
 export function writePepitesBoxes(source: string, templateId: string, boxes: TemplateBox[]): string {
-  const lines = source.split('\n');
+  const { lines, eol } = splitLines(source);
 
   const idIdx = lines.findIndex((l) => l.trim() === `id: '${templateId}',`);
   if (idIdx === -1) throw new Error(`Template ${templateId} introuvable dans pepites.ts`);
@@ -82,5 +93,5 @@ export function writePepitesBoxes(source: string, templateId: string, boxes: Tem
       : ['    boxes: [', ...boxes.map((b) => `      ${formatBox(b)},`), '    ],'];
 
   lines.splice(startIdx, endIdx - startIdx + 1, ...replacement);
-  return lines.join('\n');
+  return lines.join(eol);
 }

@@ -80,6 +80,51 @@ console.log('PASS  format     → 1 zone inline, 2+ zones une par ligne');
 assert.throws(() => writePepitesBoxes(ppSrc, 'pepites-inexistant', moved), /introuvable/);
 console.log('PASS  garde-fou  → un id inconnu lève une erreur');
 
+console.log('--- fins de ligne Windows (CRLF) ---');
+
+// 7. Un checkout Windows (core.autocrlf) donne des fichiers en \r\n. Un split
+//    naïf sur '\n' laisse un '\r' traînant en fin de ligne, qui casse la
+//    comparaison stricte `l === '};'` (repéré en usage réel : "Fin de CURATED
+//    introuvable") — et, plus sournois, aurait aussi cassé le `$` de fin de
+//    l'entryRe pour la mise à jour d'une entrée existante, sans lever la
+//    moindre erreur : chaque édition aurait silencieusement dupliqué
+//    l'entrée en fin de fichier plutôt que de mettre à jour la bonne ligne.
+const tbCRLF = tbSrc.replace(/\n/g, '\r\n');
+const ppCRLF = ppSrc.replace(/\n/g, '\r\n');
+
+let outCRLF = ppCRLF;
+for (const t of PEPITES_TEMPLATES) outCRLF = writePepitesBoxes(outCRLF, t.id, t.boxes);
+assert.equal(outCRLF, ppCRLF, 'round-trip CRLF de pepites.ts a modifié le fichier');
+
+let outCRLF2 = tbCRLF;
+for (const t of CLASSIQUES_TEMPLATES) {
+  if (!curatedIds.has(rawId(t.id))) continue;
+  outCRLF2 = writeCuratedBoxes(outCRLF2, rawId(t.id), t.boxes, t.name);
+}
+assert.equal(outCRLF2, tbCRLF, 'round-trip CRLF de templateBoxes.ts a modifié le fichier');
+console.log('PASS  CRLF round-trip → 112 entrées réécrites à l\'identique sur fichier \\r\\n');
+
+// Une entrée existante mise à jour sur un fichier CRLF doit toucher une seule
+// ligne (pas de duplication) et garder du CRLF partout, pas un mélange.
+const editedCRLF = writeCuratedBoxes(tbCRLF, '438680', moved, 'Batman Slapping Robin');
+const linesBeforeCRLF = tbCRLF.split('\r\n');
+const linesAfterCRLF = editedCRLF.split('\r\n');
+assert.equal(linesBeforeCRLF.length, linesAfterCRLF.length, 'CRLF : le nombre de lignes a changé (duplication ?)');
+assert.equal(
+  linesAfterCRLF.filter((l, i) => l !== linesBeforeCRLF[i]).length,
+  1,
+  'CRLF : plus d\'une ligne modifiée'
+);
+assert.ok(!editedCRLF.split('\r\n').some((l) => l.endsWith('\r')), 'CRLF : du CRLF résiduel après découpage');
+assert.ok(editedCRLF.includes('\r\n') && !/[^\r]\n/.test(editedCRLF), 'CRLF : mélange de fins de ligne introduit');
+console.log('PASS  CRLF édition → une seule ligne touchée, aucun mélange de fins de ligne');
+
+// Une nouvelle entrée sur un fichier CRLF doit réussir (c'était l'échec
+// remonté : "Fin de CURATED introuvable dans templateBoxes.ts").
+const addedCRLF = writeCuratedBoxes(tbCRLF, '999000111', moved, 'Template De Test');
+assert.ok(addedCRLF.includes(`'999000111': [{ xPct: 11`), 'CRLF : nouvelle entrée absente');
+console.log('PASS  CRLF ajout   → nouvelle entrée insérée sans erreur');
+
 console.log("--- l'éditeur reste hors production ---");
 
 // 7. L'éditeur est un outil de dev : il ne doit jamais atteindre dist/. La
