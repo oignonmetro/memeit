@@ -47,8 +47,22 @@ function sampleText(mode: SampleMode, i: number): string {
   return pool[i % pool.length];
 }
 
+// Miroir de formatBox() dans scripts/boxWriter.mts (import direct impossible :
+// TS refuse une extension .mts explicite sans changer la config du projet
+// entier pour ce seul aperçu). Garder les deux en phase si le format change.
+function formatBoxPreview(b: TemplateBox): string {
+  const base = `xPct: ${b.xPct}, yPct: ${b.yPct}, widthPct: ${b.widthPct}, heightPct: ${b.heightPct}`;
+  return b.rotationDeg ? `{ ${base}, rotationDeg: ${b.rotationDeg} }` : `{ ${base} }`;
+}
+
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const round = (v: number) => Math.round(v);
+
+// Normalise dans [-180, 180) : deux valeurs qui désignent le même angle
+// (ex. 270 et -90) doivent compter comme identiques, pas comme "modifié".
+function normDeg(deg: number): number {
+  return (((deg + 180) % 360) + 360) % 360 - 180;
+}
 
 function sameBoxes(a: TemplateBox[], b: TemplateBox[]): boolean {
   return (
@@ -58,9 +72,21 @@ function sameBoxes(a: TemplateBox[], b: TemplateBox[]): boolean {
         box.xPct === b[i].xPct &&
         box.yPct === b[i].yPct &&
         box.widthPct === b[i].widthPct &&
-        box.heightPct === b[i].heightPct
+        box.heightPct === b[i].heightPct &&
+        normDeg(box.rotationDeg || 0) === normDeg(b[i].rotationDeg || 0)
     )
   );
+}
+
+// Fait pivoter un vecteur (delta en % du cadre) de `deg` degrés. Sert à
+// convertir un déplacement écran en déplacement local à une zone tournée,
+// et inversement — cf. startDrag ci-dessous pour le pourquoi.
+function rotateVec(dx: number, dy: number, deg: number): { dx: number; dy: number } {
+  if (!deg) return { dx, dy };
+  const rad = (deg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return { dx: dx * cos - dy * sin, dy: dx * sin + dy * cos };
 }
 
 // Poignées de redimensionnement : (sx, sy) indique quel bord suit le pointeur.
@@ -176,6 +202,15 @@ export default function BoxEditor() {
     [selected]
   );
 
+  const nudgeRotation = useCallback(
+    (delta: number) => {
+      setDraft((prev) =>
+        prev.map((b, i) => (i === selected ? { ...b, rotationDeg: normDeg((b.rotationDeg || 0) + delta) } : b))
+      );
+    },
+    [selected]
+  );
+
   const save = useCallback(async () => {
     if (!entry) return;
     setStatus('Enregistrement…');
@@ -225,6 +260,8 @@ export default function BoxEditor() {
         case 'ArrowRight': e.preventDefault(); nudge(step, 0); break;
         case 'ArrowUp': e.preventDefault(); nudge(0, -step); break;
         case 'ArrowDown': e.preventDefault(); nudge(0, step); break;
+        case ',': nudgeRotation(-step); break;
+        case '.': nudgeRotation(step); break;
         case '[': move(-1); break;
         case ']': move(1); break;
         case 's': save(); break;
@@ -236,7 +273,7 @@ export default function BoxEditor() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [nudge, move, save, toggleReviewed]);
+  }, [nudge, nudgeRotation, move, save, toggleReviewed]);
 
   // Un seul gestionnaire pour le déplacement et le redimensionnement : on
   // capture le pointeur (souris comme doigt) et on convertit les deltas en
@@ -263,30 +300,84 @@ export default function BoxEditor() {
     target.setPointerCapture(e.pointerId);
 
     const onMove = (ev: PointerEvent) => {
-      const dx = ((ev.clientX - startX) / rect.width) * 100;
-      const dy = ((ev.clientY - startY) / rect.height) * 100;
+      const dxScreen = ((ev.clientX - startX) / rect.width) * 100;
+      const dyScreen = ((ev.clientY - startY) / rect.height) * 100;
       setDraft((prev) =>
         prev.map((b, i) => {
           if (i !== boxIndex) return b;
           if (!handle) {
+            // Déplacer ne dépend pas de l'orientation de la zone : xPct/yPct
+            // vivent dans le repère de l'image, pas dans celui de la zone.
             return {
               ...b,
-              xPct: round(clamp(start.xPct + dx, 0, 100)),
-              yPct: round(clamp(start.yPct + dy, 0, 100)),
+              xPct: round(clamp(start.xPct + dxScreen, 0, 100)),
+              yPct: round(clamp(start.yPct + dyScreen, 0, 100)),
             };
           }
+          // Redimensionner, en revanche, doit suivre les bords de la zone
+          // elle-même : sur une zone pivotée, "tirer vers la droite" à
+          // l'écran ne correspond plus à "élargir vers la droite" pour la
+          // zone. On ramène donc le delta écran dans le repère local (non
+          // tourné) de la zone avant d'appliquer la même formule qu'avant
+          // (le bord opposé reste fixe), puis on repasse le déplacement du
+          // centre dans le repère de l'image, seul espace où xPct/yPct ont
+          // un sens.
+          const rot = start.rotationDeg || 0;
+          const { dx, dy } = rotateVec(dxScreen, dyScreen, -rot);
           const next = { ...b };
+          let shiftX = 0;
+          let shiftY = 0;
           if (handle.sx !== 0) {
             next.widthPct = round(clamp(start.widthPct + handle.sx * dx, MIN_W, 100));
-            next.xPct = round(clamp(start.xPct + dx / 2, 0, 100));
+            shiftX = dx / 2;
           }
           if (handle.sy !== 0) {
             next.heightPct = round(clamp(start.heightPct + handle.sy * dy, MIN_H, 100));
-            next.yPct = round(clamp(start.yPct + dy / 2, 0, 100));
+            shiftY = dy / 2;
+          }
+          if (shiftX || shiftY) {
+            const shift = rotateVec(shiftX, shiftY, rot);
+            next.xPct = round(clamp(start.xPct + shift.dx, 0, 100));
+            next.yPct = round(clamp(start.yPct + shift.dy, 0, 100));
           }
           return next;
         })
       );
+    };
+    const onUp = () => {
+      target.releasePointerCapture(e.pointerId);
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
+  }
+
+  // Le pivot se manipule différemment d'un redimensionnement : on suit
+  // l'angle entre le centre de la zone et le pointeur, pas un delta linéaire.
+  function startRotate(e: React.PointerEvent, boxIndex: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected(boxIndex);
+    const frame = frameRef.current;
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
+    if (!frameReady || !rect.width || !rect.height) {
+      setStatus('Image non chargée : édition désactivée (les coordonnées seraient fausses).');
+      return;
+    }
+    const start = draft[boxIndex];
+    const cx = rect.left + (start.xPct / 100) * rect.width;
+    const cy = rect.top + (start.yPct / 100) * rect.height;
+    const angleOf = (x: number, y: number) => Math.atan2(y - cy, x - cx) * (180 / Math.PI);
+    const startAngle = angleOf(e.clientX, e.clientY);
+    const startRotation = start.rotationDeg || 0;
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+
+    const onMove = (ev: PointerEvent) => {
+      const deg = normDeg(round(startRotation + (angleOf(ev.clientX, ev.clientY) - startAngle)));
+      setDraft((prev) => prev.map((b, i) => (i === boxIndex ? { ...b, rotationDeg: deg } : b)));
     };
     const onUp = () => {
       target.releasePointerCapture(e.pointerId);
@@ -389,23 +480,36 @@ export default function BoxEditor() {
                       top: `${b.yPct}%`,
                       width: `${b.widthPct}%`,
                       height: `${b.heightPct}%`,
+                      // Les poignées et le pivot sont des enfants : ils héritent
+                      // de cette transformation et suivent donc visuellement la
+                      // zone quand elle tourne, sans calcul de position séparé.
+                      transform: `translate(-50%, -50%) rotate(${b.rotationDeg || 0}deg)`,
                     }}
                     onPointerDown={(e) => startDrag(e, i, null)}
                   >
                     <span className="be-box-tag">{i + 1}</span>
-                    {i === selected &&
-                      HANDLES.map((h) => (
+                    {i === selected && (
+                      <>
+                        {HANDLES.map((h) => (
+                          <span
+                            key={`${h.sx}${h.sy}`}
+                            className="be-handle"
+                            style={{
+                              left: `${50 + h.sx * 50}%`,
+                              top: `${50 + h.sy * 50}%`,
+                              cursor: h.cursor,
+                            }}
+                            onPointerDown={(e) => startDrag(e, i, h)}
+                          />
+                        ))}
+                        <span className="be-rotate-stalk" />
                         <span
-                          key={`${h.sx}${h.sy}`}
-                          className="be-handle"
-                          style={{
-                            left: `${50 + h.sx * 50}%`,
-                            top: `${50 + h.sy * 50}%`,
-                            cursor: h.cursor,
-                          }}
-                          onPointerDown={(e) => startDrag(e, i, h)}
+                          className="be-rotate-handle"
+                          title="Glisser pour pivoter"
+                          onPointerDown={(e) => startRotate(e, i)}
                         />
-                      ))}
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -433,6 +537,20 @@ export default function BoxEditor() {
                   />
                 </label>
               ))}
+              <label>
+                rot°
+                <input
+                  type="number"
+                  value={b.rotationDeg || 0}
+                  onChange={(e) =>
+                    setDraft((prev) =>
+                      prev.map((box, j) =>
+                        j === i ? { ...box, rotationDeg: normDeg(clamp(Number(e.target.value) || 0, -180, 180)) } : box
+                      )
+                    )
+                  }
+                />
+              </label>
             </div>
           ))}
 
@@ -451,12 +569,11 @@ export default function BoxEditor() {
           {status && <p className="be-status">{status}</p>}
 
           <p className="be-help">
-            Glisser le cadre pour déplacer, les poignées pour redimensionner. Flèches : nudge 1 %
-            (Maj : 5 %). 1-9 : sélectionner une zone. [ / ] : template précédent / suivant.
+            Glisser le cadre pour déplacer, les poignées pour redimensionner, le petit rond en
+            haut pour pivoter. Flèches : nudge 1 % (Maj : 5 %). , / . : pivoter 1° (Maj : 5°).
+            1-9 : sélectionner une zone. [ / ] : template précédent / suivant.
           </p>
-          <code className="be-code">
-            [{draft.map((b) => `{ xPct: ${b.xPct}, yPct: ${b.yPct}, widthPct: ${b.widthPct}, heightPct: ${b.heightPct} }`).join(', ')}]
-          </code>
+          <code className="be-code">[{draft.map(formatBoxPreview).join(', ')}]</code>
         </aside>
       </div>
     </div>
@@ -504,6 +621,15 @@ function Styles() {
       .be-box.sel .be-box-tag { background: #06d6a0; }
       .be-handle { position: absolute; width: 12px; height: 12px; transform: translate(-50%, -50%);
         background: #06d6a0; border: 2px solid #16121f; border-radius: 3px; touch-action: none; z-index: 3; }
+      /* Repère local (non tourné) de la zone parente : positionnées en enfants
+         d'une .be-box qui porte elle-même la rotation, poignées et pivot en
+         héritent automatiquement, sans calcul de position séparé. */
+      .be-rotate-stalk { position: absolute; left: 50%; top: -14px; width: 2px; height: 14px;
+        background: rgba(6,214,160,.75); transform: translateX(-50%); pointer-events: none; }
+      .be-rotate-handle { position: absolute; left: 50%; top: -22px; width: 14px; height: 14px;
+        transform: translate(-50%, -50%); background: #06d6a0; border: 2px solid #16121f;
+        border-radius: 50%; cursor: grab; touch-action: none; z-index: 3; }
+      .be-rotate-handle:active { cursor: grabbing; }
       .be-side { flex: 0 1 340px; min-width: 280px; display: flex; flex-direction: column; gap: 8px; }
       .be-row { display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 8px;
         background: rgba(255,255,255,.05); cursor: pointer; }

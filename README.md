@@ -248,8 +248,15 @@ npm run boxes:edit --workspace client    # puis ouvrir /dev-boxes.html
   taille de police). Un éditeur qui rendrait "à peu près" pareil ferait corriger contre une
   cible fausse.
 - On glisse le cadre pour déplacer, les poignées pour redimensionner (le bord opposé reste
-  fixe). Flèches : nudge 1 % (Maj : 5 %). `1`-`9` sélectionne une zone, `[` / `]` change de
-  template, `s` enregistre, `r` marque le template comme relu.
+  fixe), le petit rond en haut de la zone sélectionnée pour la pivoter (comme sur l'éditeur
+  Imgflip). Le redimensionnement compense la rotation : sur une zone pivotée, une poignée de
+  bord ne suit que l'axe local de ce bord, pas les axes de l'écran — sinon "tirer à droite"
+  déformerait la zone au lieu de l'élargir le long de son propre bord. Flèches : nudge 1 %
+  (Maj : 5 %) ; `,` / `.` : pivoter 1° (Maj : 5°). `1`-`9` sélectionne une zone, `[` / `]`
+  change de template, `s` enregistre, `r` marque le template comme relu. La rotation est
+  optionnelle (`rotationDeg`, omis du fichier quand elle vaut 0) et s'applique aussi bien à
+  l'aperçu DOM (`MemeRender`) qu'à l'export PNG téléchargé par les joueurs (`memeImage.ts`),
+  donc le fichier téléchargé correspond toujours à ce qui a été affiché en jeu.
 - L'enregistrement réécrit **le bon fichier selon le pack** : entrée `CURATED` de
   `templateBoxes.ts` pour les Classiques (créée si le template était encore sur la disposition
   générique, commentaire de fin de ligne conservé), bloc `boxes:` de `pepites.ts` pour les

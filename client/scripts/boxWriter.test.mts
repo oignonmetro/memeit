@@ -8,7 +8,7 @@ import assert from 'node:assert';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { writeCuratedBoxes, writePepitesBoxes } from './boxWriter.mts';
+import { writeCuratedBoxes, writePepitesBoxes, formatBox } from './boxWriter.mts';
 import { CLASSIQUES_TEMPLATES } from '../src/lib/packs/classiques.ts';
 import { PEPITES_TEMPLATES } from '../src/lib/packs/pepites.ts';
 import type { TemplateBox } from '../src/types.ts';
@@ -79,6 +79,17 @@ console.log('PASS  format     → 1 zone inline, 2+ zones une par ligne');
 // 6. Un id inconnu échoue bruyamment plutôt que de corrompre le fichier.
 assert.throws(() => writePepitesBoxes(ppSrc, 'pepites-inexistant', moved), /introuvable/);
 console.log('PASS  garde-fou  → un id inconnu lève une erreur');
+
+// 7. rotationDeg est omis quand il vaut 0 (défaut de l'écrasante majorité des
+// zones) et n'apparaît que sur celles qu'un éditeur a effectivement pivotées
+// — sinon éditer une zone sur un template en aurait reformaté 148 autres.
+assert.equal(formatBox({ xPct: 1, yPct: 2, widthPct: 3, heightPct: 4 }), '{ xPct: 1, yPct: 2, widthPct: 3, heightPct: 4 }');
+assert.equal(formatBox({ xPct: 1, yPct: 2, widthPct: 3, heightPct: 4, rotationDeg: 0 }), '{ xPct: 1, yPct: 2, widthPct: 3, heightPct: 4 }');
+assert.equal(
+  formatBox({ xPct: 1, yPct: 2, widthPct: 3, heightPct: 4, rotationDeg: 30 }),
+  '{ xPct: 1, yPct: 2, widthPct: 3, heightPct: 4, rotationDeg: 30 }'
+);
+console.log('PASS  rotation   → rotationDeg omis à 0, présent sinon');
 
 console.log('--- fins de ligne Windows (CRLF) ---');
 

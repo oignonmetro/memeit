@@ -12,7 +12,11 @@
 import type { TemplateBox } from '../src/types.ts';
 
 export function formatBox(b: TemplateBox): string {
-  return `{ xPct: ${b.xPct}, yPct: ${b.yPct}, widthPct: ${b.widthPct}, heightPct: ${b.heightPct} }`;
+  const base = `xPct: ${b.xPct}, yPct: ${b.yPct}, widthPct: ${b.widthPct}, heightPct: ${b.heightPct}`;
+  // Omitted when 0/absent: the vast majority of zones aren't rotated, and
+  // keeping the field out of those entries means editing an unrelated zone
+  // never touches — or reformats — every other line in the file.
+  return b.rotationDeg ? `{ ${base}, rotationDeg: ${b.rotationDeg} }` : `{ ${base} }`;
 }
 
 // Échappe un id pour l'insérer dans une regex (les ids sont alphanumériques

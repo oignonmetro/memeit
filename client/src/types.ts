@@ -6,11 +6,15 @@ export type TemplateSource = 'library' | 'upload';
 
 // A predefined text zone on a template (imgflip-style). Coordinates are
 // percentages of the image; (xPct,yPct) is the CENTER of the box.
+// rotationDeg is optional and omitted from the data files when 0 (the
+// overwhelming majority of zones), so untouched entries keep their exact
+// existing formatting — only zones an editor actually rotated grow the field.
 export interface TemplateBox {
   xPct: number;
   yPct: number;
   widthPct: number;
   heightPct: number;
+  rotationDeg?: number;
 }
 
 export interface Template {
@@ -28,6 +32,7 @@ export interface TextLayer {
   yPct: number;
   widthPct: number;
   heightPct: number;
+  rotationDeg?: number;
 }
 
 export interface RoomSettings {

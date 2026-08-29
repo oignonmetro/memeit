@@ -57,11 +57,17 @@ function sanitizeBoxes(input: unknown): TemplateBox[] {
       if (!Number.isFinite(n)) throw new Error('Coordonnée non numérique');
       return Math.min(max, Math.max(min, n));
     };
+    const rotationDeg = num(b.rotationDeg ?? 0, -180, 180);
     return {
       xPct: num(b.xPct, 0, 100),
       yPct: num(b.yPct, 0, 100),
       widthPct: num(b.widthPct, 1, 100),
       heightPct: num(b.heightPct, 1, 100),
+      // 0 est omis à l'écriture par formatBox, donc l'inclure ici même à 0
+      // ne change rien au fichier — mais un rotationDeg fourni par le client
+      // et silencieusement perdu ici serait un bug bien plus difficile à
+      // repérer qu'un champ superflu.
+      ...(rotationDeg ? { rotationDeg } : {}),
     };
   });
 }
