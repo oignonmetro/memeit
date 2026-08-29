@@ -12,17 +12,36 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
+import { TEMPLATE_PACKS } from '../lib/packs';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
 type PackId = 'classiques' | 'pepites';
 type Entry = { template: Template; pack: PackId };
-type Filter = 'tous' | 'generiques' | 'cures' | 'nonrevus';
+type Filter = 'tous' | 'generiques' | 'personnalises' | 'nonrevus';
 type SampleMode = 'court' | 'long' | 'numeros';
 
 const ENTRIES: Entry[] = [
   ...CLASSIQUES_TEMPLATES.map((template) => ({ template, pack: 'classiques' as const })),
   ...PEPITES_TEMPLATES.map((template) => ({ template, pack: 'pepites' as const })),
 ];
+
+const PACK_NAME: Record<PackId, string> = Object.fromEntries(
+  TEMPLATE_PACKS.map((p) => [p.id, p.name])
+) as Record<PackId, string>;
+
+// Un template compte comme "personnalisé" s'il a une entrée CURATED dans
+// templateBoxes.ts (Classiques) — les Pépites ont toujours leurs zones
+// écrites à la main, donc toujours personnalisées.
+function isCuratedEntry(pack: PackId, template: Template, curatedIds: Set<string>): boolean {
+  return pack === 'pepites' || curatedIds.has(template.id.replace(/^imgflip-/, ''));
+}
+
+function matchesFilter(filter: Filter, isCurated: boolean, isReviewed: boolean): boolean {
+  if (filter === 'personnalises') return isCurated;
+  if (filter === 'generiques') return !isCurated;
+  if (filter === 'nonrevus') return !isReviewed;
+  return true;
+}
 
 // Les légendes longues sont le vrai test : c'est le texte long qui révèle les
 // chevauchements (cf. les deux libellés du haut de "Left Exit 12 Off Ramp").
@@ -121,12 +140,9 @@ export default function BoxEditor() {
     const q = search.trim().toLowerCase();
     return ENTRIES.filter(({ template, pack }) => {
       if (q && !template.name.toLowerCase().includes(q)) return false;
-      const raw = template.id.replace(/^imgflip-/, '');
-      const isCurated = pack === 'pepites' || curatedIds.has(raw);
-      if (filter === 'cures') return isCurated;
-      if (filter === 'generiques') return !isCurated;
-      if (filter === 'nonrevus') return !reviewedIds.has(template.id);
-      return true;
+      const isCurated = isCuratedEntry(pack, template, curatedIds);
+      const isReviewed = reviewedIds.has(template.id);
+      return matchesFilter(filter, isCurated, isReviewed);
     });
   }, [search, filter, curatedIds, reviewedIds]);
 
@@ -230,13 +246,19 @@ export default function BoxEditor() {
       const raw = entry.template.id.replace(/^imgflip-/, '');
       setCuratedIds((prev) => new Set(prev).add(raw));
       setStatus('Enregistré dans le fichier source ✓');
+      // Enregistrer peut faire sortir ce template du filtre actif (ex.
+      // "Disposition générique" : il vient de devenir personnalisé). Dans ce
+      // cas la liste filtrée rétrécit toute seule et le template suivant
+      // glisse déjà à cette place — avancer l'index en plus le sauterait.
+      // Sinon (filtre "Tous", ou filtre inchangé par ce save), on avance.
+      if (matchesFilter(filter, true, reviewedIds.has(entry.template.id))) move(1);
     } catch (err) {
       setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
     }
-  }, [entry, draft]);
+  }, [entry, draft, filter, reviewedIds, move]);
 
-  const toggleReviewed = useCallback(async () => {
-    if (!template) return;
+  const toggleReviewed = useCallback(() => {
+    if (!template || !entry) return;
     const next = !reviewedIds.has(template.id);
     setReviewedIds((prev) => {
       const copy = new Set(prev);
@@ -244,12 +266,19 @@ export default function BoxEditor() {
       else copy.delete(template.id);
       return copy;
     });
-    await fetch('/__boxes/reviewed', {
+    fetch('/__boxes/reviewed', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: template.id, reviewed: next }),
     }).catch(() => setStatus('Statut « revu » non enregistré'));
-  }, [template, reviewedIds]);
+    // Seulement en passant à "revu" : après "non revu" on reste sur place,
+    // pour pouvoir reconsidérer le template qu'on vient de dé-marquer sans
+    // en être éjecté. Même logique de rétrécissement de liste que save().
+    if (next) {
+      const isCurated = isCuratedEntry(entry.pack, template, curatedIds);
+      if (matchesFilter(filter, isCurated, true)) move(1);
+    }
+  }, [template, entry, reviewedIds, curatedIds, filter, move]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -398,8 +427,7 @@ export default function BoxEditor() {
   }
 
   const layers: TextLayer[] = draft.map((b, i) => ({ ...b, text: sampleText(sample, i) }));
-  const raw = template.id.replace(/^imgflip-/, '');
-  const isCurated = entry.pack === 'pepites' || curatedIds.has(raw);
+  const isCurated = isCuratedEntry(entry.pack, template, curatedIds);
   const isReviewed = reviewedIds.has(template.id);
 
   return (
@@ -414,12 +442,12 @@ export default function BoxEditor() {
         <button onClick={() => move(1)}>▶</button>
         <strong className="be-name">{template.name}</strong>
         <span className={`be-chip ${isCurated ? 'ok' : 'warn'}`}>
-          {isCurated ? 'curé' : 'générique'}
+          {isCurated ? 'personnalisé' : 'générique'}
         </span>
         <span className={`be-chip ${isReviewed ? 'ok' : ''}`}>
           {isReviewed ? 'revu' : 'non revu'}
         </span>
-        <span className="be-chip">{entry.pack}</span>
+        <span className="be-chip">{PACK_NAME[entry.pack]}</span>
         {dirty && <span className="be-chip dirty">modifié</span>}
       </header>
 
@@ -442,7 +470,7 @@ export default function BoxEditor() {
         >
           <option value="tous">Tous</option>
           <option value="generiques">Disposition générique</option>
-          <option value="cures">Curés à la main</option>
+          <option value="personnalises">Disposition personnalisée</option>
           <option value="nonrevus">Jamais revus</option>
         </select>
         <select value={sample} onChange={(e) => setSample(e.target.value as SampleMode)}>
@@ -521,9 +549,16 @@ export default function BoxEditor() {
           {draft.map((b, i) => (
             <div key={i} className={`be-row ${i === selected ? 'sel' : ''}`} onClick={() => setSelected(i)}>
               <span className="be-row-tag">{i + 1}</span>
-              {(['xPct', 'yPct', 'widthPct', 'heightPct'] as const).map((k) => (
+              {(
+                [
+                  ['xPct', 'x'],
+                  ['yPct', 'y'],
+                  ['widthPct', 'largeur'],
+                  ['heightPct', 'hauteur'],
+                ] as const
+              ).map(([k, label]) => (
                 <label key={k}>
-                  {k.replace('Pct', '')}
+                  {label}
                   <input
                     type="number"
                     value={b[k]}
@@ -570,8 +605,9 @@ export default function BoxEditor() {
 
           <p className="be-help">
             Glisser le cadre pour déplacer, les poignées pour redimensionner, le petit rond en
-            haut pour pivoter. Flèches : nudge 1 % (Maj : 5 %). , / . : pivoter 1° (Maj : 5°).
-            1-9 : sélectionner une zone. [ / ] : template précédent / suivant.
+            haut pour pivoter. Flèches : déplacement de 1 % (Maj : 5 %). , / . : pivoter de 1°
+            (Maj : 5°). 1-9 : sélectionner une zone. [ / ] : template précédent / suivant.
+            s : enregistrer, r : marquer revu — les deux passent au template suivant.
           </p>
           <code className="be-code">[{draft.map(formatBoxPreview).join(', ')}]</code>
         </aside>

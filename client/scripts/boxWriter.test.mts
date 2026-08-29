@@ -31,7 +31,7 @@ for (const t of PEPITES_TEMPLATES) out = writePepitesBoxes(out, t.id, t.boxes);
 assert.equal(out, ppSrc, 'la réécriture de pepites.ts a modifié le fichier');
 console.log(`PASS  pépites    → ${PEPITES_TEMPLATES.length} entrées réécrites à l'identique`);
 
-// 2. Idem pour les entrées déjà curées de templateBoxes.ts.
+// 2. Idem pour les entrées déjà personnalisées de templateBoxes.ts.
 const curatedIds = new Set([...tbSrc.matchAll(/^ {2}'(\d+)':/gm)].map((m) => m[1]));
 let out2 = tbSrc;
 let curatedCount = 0;
@@ -41,7 +41,7 @@ for (const t of CLASSIQUES_TEMPLATES) {
   curatedCount += 1;
 }
 assert.equal(out2, tbSrc, 'la réécriture de templateBoxes.ts a modifié le fichier');
-console.log(`PASS  classiques → ${curatedCount} entrées curées réécrites à l'identique`);
+console.log(`PASS  classiques → ${curatedCount} entrées personnalisées réécrites à l'identique`);
 
 console.log('--- réécriture des zones : modification ---');
 
