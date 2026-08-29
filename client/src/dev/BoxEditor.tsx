@@ -77,6 +77,17 @@ function formatBoxPreview(b: TemplateBox): string {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const round = (v: number) => Math.round(v);
 
+// e.preventDefault() sur un pointerdown supprime aussi le blur automatique du
+// champ actuellement focus (comportement standard du navigateur) — sans ça,
+// cliquer une zone du canvas juste après une recherche laisse le focus dans
+// le champ "Filtrer par nom…", et tous les raccourcis clavier (s, r, +,
+// Suppr, 1-9...) atterrissent comme du texte tapé dans la recherche au lieu
+// de déclencher l'action voulue.
+function blurActiveField() {
+  const el = document.activeElement;
+  if (el instanceof HTMLElement && el !== document.body) el.blur();
+}
+
 // Normalise dans [-180, 180) : deux valeurs qui désignent le même angle
 // (ex. 270 et -90) doivent compter comme identiques, pas comme "modifié".
 function normDeg(deg: number): number {
@@ -227,6 +238,49 @@ export default function BoxEditor() {
     [selected]
   );
 
+  // Ajoute toujours en fin de liste (donc "dernière" étiquette Texte N) —
+  // l'ordre se règle ensuite avec moveZone, plutôt que de deviner où insérer.
+  // Plafonné à 9 : au-delà, la sélection rapide au clavier (1-9) ne suit plus.
+  const addZone = useCallback(() => {
+    if (draft.length >= 9) {
+      setStatus('9 zones maximum (au-delà, la sélection clavier 1-9 ne suit plus).');
+      return;
+    }
+    setDraft((prev) => [...prev, { xPct: 50, yPct: 50, widthPct: 40, heightPct: 15 }]);
+    setSelected(draft.length);
+  }, [draft.length]);
+
+  const deleteZone = useCallback(
+    (idx: number) => {
+      if (draft.length <= 1) {
+        setStatus('Impossible de supprimer la dernière zone restante.');
+        return;
+      }
+      setDraft((prev) => prev.filter((_, j) => j !== idx));
+      setSelected((s) => {
+        const shifted = idx < s ? s - 1 : s;
+        return Math.min(shifted, draft.length - 2); // draft.length - 1 zones après suppression
+      });
+    },
+    [draft.length]
+  );
+
+  // Échange avec la zone adjacente : la hiérarchie (Texte 1, Texte 2...) est
+  // l'ordre du tableau, donc réordonner = permuter deux positions.
+  const moveZone = useCallback(
+    (idx: number, dir: -1 | 1) => {
+      const target = idx + dir;
+      if (target < 0 || target >= draft.length) return;
+      setDraft((prev) => {
+        const next = [...prev];
+        [next[idx], next[target]] = [next[target], next[idx]];
+        return next;
+      });
+      setSelected((s) => (s === idx ? target : s === target ? idx : s));
+    },
+    [draft.length]
+  );
+
   const save = useCallback(async () => {
     if (!entry) return;
     setStatus('Enregistrement…');
@@ -287,8 +341,16 @@ export default function BoxEditor() {
       switch (e.key) {
         case 'ArrowLeft': e.preventDefault(); nudge(-step, 0); break;
         case 'ArrowRight': e.preventDefault(); nudge(step, 0); break;
-        case 'ArrowUp': e.preventDefault(); nudge(0, -step); break;
-        case 'ArrowDown': e.preventDefault(); nudge(0, step); break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (e.altKey) moveZone(selected, -1);
+          else nudge(0, -step);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          if (e.altKey) moveZone(selected, 1);
+          else nudge(0, step);
+          break;
         case ',': nudgeRotation(-step); break;
         case '.': nudgeRotation(step); break;
         case '[': move(-1); break;
@@ -296,13 +358,21 @@ export default function BoxEditor() {
         case 's': save(); break;
         case 'r': toggleReviewed(); break;
         case 'o': setShowOverlay((v) => !v); break;
+        case 'Backspace':
+        case 'Delete':
+          e.preventDefault();
+          deleteZone(selected);
+          break;
+        case '+':
+          addZone();
+          break;
         default:
           if (/^[1-9]$/.test(e.key)) setSelected(Number(e.key) - 1);
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [nudge, nudgeRotation, move, save, toggleReviewed]);
+  }, [nudge, nudgeRotation, move, save, toggleReviewed, selected, moveZone, deleteZone, addZone]);
 
   // Un seul gestionnaire pour le déplacement et le redimensionnement : on
   // capture le pointeur (souris comme doigt) et on convertit les deltas en
@@ -314,6 +384,7 @@ export default function BoxEditor() {
   ) {
     e.preventDefault();
     e.stopPropagation();
+    blurActiveField();
     setSelected(boxIndex);
     const frame = frameRef.current;
     if (!frame) return;
@@ -387,6 +458,7 @@ export default function BoxEditor() {
   function startRotate(e: React.PointerEvent, boxIndex: number) {
     e.preventDefault();
     e.stopPropagation();
+    blurActiveField();
     setSelected(boxIndex);
     const frame = frameRef.current;
     if (!frame) return;
@@ -586,8 +658,56 @@ export default function BoxEditor() {
                   }
                 />
               </label>
+              <div className="be-row-actions">
+                <button
+                  type="button"
+                  className="be-row-btn"
+                  disabled={i === 0}
+                  title="Monter d'un cran (Alt+↑) — change l'ordre Texte 1/2/3..."
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveZone(i, -1);
+                  }}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  className="be-row-btn"
+                  disabled={i === draft.length - 1}
+                  title="Descendre d'un cran (Alt+↓)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveZone(i, 1);
+                  }}
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  className="be-row-btn be-row-btn--danger"
+                  disabled={draft.length <= 1}
+                  title="Supprimer cette zone (Suppr)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteZone(i);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))}
+
+          <button
+            type="button"
+            className="be-add-zone"
+            onClick={addZone}
+            disabled={draft.length >= 9}
+            title="Ajouter une zone de texte (+)"
+          >
+            + Ajouter une zone
+          </button>
 
           <div className="be-actions">
             <button className="be-primary" onClick={save} disabled={!dirty || !frameReady}>
@@ -608,6 +728,8 @@ export default function BoxEditor() {
             haut pour pivoter. Flèches : déplacement de 1 % (Maj : 5 %). , / . : pivoter de 1°
             (Maj : 5°). 1-9 : sélectionner une zone. [ / ] : template précédent / suivant.
             s : enregistrer, r : marquer revu — les deux passent au template suivant.
+            + : ajouter une zone, Suppr : supprimer la zone sélectionnée, Alt+↑/Alt+↓ (ou ▲▼ sur
+            une ligne) : réordonner — l'ordre du tableau, c'est Texte 1, Texte 2... en jeu.
           </p>
           <code className="be-code">[{draft.map(formatBoxPreview).join(', ')}]</code>
         </aside>
@@ -624,11 +746,12 @@ function Styles() {
       .be-root { min-height: 100dvh; background: #16121f; color: #f5f0ff; padding: 12px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
       .be-bar, .be-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-      .be-bar button, .be-controls button, .be-actions button {
+      .be-bar button, .be-controls button, .be-actions button, .be-row-actions button, .be-add-zone {
         background: #2c1c40; color: #f5f0ff; border: 1px solid rgba(255,255,255,.18);
         border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 700; }
       .be-primary { background: #ffd166 !important; color: #23150a !important; border-color: #ffd166 !important; }
-      .be-bar button:disabled, .be-actions button:disabled { opacity: .4; cursor: not-allowed; }
+      .be-bar button:disabled, .be-actions button:disabled, .be-row-actions button:disabled,
+      .be-add-zone:disabled { opacity: .4; cursor: not-allowed; }
       .be-pos { font-variant-numeric: tabular-nums; color: #b8a9d4; font-size: .85rem; }
       .be-name { font-size: 1rem; margin-right: 4px; }
       .be-chip { font-size: .7rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;
@@ -675,6 +798,13 @@ function Styles() {
       .be-row label { display: flex; flex-direction: column; font-size: .62rem; color: #b8a9d4; gap: 2px; }
       .be-row input { width: 52px; background: rgba(0,0,0,.35); color: #f5f0ff;
         border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 4px; font-size: .8rem; }
+      .be-row-actions { display: flex; flex-direction: column; gap: 2px; margin-left: auto; }
+      .be-row-btn { width: 22px; height: 18px; padding: 0 !important; font-size: .65rem !important;
+        line-height: 1; background: rgba(255,255,255,.08) !important; border-radius: 4px !important; }
+      .be-row-btn--danger:not(:disabled) { color: #ef476f !important; }
+      .be-add-zone { width: 100%; border: 1px dashed rgba(255,255,255,.3) !important;
+        background: transparent !important; color: #b8a9d4 !important; }
+      .be-add-zone:not(:disabled):hover { border-color: #ffd166 !important; color: #ffd166 !important; }
       .be-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
       .be-status { font-size: .8rem; color: #06d6a0; margin: 0; }
       .be-help { font-size: .72rem; color: #b8a9d4; line-height: 1.5; margin: 4px 0 0; }
