@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import MemeRender from './MemeRender';
 import type { Template, TextLayer } from '../types';
 
@@ -31,12 +31,9 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
     }
   }
 
-  // Preview shows the real position of each zone, with a faint placeholder when empty.
-  const previewLayers: TextLayer[] = useMemo(
-    () => boxes.map((b, i) => ({ ...b, text: texts[i]?.trim() ? texts[i] : boxLabel(i) })),
-    [boxes, texts]
-  );
-
+  // Une zone vide ne rend aucun texte (fini le "Texte 1" en dur dans l'aperçu) :
+  // même tableau que ce qui part réellement à la soumission, donc l'aperçu ne
+  // montre jamais un texte que le meme final n'aurait pas.
   const submitLayers: TextLayer[] = boxes
     .map((b, i) => ({ ...b, text: (texts[i] || '').trim() }))
     .filter((l) => l.text.length > 0);
@@ -53,7 +50,25 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
         <div className="first-template-badge">1er template !</div>
       )}
 
-      <MemeRender templateUrl={template.url} layers={previewLayers} />
+      <div className="caption-preview">
+        <MemeRender templateUrl={template.url} layers={submitLayers} />
+        {boxes.map(
+          (b, i) =>
+            !texts[i]?.trim() && (
+              <div
+                key={i}
+                className="caption-empty-zone"
+                style={{
+                  left: `${b.xPct}%`,
+                  top: `${b.yPct}%`,
+                  width: `${b.widthPct}%`,
+                  height: `${b.heightPct}%`,
+                  transform: `translate(-50%, -50%) rotate(${b.rotationDeg || 0}deg)`,
+                }}
+              />
+            )
+        )}
+      </div>
 
       {!isSharedTemplate && (
         <button
