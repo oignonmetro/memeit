@@ -37,7 +37,6 @@ const CURATED: Record<string, TemplateBox[]> = {
   '80707627': [{ xPct: 42, yPct: 32, widthPct: 48, heightPct: 14 }, { xPct: 27, yPct: 80, widthPct: 40, heightPct: 14 }, { xPct: 85, yPct: 82, widthPct: 20, heightPct: 12 }], // Sad Pablo Escobar
   '84341851': [{ xPct: 23, yPct: 11, widthPct: 40, heightPct: 20 }, { xPct: 70, yPct: 12, widthPct: 40, heightPct: 22 }], // Evil Kermit
   '87743020': [{ xPct: 26, yPct: 15, widthPct: 28, heightPct: 10, rotationDeg: -16 }, { xPct: 58, yPct: 11, widthPct: 24, heightPct: 9, rotationDeg: -10 }, { xPct: 50, yPct: 88, widthPct: 86, heightPct: 16 }], // Two Buttons
-  '91998305': [{ xPct: 74, yPct: 25, widthPct: 48, heightPct: 40 }, { xPct: 74, yPct: 75, widthPct: 48, heightPct: 40 }], // Drake Blank
   '93895088': [{ xPct: 24, yPct: 13, widthPct: 46, heightPct: 21 }, { xPct: 25, yPct: 38, widthPct: 46, heightPct: 21 }, { xPct: 25, yPct: 62, widthPct: 46, heightPct: 19 }, { xPct: 25, yPct: 87, widthPct: 46, heightPct: 20 }], // Expanding Brain
   '99683372': [{ xPct: 25, yPct: 25, widthPct: 46, heightPct: 40 }, { xPct: 25, yPct: 75, widthPct: 46, heightPct: 40 }], // Sleeping Shaq / I sleep real shit (blank left column, one caption per face)
   '100777631': [{ xPct: 29, yPct: 27, widthPct: 34, heightPct: 20 }, { xPct: 84, yPct: 18, widthPct: 30, heightPct: 16 }], // Is This A Pigeon (2 zones seulement, la 3e était redondante)
@@ -102,7 +101,6 @@ const CURATED: Record<string, TemplateBox[]> = {
   '177682295': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // You Guys are Getting Paid
   '505705955': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Absolute Cinema
   '3218037': [{ xPct: 50, yPct: 44, widthPct: 91, heightPct: 12 }, { xPct: 50, yPct: 94, widthPct: 93, heightPct: 11 }], // This Is Where I'd Put My Trophy If I Had One
-  '370867422': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 90, widthPct: 90, heightPct: 16 }], // Megamind peeking
   '28251713': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Oprah You Get A
   '77045868': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Pawn Stars Best I Can Do
   '148909805': [{ xPct: 50, yPct: 18, widthPct: 95, heightPct: 33 }], // Monkey Puppet
