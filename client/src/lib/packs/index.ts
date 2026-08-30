@@ -8,24 +8,26 @@ export interface TemplatePackMeta {
   description: string;
 }
 
+// Un seul pack, exposé aux joueurs : "Pépites" a fusionné dedans (les deux
+// fichiers source, classiques.ts et pepites.ts, restent séparés en interne —
+// l'éditeur visuel de zones s'appuie sur cette séparation pour savoir où
+// écrire — mais ça ne concerne plus que l'outillage, plus le jeu).
 export const TEMPLATE_PACKS: TemplatePackMeta[] = [
-  { id: 'classiques', name: 'Classiques', description: 'Les ~100 memes les plus utilisés sur Imgflip' },
-  { id: 'pepites', name: 'Pépites', description: 'Une sélection de memes cultes en plus des classiques' },
+  { id: 'classiques', name: 'Classiques', description: 'Tous les memes cultes intégrés à MemeIt' },
 ];
 
 const PACKS: Record<string, Template[]> = {
-  classiques: CLASSIQUES_TEMPLATES,
-  pepites: PEPITES_TEMPLATES,
+  classiques: [...CLASSIQUES_TEMPLATES, ...PEPITES_TEMPLATES],
 };
 
 export const DEFAULT_PACK_ID = 'classiques';
 
-// All packs are static, bundled data — no network round-trip, unlike the old
-// live Imgflip fetch. The host can select several packs at once; templates
-// from every selected pack are pooled together (deduped by id, in case a
-// template were ever listed in more than one pack). Unknown/removed ids are
-// dropped silently, and an empty selection falls back to "classiques" (e.g.
-// a room created before a pack was renamed or retired).
+// Pack statique, bundlé — pas d'appel réseau, contrairement à l'ancien fetch
+// Imgflip en direct. Une salle créée avant la fusion peut encore avoir
+// templatePackIds: ['pepites'] ou ['classiques', 'pepites'] en base : l'id
+// "pepites" n'existe plus dans PACKS, il est donc filtré ci-dessous — la
+// sélection ne contient alors plus que "classiques" (ou tombe sur le
+// fallback si "pepites" était le seul id), qui contient désormais tout.
 export function getPackTemplates(packIds: string[]): Template[] {
   const ids = (packIds || []).filter((id) => PACKS[id]);
   const effectiveIds = ids.length ? ids : [DEFAULT_PACK_ID];

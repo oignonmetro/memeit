@@ -209,10 +209,12 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
                 <span>{room.settings.maxTemplateChanges} / manche</span>
               </div>
             )}
-            <div className="settings-recap-row">
-              <span className="field-label">Packs de templates</span>
-              <span>{currentPacks.map((p) => p.name).join(', ')}</span>
-            </div>
+            {TEMPLATE_PACKS.length > 1 && (
+              <div className="settings-recap-row">
+                <span className="field-label">Packs de templates</span>
+                <span>{currentPacks.map((p) => p.name).join(', ')}</span>
+              </div>
+            )}
             <div className="settings-recap-row">
               <span className="field-label">Templates</span>
               <span>{room.templates.length} (dont {customCount} perso)</span>
@@ -221,7 +223,7 @@ export default function Lobby({ room, self, onStart, onUpload, onSetCaptionTime,
         </div>
       )}
 
-      {self.isHost && (
+      {self.isHost && TEMPLATE_PACKS.length > 1 && (
         <div className="card">
           <div className="subtitle" style={{ margin: '0 0 10px' }}>
             Packs de templates (plusieurs possibles)

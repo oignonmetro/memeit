@@ -277,9 +277,11 @@ try {
 console.log('--- packs de templates ---');
 try {
   const { TEMPLATE_PACKS, getPackTemplates } = await import('./packs/index.ts');
-  assert.ok(TEMPLATE_PACKS.length >= 2, 'au moins 2 packs déclarés');
+  // "Pépites" a fusionné dans "classiques" : un seul pack reste exposé côté
+  // joueur (l'éditeur visuel de zones distingue encore les deux fichiers
+  // source en interne, mais ça ne concerne plus le jeu).
+  assert.equal(TEMPLATE_PACKS.length, 1, 'un seul pack déclaré depuis la fusion Classiques/Pépites');
   assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'classiques'), 'le pack "classiques" existe');
-  assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'pepites'), 'le pack "pepites" existe');
 
   // Un même meme présent deux fois (même sous deux ids/noms différents) peut
   // sortir deux fois dans la même partie : on vérifie l'unicité de l'id, mais
@@ -394,8 +396,11 @@ try {
 }
 console.log('--- bouton "vu" pendant le reveal ---');
 try {
-  // 3 joueurs connectés : tant que tout le monde n'a pas cliqué "vu", le
-  // deadline (non atteint ici) reste seul déclencheur.
+  // 3 joueurs connectés : tant que tous les non-auteurs n'ont pas cliqué
+  // "vu", le deadline (non atteint ici) reste seul déclencheur. L'auteur du
+  // meme affiché est exclu du calcul (il connaît déjà son propre meme), et
+  // son propre clic est un no-op — revealOrder étant mélangé, on détermine
+  // l'auteur dynamiquement plutôt que de supposer que c'est p1/p2/p3.
   let room = makeRoom('normal');
   room = reduceStartGame(room, LIB, [], tick())!;
   for (const id of ['p1', 'p2', 'p3']) room.submissions[id] = { layers: [{ text: `meme ${id}`, xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }] };
@@ -404,29 +409,34 @@ try {
   const startIndex = room.revealIndex;
   const farFromDeadline = room.revealDeadline! - 1000; // avant l'échéance
 
-  room = reduceMarkSeen(room, 'p1', farFromDeadline)!;
-  assert.equal(room.revealIndex, startIndex, 'un seul "vu" sur 3 ne fait pas avancer');
-  assert.deepEqual(room.revealSeenBy, { p1: true }, 'le clic de p1 est enregistré');
+  const authorId = room.revealOrder[startIndex];
+  const [otherA, otherB] = ['p1', 'p2', 'p3'].filter((id) => id !== authorId);
 
-  room = reduceMarkSeen(room, 'p1', farFromDeadline)!; // double-clic, ignoré
-  assert.deepEqual(room.revealSeenBy, { p1: true }, 'un second clic du même joueur ne change rien');
+  room = reduceMarkSeen(room, authorId, farFromDeadline)!;
+  assert.equal(room.revealIndex, startIndex, "le clic de l'auteur du meme affiché n'avance rien");
+  assert.deepEqual(room.revealSeenBy, {}, "le clic de l'auteur n'est pas enregistré (no-op)");
 
-  room = reduceMarkSeen(room, 'p2', farFromDeadline)!;
-  assert.equal(room.revealIndex, startIndex, 'deux "vu" sur 3 ne font pas encore avancer');
+  room = reduceMarkSeen(room, otherA, farFromDeadline)!;
+  assert.equal(room.revealIndex, startIndex, 'un seul "vu" sur les 2 requis (auteur exclu) ne fait pas avancer');
+  assert.deepEqual(room.revealSeenBy, { [otherA]: true }, `le clic de ${otherA} est enregistré`);
 
-  room = reduceMarkSeen(room, 'p3', farFromDeadline)!;
-  assert.equal(room.revealIndex, startIndex + 1, 'le 3e et dernier "vu" fait avancer immédiatement, avant le deadline');
+  room = reduceMarkSeen(room, otherA, farFromDeadline)!; // double-clic, ignoré
+  assert.deepEqual(room.revealSeenBy, { [otherA]: true }, 'un second clic du même joueur ne change rien');
+
+  room = reduceMarkSeen(room, otherB, farFromDeadline)!;
+  assert.equal(room.revealIndex, startIndex + 1, 'le dernier "vu" requis fait avancer immédiatement, avant le deadline');
   assert.deepEqual(room.revealSeenBy, {}, 'le suivi "vu" est réinitialisé pour le meme suivant');
+  const afterFirstAdvance = room.revealIndex;
 
-  // Un joueur déconnecté ne compte pas dans le total requis.
-  room.players.p3.connected = false;
-  room = reduceMarkSeen(room, 'p1', farFromDeadline)!;
-  const afterP1 = room.revealIndex;
-  assert.equal(afterP1, startIndex + 1, 'p1 seul ne suffit pas encore (p2 connecté doit aussi cliquer)');
-  room = reduceMarkSeen(room, 'p2', farFromDeadline)!;
-  assert.equal(room.revealIndex, afterP1 + 1, 'avec p3 déconnecté, seuls p1+p2 suffisent à avancer');
+  // Un joueur déconnecté ne compte pas dans le total requis — quel que soit
+  // l'auteur (de nouveau exclu) du meme désormais affiché.
+  const nextAuthorId = room.revealOrder[afterFirstAdvance];
+  const [remA, remB] = ['p1', 'p2', 'p3'].filter((id) => id !== nextAuthorId);
+  room.players[remB].connected = false;
+  room = reduceMarkSeen(room, remA, farFromDeadline)!;
+  assert.equal(room.revealIndex, afterFirstAdvance + 1, `${remA} seul suffit (${remB} déconnecté, ${nextAuthorId} exclu en tant qu'auteur)`);
 
-  console.log('PASS  vu         → tous les joueurs connectés cliquent "vu" -> avance avant le deadline, déconnectés exclus du total');
+  console.log('PASS  vu         → auteur exclu du compteur et de son propre clic, déconnectés exclus du total');
 } catch (e) {
   ok = false;
   console.error('FAIL  vu:', (e as Error).message);

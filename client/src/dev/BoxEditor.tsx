@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
-import { TEMPLATE_PACKS } from '../lib/packs';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
 type PackId = 'classiques' | 'pepites';
@@ -25,9 +24,15 @@ const ENTRIES: Entry[] = [
   ...PEPITES_TEMPLATES.map((template) => ({ template, pack: 'pepites' as const })),
 ];
 
-const PACK_NAME: Record<PackId, string> = Object.fromEntries(
-  TEMPLATE_PACKS.map((p) => [p.id, p.name])
-) as Record<PackId, string>;
+// Étiquette purement interne à l'éditeur (fichier source d'origine) — depuis
+// la fusion des packs "Classiques" et "Pépites" côté joueur, TEMPLATE_PACKS
+// n'en expose plus qu'un seul et ne peut donc plus servir à nommer les deux
+// origines de fichier que l'éditeur doit encore distinguer pour savoir où
+// écrire (classiques.ts vs pepites.ts).
+const PACK_NAME: Record<PackId, string> = {
+  classiques: 'Classiques',
+  pepites: 'Pépites',
+};
 
 // Un template compte comme "personnalisé" s'il a une entrée CURATED dans
 // templateBoxes.ts (Classiques) — les Pépites ont toujours leurs zones
