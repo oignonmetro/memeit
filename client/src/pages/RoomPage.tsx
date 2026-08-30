@@ -116,7 +116,7 @@ export default function RoomPage() {
   }
 
   async function handleMarkSeen() {
-    if (!revealMeme || revealMeme.selfSeen || marking) return;
+    if (!revealMeme || revealMeme.selfSeen || revealMeme.isAuthor || marking) return;
     setMarking(true);
     try {
       await markMemeSeen();
@@ -252,8 +252,17 @@ export default function RoomPage() {
               <button className="btn btn-secondary btn-sm" onClick={handleDownloadRevealed} disabled={downloading}>
                 {downloading ? 'Préparation...' : '⬇️ Télécharger ce meme'}
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={handleMarkSeen} disabled={marking || revealMeme.selfSeen}>
-                {revealMeme.selfSeen ? `👀 Vu (${revealMeme.seenCount}/${revealMeme.seenTotal})` : '👀 Vu'}
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleMarkSeen}
+                disabled={marking || revealMeme.selfSeen || revealMeme.isAuthor}
+                title={revealMeme.isAuthor ? "C'est ton meme, pas besoin de le confirmer" : undefined}
+              >
+                {revealMeme.isAuthor
+                  ? '👀 Ton meme'
+                  : revealMeme.selfSeen
+                  ? `👀 Vu (${revealMeme.seenCount}/${revealMeme.seenTotal})`
+                  : '👀 Vu'}
               </button>
             </div>
             {downloadError && (
@@ -263,7 +272,7 @@ export default function RoomPage() {
               <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
             </div>
             <div className="center-note">
-              {revealMeme.selfSeen
+              {revealMeme.isAuthor || revealMeme.selfSeen
                 ? `En attente des autres (${revealMeme.seenCount}/${revealMeme.seenTotal} ont vu)...`
                 : 'Le vote arrive quand tous les memes sont passés. Clique "Vu" pour accélérer.'}
             </div>

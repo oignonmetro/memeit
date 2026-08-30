@@ -153,12 +153,17 @@ export interface RevealMemePayload {
   template: Template;
   meme: { authorId: string; layers: TextLayer[] };
   deadline: number;
-  // How many connected players have hit "Vu" on the currently displayed meme.
-  // Once seenCount reaches seenTotal, the room advances immediately instead
-  // of waiting for the deadline.
+  // How many connected players (excluding the meme's own author — see
+  // isAuthor) have hit "Vu" on the currently displayed meme. Once seenCount
+  // reaches seenTotal, the room advances immediately instead of waiting for
+  // the deadline.
   seenCount: number;
   seenTotal: number;
   selfSeen: boolean;
+  // True when the viewer is the author of the meme currently shown: they
+  // already know it, so the "Vu" button is disabled for them and they don't
+  // count towards seenTotal.
+  isAuthor: boolean;
 }
 
 export interface VoteMeme {

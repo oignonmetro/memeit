@@ -116,15 +116,19 @@ export function deriveView(
     if (authorId && submission && template) {
       const seenBy = dbRoom.revealSeenBy || {};
       const connectedIds = players.filter((p) => p.connected).map((p) => p.id);
+      // L'auteur connaît déjà son propre meme : il est exclu du compte des
+      // "vu" requis, comme côté reducer (reduceReveal).
+      const requiredIds = connectedIds.filter((id) => id !== authorId);
       revealMeme = {
         index: dbRoom.revealIndex,
         total: (dbRoom.revealOrder || []).length,
         template,
         meme: { authorId, layers: submission.layers || [] },
         deadline: dbRoom.revealDeadline || Date.now(),
-        seenCount: connectedIds.filter((id) => seenBy[id]).length,
-        seenTotal: connectedIds.length,
+        seenCount: requiredIds.filter((id) => seenBy[id]).length,
+        seenTotal: requiredIds.length,
         selfSeen: Boolean(seenBy[selfId]),
+        isAuthor: selfId === authorId,
       };
     }
   }
