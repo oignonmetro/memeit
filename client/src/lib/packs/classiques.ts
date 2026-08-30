@@ -41,7 +41,7 @@ const CLASSIQUES_META: { id: string; url: string; name: string; boxCount: number
   { id: '252758727', url: '/templates/imgflip-252758727.jpg', name: 'Mother Ignoring Kid Drowning In A Pool', boxCount: 4 },
   { id: '177682295', url: '/templates/imgflip-177682295.png', name: 'You Guys are Getting Paid', boxCount: 2 },
   { id: '180190441', url: '/templates/imgflip-180190441.jpg', name: 'They\'re The Same Picture', boxCount: 3 },
-  { id: '505705955', url: '/templates/imgflip-505705955.png', name: 'Absolute Cinema', boxCount: 2 },
+  { id: '505705955', url: '/templates/imgflip-505705955.jpg', name: 'Absolute Cinema', boxCount: 1 },
   { id: '3218037', url: '/templates/imgflip-3218037.jpg', name: 'This Is Where I\'d Put My Trophy If I Had One', boxCount: 2 },
   { id: '67452763', url: '/templates/imgflip-67452763.jpg', name: 'Squidward window', boxCount: 2 },
   { id: '247375501', url: '/templates/imgflip-247375501.png', name: 'Buff Doge vs. Cheems', boxCount: 4 },

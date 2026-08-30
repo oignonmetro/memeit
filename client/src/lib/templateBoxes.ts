@@ -99,7 +99,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '102156234': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Mocking Spongebob
   '61579': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // One Does Not Simply
   '177682295': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // You Guys are Getting Paid
-  '505705955': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Absolute Cinema
+  '505705955': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }], // Absolute Cinema ("ABSOLUTE CINEMA" baked en bas, une seule zone en haut pour décrire la scène)
   '3218037': [{ xPct: 50, yPct: 44, widthPct: 91, heightPct: 12 }, { xPct: 50, yPct: 94, widthPct: 93, heightPct: 11 }], // This Is Where I'd Put My Trophy If I Had One
   '28251713': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Oprah You Get A
   '77045868': [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Pawn Stars Best I Can Do ("BEST I CAN DO IS" baked en haut, une seule zone pour la contre-offre en bas)
