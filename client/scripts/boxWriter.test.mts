@@ -8,7 +8,15 @@ import assert from 'node:assert';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { writeCuratedBoxes, writePepitesBoxes, formatBox } from './boxWriter.mts';
+import {
+  writeCuratedBoxes,
+  writePepitesBoxes,
+  formatBox,
+  deleteClassiqueEntry,
+  deletePepitesEntry,
+  deleteCuratedBoxes,
+  deleteFingerprintEntry,
+} from './boxWriter.mts';
 import { CLASSIQUES_TEMPLATES } from '../src/lib/packs/classiques.ts';
 import { PEPITES_TEMPLATES } from '../src/lib/packs/pepites.ts';
 import type { TemplateBox } from '../src/types.ts';
@@ -16,7 +24,9 @@ import type { TemplateBox } from '../src/types.ts';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT = path.join(HERE, '..');
 const TEMPLATE_BOXES = path.join(CLIENT, 'src', 'lib', 'templateBoxes.ts');
+const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
+const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 
 const tbSrc = readFileSync(TEMPLATE_BOXES, 'utf8');
 const ppSrc = readFileSync(PEPITES, 'utf8');
@@ -135,6 +145,46 @@ console.log('PASS  CRLF édition → une seule ligne touchée, aucun mélange de
 const addedCRLF = writeCuratedBoxes(tbCRLF, '999000111', moved, 'Template De Test');
 assert.ok(addedCRLF.includes(`'999000111': [{ xPct: 11`), 'CRLF : nouvelle entrée absente');
 console.log('PASS  CRLF ajout   → nouvelle entrée insérée sans erreur');
+
+console.log('--- suppression de templates ---');
+
+// 8. Classiques : supprimer une entrée retire sa seule ligne, rien d'autre.
+const ccSrc = readFileSync(CLASSIQUES, 'utf8');
+const deletedClassique = deleteClassiqueEntry(ccSrc, '181913649');
+assert.equal(
+  deletedClassique.split('\n').length,
+  ccSrc.split('\n').length - 1,
+  'classiques.ts : une seule ligne aurait dû disparaître'
+);
+assert.ok(!deletedClassique.includes("id: '181913649'"), 'entrée encore présente');
+assert.throws(() => deleteClassiqueEntry(ccSrc, '000000000'), /introuvable/, 'id inconnu non rejeté');
+console.log('PASS  suppr. classiques → entrée retirée, id inconnu rejeté');
+
+// 9. Pépites : supprimer une entrée retire tout son bloc ("{" à "},"), pas
+//    seulement la ligne id — et ne touche pas les entrées voisines.
+const deletedPepite = deletePepitesEntry(ppSrc, 'pepites-stonks');
+assert.ok(!deletedPepite.includes("id: 'pepites-stonks'"), 'entrée encore présente');
+assert.ok(deletedPepite.includes("id: 'pepites-chopper'"), 'une entrée voisine a été touchée');
+assert.throws(() => deletePepitesEntry(ppSrc, 'pepites-inexistant'), /introuvable/, 'id inconnu non rejeté');
+console.log('PASS  suppr. pépites    → bloc entier retiré, entrées voisines intactes, id inconnu rejeté');
+
+// 10. CURATED : silencieux (pas d'erreur) si l'id n'a jamais eu d'entrée
+//     personnalisée — sinon supprimer un template générique planterait.
+const untouchedCurated = deleteCuratedBoxes(tbSrc, '000000000');
+assert.equal(untouchedCurated, tbSrc, "un id absent de CURATED n'aurait rien dû changer");
+const strippedCurated = deleteCuratedBoxes(tbSrc, '438680');
+assert.ok(!strippedCurated.includes("'438680':"), 'entrée CURATED encore présente');
+console.log('PASS  suppr. CURATED    → entrée retirée si présente, silencieux sinon');
+
+// 11. Empreintes : contrairement à CURATED, une empreinte manquante EST une
+//     erreur (cf. gameLogic.test.mts : leur nombre doit égaler exactement
+//     celui des templates des packs — un id introuvable ici la signale tout
+//     de suite plutôt que de laisser un test sans rapport échouer plus tard.
+const fpSrc = readFileSync(FINGERPRINTS, 'utf8');
+const deletedFp = deleteFingerprintEntry(fpSrc, 'imgflip-181913649');
+assert.ok(!deletedFp.includes("'imgflip-181913649':"), 'empreinte encore présente');
+assert.throws(() => deleteFingerprintEntry(fpSrc, 'imgflip-000000000'), /introuvable/, 'id inconnu non rejeté');
+console.log('PASS  suppr. empreintes → entrée retirée, id inconnu rejeté');
 
 console.log("--- l'éditeur reste hors production ---");
 

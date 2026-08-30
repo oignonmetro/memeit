@@ -311,6 +311,38 @@ export default function BoxEditor() {
     }
   }, [entry, draft, filter, reviewedIds, move]);
 
+  // Supprime le template entier (pas juste une zone) : son entrée dans le
+  // pack, sa disposition personnalisée et son empreinte. Confirmation
+  // native car ça réécrit directement des fichiers source versionnés — pas
+  // de raccourci clavier pour éviter qu'une frappe malheureuse (à côté de
+  // Suppr, qui supprime une zone) déclenche ça par erreur.
+  const deleteTemplate = useCallback(async () => {
+    if (!entry || !template) return;
+    const ok = window.confirm(
+      `Supprimer définitivement « ${template.name} » ?\n\n` +
+        `Retire l'entrée de ${PACK_NAME[entry.pack]}, sa disposition personnalisée ` +
+        `et son empreinte. L'image reste sur le disque (rien n'est cassé si tu ` +
+        `changes d'avis, il suffira de rajouter l'entrée).`
+    );
+    if (!ok) return;
+    setStatus('Suppression…');
+    try {
+      const res = await fetch('/__boxes/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack: entry.pack, id: entry.template.id }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      setStatus(`« ${template.name} » supprimé ✓`);
+      // Comme pour save(), le HMR recharge le module du pack après
+      // l'écriture : la liste rétrécit toute seule, pas besoin de toucher à
+      // l'index ici.
+    } catch (err) {
+      setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
+    }
+  }, [entry, template]);
+
   const toggleReviewed = useCallback(() => {
     if (!template || !entry) return;
     const next = !reviewedIds.has(template.id);
@@ -719,6 +751,9 @@ export default function BoxEditor() {
             <button onClick={toggleReviewed}>
               {isReviewed ? 'Marquer non revu (r)' : 'Marquer revu (r)'}
             </button>
+            <button className="be-danger" onClick={deleteTemplate} title="Supprime le template entier, pas juste une zone">
+              Supprimer ce template
+            </button>
           </div>
 
           {status && <p className="be-status">{status}</p>}
@@ -730,6 +765,8 @@ export default function BoxEditor() {
             s : enregistrer, r : marquer revu — les deux passent au template suivant.
             + : ajouter une zone, Suppr : supprimer la zone sélectionnée, Alt+↑/Alt+↓ (ou ▲▼ sur
             une ligne) : réordonner — l'ordre du tableau, c'est Texte 1, Texte 2... en jeu.
+            « Supprimer ce template » (pas de raccourci clavier, confirmation demandée) retire le
+            template entier des fichiers source, pas juste une zone.
           </p>
           <code className="be-code">[{draft.map(formatBoxPreview).join(', ')}]</code>
         </aside>
@@ -806,6 +843,9 @@ function Styles() {
         background: transparent !important; color: #b8a9d4 !important; }
       .be-add-zone:not(:disabled):hover { border-color: #ffd166 !important; color: #ffd166 !important; }
       .be-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+      .be-danger { background: transparent !important; color: #ef476f !important;
+        border-color: #ef476f !important; margin-left: auto; }
+      .be-danger:hover { background: rgba(239,71,111,.12) !important; }
       .be-status { font-size: .8rem; color: #06d6a0; margin: 0; }
       .be-help { font-size: .72rem; color: #b8a9d4; line-height: 1.5; margin: 4px 0 0; }
       .be-code { display: block; font-size: .66rem; color: #b8a9d4; background: rgba(0,0,0,.35);

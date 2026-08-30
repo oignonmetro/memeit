@@ -9,13 +9,22 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import type { Plugin } from 'vite';
-import { writeCuratedBoxes, writePepitesBoxes } from './boxWriter.mts';
+import {
+  writeCuratedBoxes,
+  writePepitesBoxes,
+  deleteClassiqueEntry,
+  deletePepitesEntry,
+  deleteCuratedBoxes,
+  deleteFingerprintEntry,
+} from './boxWriter.mts';
 import type { TemplateBox } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT = path.join(HERE, '..');
 const TEMPLATE_BOXES = path.join(CLIENT, 'src', 'lib', 'templateBoxes.ts');
+const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
+const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const REVIEWED = path.join(HERE, 'boxes-reviewed.json');
 
 interface SavePayload {
@@ -23,6 +32,11 @@ interface SavePayload {
   id: string; // id du template dans le pack (imgflip-… ou pepites-…)
   name: string;
   boxes: TemplateBox[];
+}
+
+interface DeletePayload {
+  pack: 'classiques' | 'pepites';
+  id: string; // id complet du template (imgflip-… ou pepites-…)
 }
 
 function readBody(req: import('node:http').IncomingMessage): Promise<string> {
@@ -111,6 +125,73 @@ export function boxEditorPlugin(): Plugin {
           res.end(JSON.stringify({ ok: true, boxes }));
         } catch (err) {
           fail(400, err instanceof Error ? err.message : 'Écriture impossible');
+        }
+      });
+
+      // Supprime un template entier : son entrée dans le pack, son entrée
+      // CURATED (si elle existe) et son empreinte. L'image sur le disque
+      // n'est pas touchée — la garder rend la suppression réversible (il
+      // suffit de rajouter l'entrée), et un fichier orphelin dans
+      // public/templates/ ne casse jamais rien.
+      //
+      // Tout est calculé (et donc validé — les fonctions pures lèvent une
+      // erreur au moindre id introuvable) avant la moindre écriture disque :
+      // jamais de suppression à moitié faite, qui laisserait par ex. un
+      // template retiré du pack mais encore présent dans les empreintes —
+      // exactement l'état que gameLogic.test.mts détecte comme "empreintes
+      // orphelines".
+      server.middlewares.use('/__boxes/delete', async (req, res) => {
+        const fail = (code: number, message: string) => {
+          res.statusCode = code;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: false, error: message }));
+        };
+        if (req.method !== 'POST') return fail(405, 'POST attendu');
+        try {
+          const payload: DeletePayload = JSON.parse(await readBody(req));
+          const rawId = payload.id.replace(/^imgflip-/, '');
+          const packFile = payload.pack === 'pepites' ? PEPITES : CLASSIQUES;
+
+          const packSource = await readFile(packFile, 'utf8');
+          const entryCount =
+            payload.pack === 'pepites'
+              ? [...packSource.matchAll(/^ {4}id: '/gm)].length
+              : [...packSource.matchAll(/^ {2}\{ id: '/gm)].length;
+          if (entryCount <= 1) throw new Error('Impossible de supprimer le dernier template du pack.');
+
+          const newPackSource =
+            payload.pack === 'pepites'
+              ? deletePepitesEntry(packSource, payload.id)
+              : deleteClassiqueEntry(packSource, rawId);
+
+          const fpSource = await readFile(FINGERPRINTS, 'utf8');
+          const newFpSource = deleteFingerprintEntry(fpSource, payload.id);
+
+          let newTbSource: string | null = null;
+          if (payload.pack === 'classiques') {
+            const tbSource = await readFile(TEMPLATE_BOXES, 'utf8');
+            const stripped = deleteCuratedBoxes(tbSource, rawId);
+            if (stripped !== tbSource) newTbSource = stripped;
+          }
+
+          const reviewed = new Set(await loadReviewed());
+          const reviewedChanged = reviewed.delete(payload.id);
+
+          await writeFile(packFile, newPackSource, 'utf8');
+          await writeFile(FINGERPRINTS, newFpSource, 'utf8');
+          if (newTbSource !== null) await writeFile(TEMPLATE_BOXES, newTbSource, 'utf8');
+          if (reviewedChanged) {
+            await writeFile(
+              REVIEWED,
+              `${JSON.stringify({ reviewedIds: [...reviewed].sort() }, null, 2)}\n`,
+              'utf8'
+            );
+          }
+
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: true }));
+        } catch (err) {
+          fail(400, err instanceof Error ? err.message : 'Suppression impossible');
         }
       });
 

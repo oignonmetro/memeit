@@ -70,6 +70,72 @@ export function writeCuratedBoxes(
 }
 
 /**
+ * Supprime l'entrée d'un template Imgflip dans classiques.ts (CLASSIQUES_META,
+ * une ligne par entrée). Échoue si l'id est absent : un id inconnu signale un
+ * bug côté appelant (le template a déjà disparu, ou n'a jamais existé), pas
+ * un no-op silencieux qui masquerait le problème.
+ */
+export function deleteClassiqueEntry(source: string, imgflipId: string): string {
+  const { lines, eol } = splitLines(source);
+  const entryRe = new RegExp(`^  \\{ id: '${escapeRe(imgflipId)}',`);
+  const idx = lines.findIndex((l) => entryRe.test(l));
+  if (idx === -1) throw new Error(`Template ${imgflipId} introuvable dans classiques.ts`);
+  lines.splice(idx, 1);
+  return lines.join(eol);
+}
+
+/**
+ * Supprime l'entrée d'un template Pépites dans pepites.ts : tout le bloc,
+ * de la ligne "{" qui précède "id: '...'," jusqu'au "}," qui referme l'objet
+ * (pas seulement la ligne id, contrairement à classiques.ts où l'entrée est
+ * sur une seule ligne).
+ */
+export function deletePepitesEntry(source: string, templateId: string): string {
+  const { lines, eol } = splitLines(source);
+  const idIdx = lines.findIndex((l) => l.trim() === `id: '${templateId}',`);
+  if (idIdx === -1) throw new Error(`Template ${templateId} introuvable dans pepites.ts`);
+  const startIdx = idIdx - 1;
+  if (startIdx < 0 || lines[startIdx].trim() !== '{') {
+    throw new Error(`Début d'entrée introuvable pour ${templateId} dans pepites.ts`);
+  }
+  const endIdx = lines.findIndex((l, i) => i > idIdx && l.trim() === '},');
+  if (endIdx === -1) throw new Error(`Fin d'entrée introuvable pour ${templateId} dans pepites.ts`);
+  lines.splice(startIdx, endIdx - startIdx + 1);
+  return lines.join(eol);
+}
+
+/**
+ * Retire l'entrée CURATED d'un template Imgflip si elle existe. Silencieux
+ * (retourne la source inchangée) si absente : un template resté sur la
+ * disposition générique n'a jamais eu d'entrée à retirer, ce n'est pas une
+ * erreur.
+ */
+export function deleteCuratedBoxes(source: string, imgflipId: string): string {
+  const { lines, eol } = splitLines(source);
+  const entryRe = new RegExp(`^  '${escapeRe(imgflipId)}': \\[.*\\],(\\s*//.*)?$`);
+  const idx = lines.findIndex((l) => entryRe.test(l));
+  if (idx === -1) return source;
+  lines.splice(idx, 1);
+  return lines.join(eol);
+}
+
+/**
+ * Retire l'empreinte d'un template dans fingerprints.generated.ts. Échoue si
+ * absente : gameLogic.test.mts exige que le nombre d'empreintes égale
+ * exactement le nombre de templates des packs — laisser une entrée orpheline
+ * (silencieuse ici) ferait échouer ce test ailleurs, pour une raison bien
+ * moins évidente à retrouver que l'erreur immédiate levée ici.
+ */
+export function deleteFingerprintEntry(source: string, fullId: string): string {
+  const { lines, eol } = splitLines(source);
+  const entryRe = new RegExp(`^  '${escapeRe(fullId)}': \\{`);
+  const idx = lines.findIndex((l) => entryRe.test(l));
+  if (idx === -1) throw new Error(`Empreinte ${fullId} introuvable dans fingerprints.generated.ts`);
+  lines.splice(idx, 1);
+  return lines.join(eol);
+}
+
+/**
  * Met à jour les zones d'un template du pack Pépites dans pepites.ts.
  * Reproduit la convention du fichier : une seule zone tient sur une ligne,
  * deux zones ou plus sont réparties une par ligne.
