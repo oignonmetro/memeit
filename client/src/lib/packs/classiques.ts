@@ -48,7 +48,7 @@ const CLASSIQUES_META: { id: string; url: string; name: string; boxCount: number
   { id: '178591752', url: '/templates/imgflip-178591752.png', name: 'Tuxedo Winnie The Pooh', boxCount: 2 },
   { id: '55311130', url: '/templates/imgflip-55311130.jpg', name: 'This Is Fine', boxCount: 2 },
   { id: '28251713', url: '/templates/imgflip-28251713.jpg', name: 'Oprah You Get A', boxCount: 2 },
-  { id: '77045868', url: '/templates/imgflip-77045868.jpg', name: 'Pawn Stars Best I Can Do', boxCount: 2 },
+  { id: '77045868', url: '/templates/imgflip-77045868.jpg', name: 'Pawn Stars Best I Can Do', boxCount: 1 },
   { id: '195515965', url: '/templates/imgflip-195515965.jpg', name: 'Clown Applying Makeup', boxCount: 4 },
   { id: '148909805', url: '/templates/imgflip-148909805.jpg', name: 'Monkey Puppet', boxCount: 2 },
   { id: '533936279', url: '/templates/imgflip-533936279.png', name: 'Bell Curve', boxCount: 3 },

@@ -299,7 +299,10 @@ try {
       const nn = normName(t.name);
       assert.ok(!seenNames.has(nn), `[${pack.id}] "${t.name}" a le même nom que "${seenNames.get(nn)}"`);
       seenNames.set(nn, t.name);
-      assert.ok(t.url.startsWith('http'), `[${pack.id}] "${t.name}" a une URL valide`);
+      assert.ok(
+        t.url.startsWith('http') || t.url.startsWith('/templates/'),
+        `[${pack.id}] "${t.name}" a une URL valide`
+      );
       assert.ok(t.boxes.length > 0, `[${pack.id}] "${t.name}" a au moins une zone de texte`);
       for (const b of t.boxes) {
         for (const key of ['xPct', 'yPct', 'widthPct', 'heightPct'] as const) {
