@@ -2,6 +2,7 @@
 //
 //   npm run templates:fingerprint          (re)calcule les empreintes des packs
 //   npm run templates:import candidats.json   filtre des candidats à l'import
+//   npm run templates:localize             télécharge les images vers public/templates/
 //
 // Le but : qu'aucun template déjà présent dans un pack ne soit importé une
 // seconde fois. Les métadonnées ne suffisent pas (un même meme peut être servi
@@ -9,10 +10,11 @@
 // sha256 des octets pour les fichiers identiques, dhash perceptuel pour les
 // ré-encodages et redimensionnements.
 //
-// Ces deux commandes ont besoin du réseau. Le test, lui, relit simplement les
-// empreintes figées dans fingerprints.generated.ts : il reste hors-ligne.
+// Ces trois commandes ont besoin du réseau (accès à imgflip). Le test, lui, ne
+// relit que les empreintes figées dans fingerprints.generated.ts et les images
+// déjà locales dans public/templates/ : il reste hors-ligne.
 import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Jimp } from 'jimp';
@@ -22,6 +24,9 @@ import type { Template } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GENERATED_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'fingerprints.generated.ts');
+const CLASSIQUES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'classiques.ts');
+const PEPITES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'pepites.ts');
+const TEMPLATES_DIR = path.join(HERE, '..', 'public', 'templates');
 const DHASH_SIZE = 16; // 16x16 => 256 bits
 const DOWNLOAD_CONCURRENCY = 8;
 
@@ -32,7 +37,13 @@ interface Fingerprint {
   height: number;
 }
 
+// Une fois localisé (npm run templates:localize), template.url n'est plus une
+// URL réseau mais un chemin public Vite ("/templates/xxx.jpg") : on le relit
+// directement sur disque plutôt que d'essayer un fetch réseau qui échouerait.
 async function download(url: string): Promise<Buffer> {
+  if (url.startsWith('/')) {
+    return readFile(path.join(HERE, '..', 'public', url));
+  }
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} sur ${url}`);
   return Buffer.from(await res.arrayBuffer());
@@ -253,6 +264,112 @@ async function cmdImport(file: string): Promise<number> {
   return 0;
 }
 
+// ---------- commande : localize ----------
+
+// Échappe un id pour l'insérer dans une regex (même logique que boxWriter.mts).
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Découpe en lignes sans `\r` de fin, EOL détecté réutilisé à l'écriture —
+// même précaution que boxWriter.mts pour ne pas casser un checkout Windows.
+function splitLines(source: string): { lines: string[]; eol: '\n' | '\r\n' } {
+  const eol = source.includes('\r\n') ? '\r\n' : '\n';
+  return { lines: source.split(/\r?\n/), eol };
+}
+
+// Réécrit l'url d'une entrée de pack, que le fichier l'écrive sur la même
+// ligne que l'id (classiques.ts) ou sur la ligne suivante (pepites.ts).
+// Échoue bruyamment plutôt que de rester silencieuse sur une entrée non
+// trouvée : mieux vaut planter que laisser une url distante orpheline.
+function rewriteUrl(source: string, id: string, newUrl: string): string {
+  const { lines, eol } = splitLines(source);
+  const idRe = new RegExp(`id: '${escapeRe(id)}'`);
+  const urlRe = /url: '[^']*'/;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!idRe.test(lines[i])) continue;
+    if (urlRe.test(lines[i])) {
+      lines[i] = lines[i].replace(urlRe, `url: '${newUrl}'`);
+      return lines.join(eol);
+    }
+    if (lines[i + 1] && urlRe.test(lines[i + 1])) {
+      lines[i + 1] = lines[i + 1].replace(urlRe, `url: '${newUrl}'`);
+      return lines.join(eol);
+    }
+  }
+  throw new Error(`Entrée id='${id}' introuvable (ou sans url à côté) pour réécriture.`);
+}
+
+function extOf(url: string): string {
+  const match = /\.([a-zA-Z0-9]+)(?:\?.*)?$/.exec(url);
+  return match ? match[1].toLowerCase() : 'jpg';
+}
+
+// Télécharge toutes les images encore distantes (url http...) vers
+// public/templates/ et réécrit classiques.ts/pepites.ts pour pointer vers
+// ces fichiers locaux. Idempotente : une fois une entrée localisée, son url
+// commence par "/" et download() la relit sur disque au lieu de refaire une
+// requête réseau, donc relancer la commande ne télécharge que ce qu'il reste.
+async function cmdLocalize(): Promise<number> {
+  const entries = allPackTemplates().filter(({ template }) => template.url.startsWith('http'));
+  if (!entries.length) {
+    console.log('Toutes les images sont déjà locales (aucune url http à télécharger).');
+    return 0;
+  }
+
+  console.log(`Téléchargement de ${entries.length} image(s) vers ${path.relative(process.cwd(), TEMPLATES_DIR)}...`);
+  await mkdir(TEMPLATES_DIR, { recursive: true });
+
+  const failures: string[] = [];
+  const localized: { packId: string; rawId: string; newUrl: string }[] = [];
+
+  await mapLimit(entries, DOWNLOAD_CONCURRENCY, async ({ packId, template }) => {
+    try {
+      const buf = await download(template.url);
+      const fileName = `${template.id}.${extOf(template.url)}`;
+      await writeFile(path.join(TEMPLATES_DIR, fileName), buf);
+      // classiques.ts référence l'id nu ('222403160'), sans le préfixe
+      // "imgflip-" que porte Template.id — pepites.ts utilise déjà l'id complet.
+      const rawId = packId === 'classiques' ? template.id.replace(/^imgflip-/, '') : template.id;
+      localized.push({ packId, rawId, newUrl: `/templates/${fileName}` });
+    } catch (e) {
+      failures.push(`  ⚠️  [${packId}] "${template.name}" (${template.id}) — ${(e as Error).message}`);
+    }
+  });
+
+  if (!localized.length) {
+    console.error('\n❌ Aucun téléchargement n\'a réussi.');
+    failures.forEach((f) => console.error(f));
+    return 1;
+  }
+
+  let classiquesSource = await readFile(CLASSIQUES_FILE, 'utf8');
+  let pepitesSource = await readFile(PEPITES_FILE, 'utf8');
+
+  for (const { packId, rawId, newUrl } of localized) {
+    if (packId === 'classiques') {
+      classiquesSource = rewriteUrl(classiquesSource, rawId, newUrl);
+    } else {
+      pepitesSource = rewriteUrl(pepitesSource, rawId, newUrl);
+    }
+  }
+
+  await writeFile(CLASSIQUES_FILE, classiquesSource, 'utf8');
+  await writeFile(PEPITES_FILE, pepitesSource, 'utf8');
+
+  console.log(`✅ ${localized.length} image(s) téléchargée(s) et url(s) réécrites en chemins locaux.`);
+  if (failures.length) {
+    console.error(`\n⚠️  ${failures.length} échec(s) (url encore distante, relance la commande pour réessayer) :`);
+    failures.forEach((f) => console.error(f));
+    return 1;
+  }
+  console.log(
+    "\nN'oublie pas : npm run templates:fingerprint --workspace client (les empreintes changent si l'image a été ré-encodée en transit), puis commit + push des images et du code."
+  );
+  return 0;
+}
+
 // ---------- entrée ----------
 
 const [command, ...args] = process.argv.slice(2);
@@ -266,8 +383,10 @@ if (command === 'fingerprint') {
   } else {
     code = await cmdImport(args[0]);
   }
+} else if (command === 'localize') {
+  code = await cmdLocalize();
 } else {
-  console.error('Commandes : fingerprint | import <candidats.json>');
+  console.error('Commandes : fingerprint | import <candidats.json> | localize');
   code = 1;
 }
 process.exit(code);

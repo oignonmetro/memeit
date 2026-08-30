@@ -10,7 +10,8 @@
     "test": "tsx src/lib/gameLogic.test.mts && tsx scripts/boxWriter.test.mts",
     "boxes:edit": "vite --host",
     "templates:fingerprint": "tsx scripts/templates.mts fingerprint",
-    "templates:import": "tsx scripts/templates.mts import"
+    "templates:import": "tsx scripts/templates.mts import",
+    "templates:localize": "tsx scripts/templates.mts localize"
   },
   "dependencies": {
     "firebase": "^10.13.0",
