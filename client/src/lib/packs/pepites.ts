@@ -11,7 +11,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://i.imgflip.com/3388rw.png',
     name: 'Stonks',
     source: 'library',
-    boxes: [{ xPct: 70, yPct: 12, widthPct: 54, heightPct: 18 }],
+    boxes: [{ xPct: 50, yPct: 86, widthPct: 98, heightPct: 26 }],
   },
   {
     id: 'pepites-chopper',
@@ -19,10 +19,10 @@ export const PEPITES_TEMPLATES: Template[] = [
     name: 'American Chopper Argument',
     source: 'library',
     boxes: [
-      { xPct: 40, yPct: 16, widthPct: 60, heightPct: 8 },
-      { xPct: 53, yPct: 36, widthPct: 44, heightPct: 6 },
-      { xPct: 51, yPct: 55, widthPct: 70, heightPct: 7 },
-      { xPct: 27, yPct: 76, widthPct: 40, heightPct: 7 },
+      { xPct: 49, yPct: 16, widthPct: 71, heightPct: 4 },
+      { xPct: 53, yPct: 37, widthPct: 44, heightPct: 4 },
+      { xPct: 50, yPct: 57, widthPct: 68, heightPct: 5 },
+      { xPct: 22, yPct: 76, widthPct: 33, heightPct: 7 },
       { xPct: 81, yPct: 96, widthPct: 36, heightPct: 7 },
     ],
   },
@@ -31,7 +31,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://i.imgflip.com/34mv9a.png',
     name: 'Bugs Bunny No',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 6, widthPct: 92, heightPct: 10 }],
+    boxes: [{ xPct: 50, yPct: 9, widthPct: 92, heightPct: 15 }],
   },
   {
     id: 'pepites-kombucha-girl',
@@ -65,14 +65,14 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://i.imgflip.com/24r48o.jpg',
     name: "It's Free Real Estate",
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 7, widthPct: 80, heightPct: 10 }],
+    boxes: [{ xPct: 50, yPct: 12, widthPct: 80, heightPct: 19 }],
   },
   {
     id: 'pepites-confused-nick-young',
     url: 'https://i.imgflip.com/1n28ay.jpg',
     name: 'Confused Nick Young',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 10, widthPct: 92, heightPct: 16 }],
+    boxes: [{ xPct: 49, yPct: 78, widthPct: 92, heightPct: 33 }],
   },
   {
     id: 'pepites-doge',
@@ -89,7 +89,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://imgflip.com/s/meme/Sad-Keanu.jpg',
     name: 'Sad Keanu',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 12, widthPct: 88, heightPct: 20 }],
+    boxes: [{ xPct: 49, yPct: 87, widthPct: 88, heightPct: 20 }],
   },
   {
     id: 'pepites-gigachad',
@@ -214,7 +214,10 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://imgflip.com/s/meme/Hard-To-Swallow-Pills.jpg',
     name: 'Hard To Swallow Pills',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 56, widthPct: 80, heightPct: 10 }],
+    boxes: [
+      { xPct: 56, yPct: 66, widthPct: 33, heightPct: 15 },
+      { xPct: 20, yPct: 94, widthPct: 37, heightPct: 11 },
+    ],
   },
   {
     id: 'pepites-third-world-skeptical-kid',
@@ -258,7 +261,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://i.imgflip.com/9yed5.jpg',
     name: 'Homer Simpson Backing Into Bushes',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 10, widthPct: 90, heightPct: 11 }],
+    boxes: [{ xPct: 50, yPct: 7, widthPct: 90, heightPct: 11 }],
   },
   {
     id: 'pepites-press-x-to-doubt',
@@ -292,7 +295,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://i.imgflip.com/3518id.png',
     name: 'Big Brain Time',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 8, widthPct: 84, heightPct: 14 }],
+    boxes: [{ xPct: 50, yPct: 11, widthPct: 84, heightPct: 21 }],
   },
   {
     id: 'pepites-coffin-dance',
@@ -343,7 +346,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     url: 'https://i.imgflip.com/6f7ppl.jpg',
     name: 'Internal Screaming',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 10, widthPct: 86, heightPct: 16 }],
+    boxes: [{ xPct: 50, yPct: 9, widthPct: 86, heightPct: 14 }],
   },
   {
     id: 'pepites-kevins-chili',
@@ -351,7 +354,7 @@ export const PEPITES_TEMPLATES: Template[] = [
     name: "Kevin's Chili",
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 5, widthPct: 90, heightPct: 8 },
+      { xPct: 50, yPct: 43, widthPct: 90, heightPct: 8 },
       { xPct: 50, yPct: 95, widthPct: 90, heightPct: 8 },
     ],
   },
@@ -388,8 +391,8 @@ export const PEPITES_TEMPLATES: Template[] = [
     name: 'American Psycho Business Card',
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 10, widthPct: 80, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 80, heightPct: 14 },
+      { xPct: 23, yPct: 18, widthPct: 32, heightPct: 33 },
+      { xPct: 38, yPct: 67, widthPct: 13, heightPct: 19, rotationDeg: 21 },
     ],
   },
   {
@@ -425,8 +428,8 @@ export const PEPITES_TEMPLATES: Template[] = [
     name: 'Skinner Out Of Touch',
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 7, widthPct: 80, heightPct: 10 },
-      { xPct: 50, yPct: 57, widthPct: 80, heightPct: 10 },
+      { xPct: 50, yPct: 44, widthPct: 80, heightPct: 10 },
+      { xPct: 50, yPct: 94, widthPct: 80, heightPct: 10 },
     ],
   },
   {

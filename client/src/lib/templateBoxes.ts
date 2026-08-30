@@ -58,7 +58,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '161865971': [{ xPct: 53, yPct: 19, widthPct: 16, heightPct: 12, rotationDeg: -16 }, { xPct: 48, yPct: 61, widthPct: 71, heightPct: 22 }], // Marked Safe From
   '162372564': [{ xPct: 21, yPct: 16, widthPct: 34, heightPct: 26 }, { xPct: 49, yPct: 92, widthPct: 16, heightPct: 13 }], // Domino Effect
   '166969924': [{ xPct: 29, yPct: 23, widthPct: 27, heightPct: 16 }, { xPct: 80, yPct: 16, widthPct: 35, heightPct: 8 }, { xPct: 66, yPct: 88, widthPct: 48, heightPct: 18 }], // Flex Tape
-  '171305372': [{ xPct: 18, yPct: 30, widthPct: 30, heightPct: 22 }, { xPct: 46, yPct: 74, widthPct: 30, heightPct: 18 }, { xPct: 78, yPct: 40, widthPct: 30, heightPct: 24 }], // Soldier protecting sleeping child
+  '171305372': [{ xPct: 25, yPct: 12, widthPct: 30, heightPct: 22 }, { xPct: 39, yPct: 56, widthPct: 30, heightPct: 18 }, { xPct: 80, yPct: 66, widthPct: 30, heightPct: 24 }], // Soldier protecting sleeping child
   '178591752': [{ xPct: 72, yPct: 25, widthPct: 53, heightPct: 44 }, { xPct: 72, yPct: 76, widthPct: 53, heightPct: 43 }], // Tuxedo Winnie The Pooh
   '180190441': [{ xPct: 27, yPct: 19, widthPct: 34, heightPct: 25, rotationDeg: 11 }, { xPct: 78, yPct: 26, widthPct: 39, heightPct: 27, rotationDeg: 9 }, { xPct: 66, yPct: 58, widthPct: 32, heightPct: 10 }], // They're The Same Picture
   '181913649': [{ xPct: 75, yPct: 25, widthPct: 46, heightPct: 40 }, { xPct: 75, yPct: 75, widthPct: 46, heightPct: 40 }], // Drake Hotline Bling
@@ -77,19 +77,19 @@ const CURATED: Record<string, TemplateBox[]> = {
   '309668311': [{ xPct: 28, yPct: 30, widthPct: 36, heightPct: 20 }, { xPct: 72, yPct: 30, widthPct: 36, heightPct: 20 }, { xPct: 50, yPct: 86, widthPct: 60, heightPct: 12 }], // Two Paths
   '309868304': [{ xPct: 23, yPct: 34, widthPct: 40, heightPct: 24 }, { xPct: 72, yPct: 34, widthPct: 39, heightPct: 24 }, { xPct: 48, yPct: 90, widthPct: 80, heightPct: 10 }], // Trade Offer
   '322841258': [{ xPct: 25, yPct: 43, widthPct: 47, heightPct: 11 }, { xPct: 75, yPct: 45, widthPct: 48, heightPct: 7 }, { xPct: 25, yPct: 96, widthPct: 49, heightPct: 9 }], // Anakin Padme 4 Panel (texte 3 sur la case bas-gauche)
-  '342785297': [{ xPct: 50, yPct: 16, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 50, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 84, widthPct: 84, heightPct: 14 }], // Gus Fring we are not the same
+  '342785297': [{ xPct: 51, yPct: 8, widthPct: 84, heightPct: 14 }, { xPct: 50, yPct: 86, widthPct: 97, heightPct: 27 }], // Gus Fring we are not the same
   '354700819': [{ xPct: 17, yPct: 40, widthPct: 33, heightPct: 27 }, { xPct: 73, yPct: 76, widthPct: 40, heightPct: 24 }], // Two guys on a bus
   '360597639': [{ xPct: 50, yPct: 18, widthPct: 88, heightPct: 14 }, { xPct: 77, yPct: 44, widthPct: 40, heightPct: 12 }], // whe i'm in a competition and my opponent is (le texte incrusté est coupé en deux : zone 1 dans le trou entre les deux lignes, zone 2 juste après "opponent is" → "when i'm in a [1] competition and my opponent is [2]")
   '533936279': [{ xPct: 19, yPct: 43, widthPct: 32, heightPct: 32 }, { xPct: 49, yPct: 10, widthPct: 30, heightPct: 20 }, { xPct: 84, yPct: 34, widthPct: 29, heightPct: 34 }], // Bell Curve
   '657846647': [{ xPct: 50, yPct: 81, widthPct: 98, heightPct: 26 }], // Empire State Building climbers (single caption above the climbers)
   '21735': [{ xPct: 77, yPct: 13, widthPct: 40, heightPct: 14 }, { xPct: 78, yPct: 45, widthPct: 38, heightPct: 13 }], // The Rock Driving (une zone par bulle : la 2e bulle est dans la case du milieu, pas juste sous la 1re)
-  '50421420': [{ xPct: 28, yPct: 26, widthPct: 46, heightPct: 22 }, { xPct: 28, yPct: 74, widthPct: 46, heightPct: 22 }], // Disappointed Black Guy (left column)
-  '91545132': [{ xPct: 26, yPct: 14, widthPct: 32, heightPct: 20 }, { xPct: 52, yPct: 53, widthPct: 34, heightPct: 26 }], // Trump Bill Signing (texte 1 sur la tête de Trump, texte 2 sur le document)
+  '50421420': [{ xPct: 31, yPct: 25, widthPct: 57, heightPct: 44 }, { xPct: 31, yPct: 76, widthPct: 57, heightPct: 44 }], // Disappointed Black Guy (left column)
+  '91545132': [{ xPct: 23, yPct: 11, widthPct: 25, heightPct: 14 }, { xPct: 52, yPct: 57, widthPct: 23, heightPct: 39 }], // Trump Bill Signing (texte 1 sur la tête de Trump, texte 2 sur le document)
   '123999232': [{ xPct: 27, yPct: 70, widthPct: 42, heightPct: 18 }, { xPct: 27, yPct: 87, widthPct: 42, heightPct: 12 }], // The Scroll Of Truth (scroll)
   '155067746': [{ xPct: 50, yPct: 21, widthPct: 88, heightPct: 33 }], // Surprised Pikachu (top lines)
   '221578498': [{ xPct: 24, yPct: 17, widthPct: 32, heightPct: 16, rotationDeg: -2 }, { xPct: 69, yPct: 69, widthPct: 34, heightPct: 20 }], // Grant Gustin over grave (texte 1 recentré sur la pierre tombale)
   '222403160': [{ xPct: 50, yPct: 92, widthPct: 84, heightPct: 12 }], // Bernie I Am Once Again Asking (below the baked "I am once again asking" line, so the caption completes the sentence)
-  '284929871': [{ xPct: 30, yPct: 16, widthPct: 44, heightPct: 16 }, { xPct: 30, yPct: 38, widthPct: 44, heightPct: 14 }], // They don't know (lonely guy, left)
+  '284929871': [{ xPct: 43, yPct: 9, widthPct: 31, heightPct: 13 }, { xPct: 75, yPct: 59, widthPct: 44, heightPct: 14 }], // They don't know (lonely guy, left)
   '427308417': [{ xPct: 76, yPct: 40, widthPct: 46, heightPct: 25, rotationDeg: -1 }, { xPct: 46, yPct: 83, widthPct: 27, heightPct: 28 }], // 0 days without (bottom, avoid baked sign)
   '4087833': [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Waiting Skeleton
   '91538330': [{ xPct: 50, yPct: 85, widthPct: 95, heightPct: 26 }], // X, X Everywhere
@@ -118,6 +118,14 @@ const CURATED: Record<string, TemplateBox[]> = {
   '61556': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Grandma Finds The Internet
   '259237855': [{ xPct: 50, yPct: 12, widthPct: 90, heightPct: 19 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Laughing Leo
   '133946291': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // You know, I'm something of a scientist myself
+  '27813981': [{ xPct: 50, yPct: 43, widthPct: 90, heightPct: 12 }, { xPct: 50, yPct: 92, widthPct: 90, heightPct: 13 }], // Hide the Pain Harold
+  '163573': [{ xPct: 50, yPct: 12, widthPct: 90, heightPct: 20 }, { xPct: 50, yPct: 88, widthPct: 90, heightPct: 20 }], // Imagination Spongebob
+  '92084495': [{ xPct: 50, yPct: 12, widthPct: 90, heightPct: 21 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Charlie Conspiracy (Always Sunny in Philidelphia)
+  '20007896': [{ xPct: 50, yPct: 15, widthPct: 50, heightPct: 15 }, { xPct: 59, yPct: 87, widthPct: 73, heightPct: 22 }], // c'mon do something
+  '16464531': [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // But That's None Of My Business
+  '29617627': [{ xPct: 50, yPct: 13, widthPct: 90, heightPct: 23 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Look At Me
+  '14371066': [{ xPct: 50, yPct: 12, widthPct: 90, heightPct: 20 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Star Wars Yoda
+  '101716': [{ xPct: 50, yPct: 12, widthPct: 90, heightPct: 20 }, { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }], // Yo Dawg Heard You
 };
 
 export function boxesForImgflip(imgflipId: string, boxCount: number): TemplateBox[] {
