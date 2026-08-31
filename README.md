@@ -235,33 +235,47 @@ Comme ces templates sont des données statiques embarquées dans l'application, 
 appel réseau ni cache à gérer pour les charger — l'app fonctionne même hors ligne pour cette
 partie-là.
 
-### Pack "Snap français" (images déposées à la main)
+### Packs "faits main" (images déposées à la main)
 
-Un second pack (`snap.ts`) rassemble des memes qui **ne viennent pas d'Imgflip** : il n'existe
-donc pas de catalogue public à télécharger, les images sont déposées à la main.
+Certains memes **ne viennent d'aucun catalogue en ligne** (contrairement à Imgflip pour
+Classiques) : il n'y a rien à télécharger automatiquement, les images se déposent à la main.
+Deux packs de ce type existent aujourd'hui, tous deux construits par la même commande
+générique (`scripts/templates.mts`, registre `DROP_PACKS`) :
+
+| Pack | Fichier | Dossier de dépôt | Commande |
+|---|---|---|---|
+| Snap français | `snap.ts` | `client/templates-snap/` | `npm run templates:snap` |
+| TikTok France | `tiktok.ts` | `client/templates-tiktok/` | `npm run templates:tiktok` |
 
 ```bash
-# 1. déposer les images (.jpg / .png) dans client/templates-snap/
-npm run templates:snap --workspace client          # les intègre au pack
-npm run templates:fingerprint --workspace client   # empreintes des nouvelles images
-npm run boxes:edit --workspace client              # recaler les zones de texte
+# 1. déposer les images (.jpg / .png) dans le dossier du pack visé
+npm run templates:snap --workspace client           # (ou templates:tiktok) les intègre au pack
+npm run templates:fingerprint --workspace client    # empreintes des nouvelles images
+npm run boxes:edit --workspace client               # recaler les zones de texte
 ```
 
-`templates:snap` refuse les formats que Jimp ne sait pas décoder (`.webp`, `.avif`…) — sinon
+Chaque commande refuse les formats que Jimp ne sait pas décoder (`.webp`, `.avif`…) — sinon
 l'erreur ne serait remontée que plus tard par `templates:fingerprint`, sans dire quel fichier
-est en cause. Il écarte aussi les images déjà présentes dans un pack, même sous un autre nom de
-fichier (comparaison de l'image elle-même, cf. empreintes ci-dessous). Le nom du fichier devient
-le nom du template (`chat_qui_dort.jpg` → « Chat qui dort », id `snap-chat-qui-dort`).
+est en cause. Elle écarte aussi les images déjà présentes dans un pack, même sous un autre nom
+de fichier (comparaison de l'image elle-même, cf. empreintes ci-dessous). Le nom du fichier
+devient le nom du template (`chat_qui_dort.jpg` → « Chat qui dort », id `snap-chat-qui-dort`).
 
-La commande est **additive** : elle n'écrase jamais une entrée déjà présente, donc les zones
-réglées dans l'éditeur visuel survivent à un import ultérieur. Pour retirer un template, passer
-par « Supprimer ce template » dans l'éditeur.
+Elle est **additive** : elle n'écrase jamais une entrée déjà présente, donc les zones réglées
+dans l'éditeur visuel survivent à un import ultérieur. Pour retirer un template, passer par
+« Supprimer ce template » dans l'éditeur.
 
-Le pack n'est **enregistré dans `packs/index.ts` que s'il contient au moins une image** : un pack
-vide serait sélectionnable dans le lobby sans rien pouvoir tirer. Il apparaît donc tout seul (et
-avec lui le sélecteur de packs du lobby, masqué tant qu'il n'y a qu'un pack) le jour où des
-images arrivent. Le contenu de `client/templates-snap/` n'est pas versionné : c'est une zone de
-transit, les images retenues vivent dans `client/public/templates/`.
+Chaque pack n'est **enregistré dans `packs/index.ts` que s'il contient au moins une image** : un
+pack vide serait sélectionnable dans le lobby sans rien pouvoir tirer. Il apparaît donc tout seul
+(et avec lui le sélecteur de packs du lobby, masqué tant qu'il n'y a qu'un pack) le jour où des
+images arrivent. Le contenu de `client/templates-snap/` et `client/templates-tiktok/` n'est pas
+versionné : ce sont des zones de transit, les images retenues vivent dans
+`client/public/templates/`.
+
+Ajouter un nouveau pack "fait main" : une entrée dans `DROP_PACKS` (`scripts/templates.mts`), un
+fichier `src/lib/packs/<id>.ts` vide (`export const <ID>_TEMPLATES: Template[] = [];`), un
+dossier `templates-<id>/` (copier un `LISEZ-MOI.md` existant comme modèle), une ligne dans
+`package.json`, et l'enregistrement conditionnel dans `packs/index.ts` (`MANUAL_PACKS`) — la
+commande d'import, elle, n'a rien à dupliquer.
 
 ### Éditeur visuel des zones de texte
 

@@ -20,6 +20,7 @@ import {
 import { CLASSIQUES_TEMPLATES } from '../src/lib/packs/classiques.ts';
 import { PEPITES_TEMPLATES } from '../src/lib/packs/pepites.ts';
 import { SNAP_TEMPLATES } from '../src/lib/packs/snap.ts';
+import { TIKTOK_TEMPLATES } from '../src/lib/packs/tiktok.ts';
 import type { TemplateBox } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -29,6 +30,7 @@ const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
+const TIKTOK = path.join(CLIENT, 'src', 'lib', 'packs', 'tiktok.ts');
 
 const tbSrc = readFileSync(TEMPLATE_BOXES, 'utf8');
 const ppSrc = readFileSync(PEPITES, 'utf8');
@@ -188,35 +190,46 @@ assert.ok(!deletedFp.includes("'imgflip-181913649':"), 'empreinte encore présen
 assert.throws(() => deleteFingerprintEntry(fpSrc, 'imgflip-000000000'), /introuvable/, 'id inconnu non rejeté');
 console.log('PASS  suppr. empreintes → entrée retirée, id inconnu rejeté');
 
-console.log('--- pack Snap français (même format que pepites.ts) ---');
+console.log('--- packs "faits main" (même format que pepites.ts) ---');
 
-// 12. snap.ts est généré par templates:snap mais réécrit par l'éditeur via
-//     les mêmes fonctions que pepites.ts : le round-trip doit y être tout
-//     aussi neutre. Vide tant qu'aucune image n'a été déposée — le test
-//     devient réellement mordant au premier import.
-const snapSrc = readFileSync(SNAP, 'utf8');
-let outSnap = snapSrc;
-for (const t of SNAP_TEMPLATES) outSnap = writePepitesBoxes(outSnap, t.id, t.boxes, 'snap.ts');
-assert.equal(outSnap, snapSrc, 'la réécriture de snap.ts a modifié le fichier');
-console.log(
-  SNAP_TEMPLATES.length
-    ? `PASS  snap       → ${SNAP_TEMPLATES.length} entrées réécrites à l'identique`
-    : 'PASS  snap       → pack vide (aucune image déposée), format vérifié au premier import'
-);
+// 12. snap.ts et tiktok.ts sont générés par templates:<id> mais réécrits par
+//     l'éditeur via les mêmes fonctions que pepites.ts : le round-trip doit y
+//     être tout aussi neutre. Chacun est vide tant qu'aucune image n'a été
+//     déposée — le test devient réellement mordant au premier import. Une
+//     boucle plutôt qu'un bloc par pack : un futur pack "fait main" (voir
+//     DROP_PACKS dans templates.mts) n'a qu'à s'ajouter à cette liste pour
+//     être couvert, sans dupliquer les assertions.
+const MANUAL_PACKS = [
+  { file: SNAP, templates: SNAP_TEMPLATES, label: 'snap.ts', prefix: 'snap' },
+  { file: TIKTOK, templates: TIKTOK_TEMPLATES, label: 'tiktok.ts', prefix: 'tiktok' },
+];
 
-// 13. Les messages d'erreur doivent nommer le fichier réellement fouillé :
-//     writePepitesBoxes/deletePepitesEntry servent pepites.ts ET snap.ts, et
-//     envoyer chercher dans le mauvais fichier ferait perdre du temps.
-assert.throws(
-  () => writePepitesBoxes(snapSrc, 'snap-inexistant', moved, 'snap.ts'),
-  /introuvable dans snap\.ts/,
-  'le message ne nomme pas snap.ts'
-);
-assert.throws(
-  () => deletePepitesEntry(snapSrc, 'snap-inexistant', 'snap.ts'),
-  /introuvable dans snap\.ts/,
-  'le message de suppression ne nomme pas snap.ts'
-);
+for (const { file, templates, label, prefix } of MANUAL_PACKS) {
+  const src = readFileSync(file, 'utf8');
+  let out = src;
+  for (const t of templates) out = writePepitesBoxes(out, t.id, t.boxes, label);
+  assert.equal(out, src, `la réécriture de ${label} a modifié le fichier`);
+  console.log(
+    templates.length
+      ? `PASS  ${prefix.padEnd(8)} → ${templates.length} entrées réécrites à l'identique`
+      : `PASS  ${prefix.padEnd(8)} → pack vide (aucune image déposée), format vérifié au premier import`
+  );
+
+  // Les messages d'erreur doivent nommer le fichier réellement fouillé :
+  // writePepitesBoxes/deletePepitesEntry servent tous ces packs à la fois, et
+  // envoyer chercher dans le mauvais fichier ferait perdre du temps.
+  assert.throws(
+    () => writePepitesBoxes(src, `${prefix}-inexistant`, moved, label),
+    new RegExp(`introuvable dans ${label.replace('.', '\\.')}`),
+    `le message ne nomme pas ${label}`
+  );
+  assert.throws(
+    () => deletePepitesEntry(src, `${prefix}-inexistant`, label),
+    new RegExp(`introuvable dans ${label.replace('.', '\\.')}`),
+    `le message de suppression ne nomme pas ${label}`
+  );
+}
+
 assert.throws(
   () => writePepitesBoxes(ppSrc, 'pepites-inexistant', moved),
   /introuvable dans pepites\.ts/,

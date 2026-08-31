@@ -1,10 +1,10 @@
 import type { Template } from '../../types';
 
-// FICHIER GÉNÉRÉ — régénéré par : npm run templates:snap --workspace client
+// FICHIER GÉNÉRÉ — régénéré par : npm run templates:tiktok --workspace client
 //
-// Pack "Snap français" : des memes qui ne viennent d'aucun catalogue en
+// Pack "TikTok France" : des memes qui ne viennent d'aucun catalogue en
 // ligne, donc rien à télécharger automatiquement. Les images sont déposées à
-// la main dans client/templates-snap/, et la commande ci-dessus les
+// la main dans client/templates-tiktok/, et la commande ci-dessus les
 // range dans public/templates/ puis met ce fichier à jour.
 //
 // La commande est ADDITIVE : elle ajoute les nouvelles images sans jamais
@@ -19,4 +19,4 @@ import type { Template } from '../../types';
 //
 // Tant que ce tableau est vide, le pack n'est pas enregistré du tout dans
 // packs/index.ts : il n'apparaît ni dans le lobby, ni dans les tests.
-export const SNAP_TEMPLATES: Template[] = [];
+export const TIKTOK_TEMPLATES: Template[] = [];

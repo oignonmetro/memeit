@@ -4,6 +4,13 @@
 //   npm run templates:import candidats.json   filtre des candidats à l'import
 //   npm run templates:localize             télécharge les images vers public/templates/
 //   npm run templates:snap                 intègre les images déposées dans templates-snap/
+//   npm run templates:tiktok               intègre les images déposées dans templates-tiktok/
+//
+// snap et tiktok sont deux instances de la même commande générique (voir
+// DROP_PACKS plus bas) : des packs "faits main", sans catalogue en ligne à
+// interroger, dont les images sont déposées par un humain dans un dossier
+// dédié. En ajouter un nouveau n'a rien d'un copier-coller de tout ce
+// fichier — une entrée dans DROP_PACKS suffit.
 //
 // Le but : qu'aucun template déjà présent dans un pack ne soit importé une
 // seconde fois. Les métadonnées ne suffisent pas (un même meme peut être servi
@@ -12,10 +19,10 @@
 // ré-encodages et redimensionnements.
 //
 // import et localize ont besoin du réseau (accès à imgflip) ; fingerprint n'en
-// a plus besoin depuis que les images sont locales, et snap n'en a jamais eu
-// besoin (il lit des fichiers déposés à la main). Le test, lui, ne relit que
-// les empreintes figées dans fingerprints.generated.ts et les images déjà
-// locales dans public/templates/ : il reste hors-ligne.
+// a plus besoin depuis que les images sont locales, et les packs "faits main"
+// n'en ont jamais eu besoin (ils lisent des fichiers déposés à la main). Le
+// test, lui, ne relit que les empreintes figées dans fingerprints.generated.ts
+// et les images déjà locales dans public/templates/ : il reste hors-ligne.
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -30,9 +37,42 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GENERATED_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const CLASSIQUES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'pepites.ts');
-const SNAP_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'snap.ts');
-const SNAP_DROP_DIR = path.join(HERE, '..', 'templates-snap');
 const TEMPLATES_DIR = path.join(HERE, '..', 'public', 'templates');
+
+interface DropPackConfig {
+  id: string; // préfixe d'id ('snap-...', 'tiktok-...') et nom de commande npm
+  packName: string; // nom affiché (messages, commentaires du fichier généré)
+  exportName: string; // nom de la constante exportée, ex. 'SNAP_TEMPLATES'
+  file: string; // chemin vers src/lib/packs/<id>.ts
+  dropDir: string; // chemin vers templates-<id>/, où les images sont déposées
+}
+
+// Packs "faits main" : leurs images ne viennent d'aucun catalogue en ligne
+// (contrairement à classiques.ts/pepites.ts, sourcés depuis Imgflip), donc
+// pas d'URL à télécharger — elles sont déposées à la main dans
+// templates-<id>/, puis intégrées par `npm run templates:<id>`.
+//
+// Ajouter un pack : une entrée ici, un fichier vide src/lib/packs/<id>.ts
+// (`export const <EXPORT_NAME>: Template[] = [];`), un dossier
+// templates-<id>/ (copier templates-snap/LISEZ-MOI.md comme modèle), une
+// ligne dans package.json, et l'enregistrement conditionnel dans
+// packs/index.ts (voir comment SNAP_TEMPLATES y est déjà branché).
+const DROP_PACKS: Record<string, DropPackConfig> = {
+  snap: {
+    id: 'snap',
+    packName: 'Snap français',
+    exportName: 'SNAP_TEMPLATES',
+    file: path.join(HERE, '..', 'src', 'lib', 'packs', 'snap.ts'),
+    dropDir: path.join(HERE, '..', 'templates-snap'),
+  },
+  tiktok: {
+    id: 'tiktok',
+    packName: 'TikTok France',
+    exportName: 'TIKTOK_TEMPLATES',
+    file: path.join(HERE, '..', 'src', 'lib', 'packs', 'tiktok.ts'),
+    dropDir: path.join(HERE, '..', 'templates-tiktok'),
+  },
+};
 const DHASH_SIZE = 16; // 16x16 => 256 bits
 const DOWNLOAD_CONCURRENCY = 8;
 
@@ -321,7 +361,9 @@ function sourceFileFor(templateId: string): { file: string; rawId: string } {
   if (templateId.startsWith('imgflip-')) {
     return { file: CLASSIQUES_FILE, rawId: templateId.replace(/^imgflip-/, '') };
   }
-  if (templateId.startsWith('snap-')) return { file: SNAP_FILE, rawId: templateId };
+  for (const pack of Object.values(DROP_PACKS)) {
+    if (templateId.startsWith(`${pack.id}-`)) return { file: pack.file, rawId: templateId };
+  }
   return { file: PEPITES_FILE, rawId: templateId };
 }
 
@@ -382,14 +424,14 @@ async function cmdLocalize(): Promise<number> {
   return 0;
 }
 
-// ---------- commande : snap ----------
+// ---------- commande : import-drop (packs "faits main", ex. snap, tiktok) ----------
 
 // Jimp ne décode ni le webp ni l'avif : une image dans un de ces formats
 // passerait l'import pour faire échouer templates:fingerprint plus tard, avec
 // un message sans rapport avec le fichier fautif. On les refuse ici, là où on
 // peut encore nommer le fichier à convertir.
-const SNAP_EXTS = new Set(['.jpg', '.jpeg', '.png']);
-const SNAP_REJECTED_EXTS = new Set(['.webp', '.avif', '.gif', '.heic', '.bmp', '.tiff']);
+const DROP_EXTS = new Set(['.jpg', '.jpeg', '.png']);
+const DROP_REJECTED_EXTS = new Set(['.webp', '.avif', '.gif', '.heic', '.bmp', '.tiff']);
 
 const rel = (p: string) => path.relative(process.cwd(), p);
 const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -414,14 +456,15 @@ function quote(s: string): string {
   return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
-const SNAP_HEADER = `import type { Template } from '../../types';
+function dropPackHeader(pack: DropPackConfig): string {
+  return `import type { Template } from '../../types';
 
-// FICHIER GÉNÉRÉ — régénéré par : npm run templates:snap --workspace client
+// FICHIER GÉNÉRÉ — régénéré par : npm run templates:${pack.id} --workspace client
 //
-// Pack "Snap français" : des memes qui ne viennent pas d'Imgflip, donc sans
-// catalogue public à télécharger. Les images sont déposées à la main dans
-// client/templates-snap/, et la commande ci-dessus les range dans
-// public/templates/ puis met ce fichier à jour.
+// Pack "${pack.packName}" : des memes qui ne viennent d'aucun catalogue en
+// ligne, donc rien à télécharger automatiquement. Les images sont déposées à
+// la main dans client/templates-${pack.id}/, et la commande ci-dessus les
+// range dans public/templates/ puis met ce fichier à jour.
 //
 // La commande est ADDITIVE : elle ajoute les nouvelles images sans jamais
 // toucher aux entrées déjà là (leurs zones, réglées dans l'éditeur visuel,
@@ -435,9 +478,10 @@ const SNAP_HEADER = `import type { Template } from '../../types';
 //
 // Tant que ce tableau est vide, le pack n'est pas enregistré du tout dans
 // packs/index.ts : il n'apparaît ni dans le lobby, ni dans les tests.
-export const SNAP_TEMPLATES: Template[] = [`;
+export const ${pack.exportName}: Template[] = [`;
+}
 
-function renderSnapEntry(t: Template): string {
+function renderDropEntry(t: Template): string {
   const boxes =
     t.boxes.length === 1
       ? `    boxes: [${formatBox(t.boxes[0])}],`
@@ -453,38 +497,57 @@ function renderSnapEntry(t: Template): string {
   ].join('\n');
 }
 
-async function cmdSnap(): Promise<number> {
-  const { SNAP_TEMPLATES } = await import('../src/lib/packs/snap.ts');
-  const existing: Template[] = [...SNAP_TEMPLATES];
+async function cmdImportDrop(packId: string): Promise<number> {
+  const pack = DROP_PACKS[packId];
+  if (!pack) {
+    console.error(`Pack inconnu : ${packId}. Packs "faits main" déclarés : ${Object.keys(DROP_PACKS).join(', ')}.`);
+    return 1;
+  }
+
+  const module = await import(`../src/lib/packs/${pack.id}.ts`);
+  const existing: Template[] = [...(module[pack.exportName] as Template[])];
 
   let entries: string[];
   try {
-    entries = await readdir(SNAP_DROP_DIR);
+    entries = await readdir(pack.dropDir);
   } catch {
-    console.error(`❌ Dossier introuvable : ${rel(SNAP_DROP_DIR)}`);
+    console.error(`❌ Dossier introuvable : ${rel(pack.dropDir)}`);
     console.error('   Crée-le et dépose les images dedans, puis relance.');
     return 1;
   }
 
-  const files = entries.filter((f) => SNAP_EXTS.has(path.extname(f).toLowerCase())).sort();
-  const badFormat = entries.filter((f) => SNAP_REJECTED_EXTS.has(path.extname(f).toLowerCase())).sort();
+  const files = entries.filter((f) => DROP_EXTS.has(path.extname(f).toLowerCase())).sort();
+  const badFormat = entries.filter((f) => DROP_REJECTED_EXTS.has(path.extname(f).toLowerCase())).sort();
 
   if (!files.length && !badFormat.length) {
-    console.log(`Aucune image dans ${rel(SNAP_DROP_DIR)} (formats acceptés : .jpg, .jpeg, .png).`);
+    console.log(`Aucune image dans ${rel(pack.dropDir)} (formats acceptés : .jpg, .jpeg, .png).`);
     return 0;
   }
 
   // Les empreintes figées couvrent tout ce qui est déjà commité ; on complète
-  // au vol pour les templates ajoutés depuis (typiquement un import snap
-  // précédent dont les empreintes n'ont pas encore été régénérées).
+  // au vol pour les templates ajoutés depuis (typiquement un import précédent
+  // dont les empreintes n'ont pas encore été régénérées).
   const { TEMPLATE_FINGERPRINTS } = await import('../src/lib/packs/fingerprints.generated.ts');
   const pool: Record<string, { sha256: string; dhash: string }> = { ...TEMPLATE_FINGERPRINTS };
-  const packEntries = allPackTemplates();
-  const label = new Map(packEntries.map((e) => [e.template.id, `[${e.packId}] ${e.template.name}`]));
-  const knownNames = new Map(packEntries.map((e) => [normName(e.template.name), e.template.name]));
-  const knownIds = new Set(packEntries.map((e) => e.template.id));
 
-  const missing = packEntries.filter(({ template }) => !pool[template.id]);
+  // allPackTemplates() ne voit ce pack que s'il est déjà enregistré dans
+  // packs/index.ts — pas garanti pour un tout nouveau pack encore vide au
+  // moment de son premier import. On fusionne donc explicitement avec
+  // `existing` (lu directement depuis le fichier du pack, indépendamment de
+  // cet enregistrement) : sans ça, réimporter avant d'avoir branché le pack
+  // dans packs/index.ts ne verrait pas ses propres entrées déjà là, et les
+  // dupliquerait en silence au lieu de les reconnaître comme "déjà intégrées".
+  const packEntries = allPackTemplates();
+  const seenIds = new Set(packEntries.map((e) => e.template.id));
+  const allKnown = [
+    ...packEntries,
+    ...existing.filter((t) => !seenIds.has(t.id)).map((template) => ({ packId: pack.id, template })),
+  ];
+  const label = new Map(allKnown.map((e) => [e.template.id, `[${e.packId}] ${e.template.name}`]));
+  const knownNames = new Map(allKnown.map((e) => [normName(e.template.name), e.template.name]));
+  const knownIds = new Set(allKnown.map((e) => e.template.id));
+
+  const missing = allKnown.filter(({ template }) => !pool[template.id]);
   if (missing.length) {
     console.log(`Empreintes manquantes pour ${missing.length} template(s) déjà intégré(s), calcul...`);
     await mapLimit(missing, DOWNLOAD_CONCURRENCY, async ({ template }) => {
@@ -497,7 +560,7 @@ async function cmdSnap(): Promise<number> {
     });
   }
 
-  console.log(`${files.length} image(s) à examiner dans ${rel(SNAP_DROP_DIR)}.\n`);
+  console.log(`${files.length} image(s) à examiner dans ${rel(pack.dropDir)}.\n`);
   await mkdir(TEMPLATES_DIR, { recursive: true });
 
   const added: Template[] = [];
@@ -516,12 +579,12 @@ async function cmdSnap(): Promise<number> {
       problems.push(`  ⛔ ${file} — nom de fichier sans caractère exploitable, renomme-le`);
       continue;
     }
-    const id = `snap-${slug}`;
+    const id = `${pack.id}-${slug}`;
     const name = prettyName(base);
 
     let fingerprint: Fingerprint;
     try {
-      fingerprint = await fingerprintBuffer(await readFile(path.join(SNAP_DROP_DIR, file)));
+      fingerprint = await fingerprintBuffer(await readFile(path.join(pack.dropDir, file)));
     } catch (e) {
       problems.push(`  ⛔ ${file} — image illisible : ${(e as Error).message}`);
       continue;
@@ -548,7 +611,7 @@ async function cmdSnap(): Promise<number> {
     const fileName = `${id}${ext === '.jpeg' ? '.jpg' : ext}`;
     await writeFile(
       path.join(TEMPLATES_DIR, fileName),
-      await readFile(path.join(SNAP_DROP_DIR, file))
+      await readFile(path.join(pack.dropDir, file))
     );
 
     const template: Template = {
@@ -565,7 +628,7 @@ async function cmdSnap(): Promise<number> {
     };
     added.push(template);
     pool[id] = fingerprint;
-    label.set(id, `[snap] ${name}`);
+    label.set(id, `[${pack.id}] ${name}`);
     knownIds.add(id);
     knownNames.set(normName(name), name);
   }
@@ -593,10 +656,10 @@ async function cmdSnap(): Promise<number> {
   // (cas traité juste au-dessus).
 
   const all = [...existing, ...added];
-  const body = all.map(renderSnapEntry).join('\n');
-  await writeFile(SNAP_FILE, `${SNAP_HEADER}\n${body}\n];\n`, 'utf8');
+  const body = all.map(renderDropEntry).join('\n');
+  await writeFile(pack.file, `${dropPackHeader(pack)}\n${body}\n];\n`, 'utf8');
 
-  console.log(`✅ ${added.length} image(s) ajoutée(s) au pack Snap français (${all.length} au total).`);
+  console.log(`✅ ${added.length} image(s) ajoutée(s) au pack ${pack.packName} (${all.length} au total).`);
   added.forEach((t) => console.log(`  + ${t.name}`));
   console.log('\nÀ faire ensuite :');
   console.log('  1. npm run templates:fingerprint --workspace client   (empreintes des nouvelles images)');
@@ -620,10 +683,14 @@ if (command === 'fingerprint') {
   }
 } else if (command === 'localize') {
   code = await cmdLocalize();
-} else if (command === 'snap') {
-  code = await cmdSnap();
+} else if (command && DROP_PACKS[command]) {
+  // Chaque pack "fait main" (snap, tiktok...) déclaré dans DROP_PACKS
+  // devient automatiquement une commande, sans rien à ajouter ici.
+  code = await cmdImportDrop(command);
 } else {
-  console.error('Commandes : fingerprint | import <candidats.json> | localize | snap');
+  console.error(
+    `Commandes : fingerprint | import <candidats.json> | localize | ${Object.keys(DROP_PACKS).join(' | ')}`
+  );
   code = 1;
 }
 process.exit(code);
