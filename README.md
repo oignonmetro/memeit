@@ -235,6 +235,34 @@ Comme ces templates sont des données statiques embarquées dans l'application, 
 appel réseau ni cache à gérer pour les charger — l'app fonctionne même hors ligne pour cette
 partie-là.
 
+### Pack "Snap français" (images déposées à la main)
+
+Un second pack (`snap.ts`) rassemble des memes qui **ne viennent pas d'Imgflip** : il n'existe
+donc pas de catalogue public à télécharger, les images sont déposées à la main.
+
+```bash
+# 1. déposer les images (.jpg / .png) dans client/templates-snap/
+npm run templates:snap --workspace client          # les intègre au pack
+npm run templates:fingerprint --workspace client   # empreintes des nouvelles images
+npm run boxes:edit --workspace client              # recaler les zones de texte
+```
+
+`templates:snap` refuse les formats que Jimp ne sait pas décoder (`.webp`, `.avif`…) — sinon
+l'erreur ne serait remontée que plus tard par `templates:fingerprint`, sans dire quel fichier
+est en cause. Il écarte aussi les images déjà présentes dans un pack, même sous un autre nom de
+fichier (comparaison de l'image elle-même, cf. empreintes ci-dessous). Le nom du fichier devient
+le nom du template (`chat_qui_dort.jpg` → « Chat qui dort », id `snap-chat-qui-dort`).
+
+La commande est **additive** : elle n'écrase jamais une entrée déjà présente, donc les zones
+réglées dans l'éditeur visuel survivent à un import ultérieur. Pour retirer un template, passer
+par « Supprimer ce template » dans l'éditeur.
+
+Le pack n'est **enregistré dans `packs/index.ts` que s'il contient au moins une image** : un pack
+vide serait sélectionnable dans le lobby sans rien pouvoir tirer. Il apparaît donc tout seul (et
+avec lui le sélecteur de packs du lobby, masqué tant qu'il n'y a qu'un pack) le jour où des
+images arrivent. Le contenu de `client/templates-snap/` n'est pas versionné : c'est une zone de
+transit, les images retenues vivent dans `client/public/templates/`.
+
 ### Éditeur visuel des zones de texte
 
 Positionner une zone de texte est une tâche de manipulation directe : la décrire en prose

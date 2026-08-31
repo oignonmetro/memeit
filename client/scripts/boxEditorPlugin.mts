@@ -24,19 +24,32 @@ const CLIENT = path.join(HERE, '..');
 const TEMPLATE_BOXES = path.join(CLIENT, 'src', 'lib', 'templateBoxes.ts');
 const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
+const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const REVIEWED = path.join(HERE, 'boxes-reviewed.json');
 
+type PackId = 'classiques' | 'pepites' | 'snap';
+
+// pepites.ts et snap.ts partagent exactement le même format (zones écrites en
+// clair dans l'entrée, id complet, entrée multi-lignes) : seul le fichier
+// change, donc les mêmes fonctions de réécriture servent pour les deux.
+// classiques.ts est à part — ses zones vivent dans CURATED
+// (templateBoxes.ts), sous l'id nu sans le préfixe "imgflip-".
+const INLINE_PACK_FILES: Partial<Record<PackId, string>> = {
+  pepites: PEPITES,
+  snap: SNAP,
+};
+
 interface SavePayload {
-  pack: 'classiques' | 'pepites';
-  id: string; // id du template dans le pack (imgflip-… ou pepites-…)
+  pack: PackId;
+  id: string; // id du template dans le pack (imgflip-…, pepites-… ou snap-…)
   name: string;
   boxes: TemplateBox[];
 }
 
 interface DeletePayload {
-  pack: 'classiques' | 'pepites';
-  id: string; // id complet du template (imgflip-… ou pepites-…)
+  pack: PackId;
+  id: string; // id complet du template (imgflip-…, pepites-… ou snap-…)
 }
 
 function readBody(req: import('node:http').IncomingMessage): Promise<string> {
@@ -109,9 +122,14 @@ export function boxEditorPlugin(): Plugin {
           const payload: SavePayload = JSON.parse(await readBody(req));
           const boxes = sanitizeBoxes(payload.boxes);
 
-          if (payload.pack === 'pepites') {
-            const source = await readFile(PEPITES, 'utf8');
-            await writeFile(PEPITES, writePepitesBoxes(source, payload.id, boxes), 'utf8');
+          const inlineFile = INLINE_PACK_FILES[payload.pack];
+          if (inlineFile) {
+            const source = await readFile(inlineFile, 'utf8');
+            await writeFile(
+              inlineFile,
+              writePepitesBoxes(source, payload.id, boxes, path.basename(inlineFile)),
+              'utf8'
+            );
           } else {
             const imgflipId = payload.id.replace(/^imgflip-/, '');
             const source = await readFile(TEMPLATE_BOXES, 'utf8');
@@ -150,19 +168,18 @@ export function boxEditorPlugin(): Plugin {
         try {
           const payload: DeletePayload = JSON.parse(await readBody(req));
           const rawId = payload.id.replace(/^imgflip-/, '');
-          const packFile = payload.pack === 'pepites' ? PEPITES : CLASSIQUES;
+          const inlineFile = INLINE_PACK_FILES[payload.pack];
+          const packFile = inlineFile ?? CLASSIQUES;
 
           const packSource = await readFile(packFile, 'utf8');
-          const entryCount =
-            payload.pack === 'pepites'
-              ? [...packSource.matchAll(/^ {4}id: '/gm)].length
-              : [...packSource.matchAll(/^ {2}\{ id: '/gm)].length;
+          const entryCount = inlineFile
+            ? [...packSource.matchAll(/^ {4}id: '/gm)].length
+            : [...packSource.matchAll(/^ {2}\{ id: '/gm)].length;
           if (entryCount <= 1) throw new Error('Impossible de supprimer le dernier template du pack.');
 
-          const newPackSource =
-            payload.pack === 'pepites'
-              ? deletePepitesEntry(packSource, payload.id)
-              : deleteClassiqueEntry(packSource, rawId);
+          const newPackSource = inlineFile
+            ? deletePepitesEntry(packSource, payload.id, path.basename(inlineFile))
+            : deleteClassiqueEntry(packSource, rawId);
 
           const fpSource = await readFile(FINGERPRINTS, 'utf8');
           const newFpSource = deleteFingerprintEntry(fpSource, payload.id);

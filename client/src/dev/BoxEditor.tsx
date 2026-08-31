@@ -12,9 +12,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
+import { SNAP_TEMPLATES } from '../lib/packs/snap';
+import { genericBoxes } from '../lib/templateBoxes';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
-type PackId = 'classiques' | 'pepites';
+type PackId = 'classiques' | 'pepites' | 'snap';
 type Entry = { template: Template; pack: PackId };
 type Filter = 'tous' | 'generiques' | 'personnalises' | 'nonrevus';
 type SampleMode = 'court' | 'long' | 'numeros';
@@ -22,6 +24,7 @@ type SampleMode = 'court' | 'long' | 'numeros';
 const ENTRIES: Entry[] = [
   ...CLASSIQUES_TEMPLATES.map((template) => ({ template, pack: 'classiques' as const })),
   ...PEPITES_TEMPLATES.map((template) => ({ template, pack: 'pepites' as const })),
+  ...SNAP_TEMPLATES.map((template) => ({ template, pack: 'snap' as const })),
 ];
 
 // Étiquette purement interne à l'éditeur (fichier source d'origine) — depuis
@@ -32,12 +35,22 @@ const ENTRIES: Entry[] = [
 const PACK_NAME: Record<PackId, string> = {
   classiques: 'Classiques',
   pepites: 'Pépites',
+  snap: 'Snap français',
 };
 
 // Un template compte comme "personnalisé" s'il a une entrée CURATED dans
 // templateBoxes.ts (Classiques) — les Pépites ont toujours leurs zones
 // écrites à la main, donc toujours personnalisées.
+//
+// Snap est un cas à part : ses entrées sont créées par l'import
+// (templates:snap) avec la disposition générique haut/bas, et sont ensuite
+// recalées ici. Il n'y a pas de registre CURATED pour ce pack, donc on
+// compare les zones elles-mêmes à ce que l'import écrit par défaut — sinon
+// les 50 templates fraîchement importés s'annonceraient "personnalisés"
+// alors qu'ils sont justement ceux qui restent à faire, et le filtre
+// "Disposition générique" ne servirait plus à rien pour ce pack.
 function isCuratedEntry(pack: PackId, template: Template, curatedIds: Set<string>): boolean {
+  if (pack === 'snap') return !sameBoxes(template.boxes, genericBoxes(2));
   return pack === 'pepites' || curatedIds.has(template.id.replace(/^imgflip-/, ''));
 }
 

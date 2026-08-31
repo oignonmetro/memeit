@@ -8,3 +8,9 @@ client/.env
 client/.env.local
 .firebaserc
 .firebase/
+
+# Dépôt d'images pour "npm run templates:snap" : zone de transit, les images
+# retenues sont copiées dans client/public/templates/ (inutile de les
+# versionner deux fois). Le mode d'emploi du dossier, lui, est suivi.
+client/templates-snap/*
+!client/templates-snap/LISEZ-MOI.md

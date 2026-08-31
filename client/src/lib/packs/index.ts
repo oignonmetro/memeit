@@ -1,6 +1,7 @@
 import type { Template } from '../../types';
 import { CLASSIQUES_TEMPLATES } from './classiques';
 import { PEPITES_TEMPLATES } from './pepites';
+import { SNAP_TEMPLATES } from './snap';
 
 export interface TemplatePackMeta {
   id: string;
@@ -8,16 +9,31 @@ export interface TemplatePackMeta {
   description: string;
 }
 
-// Un seul pack, exposé aux joueurs : "Pépites" a fusionné dedans (les deux
-// fichiers source, classiques.ts et pepites.ts, restent séparés en interne —
-// l'éditeur visuel de zones s'appuie sur cette séparation pour savoir où
-// écrire — mais ça ne concerne plus que l'outillage, plus le jeu).
+// "Classiques" réunit classiques.ts et pepites.ts : c'était deux packs
+// sélectionnables à l'origine, fusionnés depuis (les deux fichiers source
+// restent séparés en interne parce que l'éditeur visuel de zones s'appuie
+// dessus pour savoir où écrire, mais ça ne concerne plus que l'outillage).
+//
+// "Snap français" ne s'ajoute que lorsqu'il contient au moins un template :
+// ses images ne viennent pas d'Imgflip, elles sont déposées à la main (voir
+// npm run templates:snap). Un pack vide n'a rien à proposer au tirage — il
+// resterait sélectionnable dans le lobby pour ne rien donner, et ferait
+// échouer le test "pack non vide". Il apparaît donc tout seul le jour où des
+// images arrivent, sans rien à rebrancher ici.
+const SNAP_PACK: TemplatePackMeta = {
+  id: 'snap',
+  name: 'Snap français',
+  description: 'Des memes bien de chez nous, absents d\'Imgflip',
+};
+
 export const TEMPLATE_PACKS: TemplatePackMeta[] = [
   { id: 'classiques', name: 'Classiques', description: 'Tous les memes cultes intégrés à MemeIt' },
+  ...(SNAP_TEMPLATES.length ? [SNAP_PACK] : []),
 ];
 
 const PACKS: Record<string, Template[]> = {
   classiques: [...CLASSIQUES_TEMPLATES, ...PEPITES_TEMPLATES],
+  ...(SNAP_TEMPLATES.length ? { snap: SNAP_TEMPLATES } : {}),
 };
 
 export const DEFAULT_PACK_ID = 'classiques';

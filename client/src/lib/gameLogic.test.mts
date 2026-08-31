@@ -277,11 +277,14 @@ try {
 console.log('--- packs de templates ---');
 try {
   const { TEMPLATE_PACKS, getPackTemplates } = await import('./packs/index.ts');
-  // "Pépites" a fusionné dans "classiques" : un seul pack reste exposé côté
-  // joueur (l'éditeur visuel de zones distingue encore les deux fichiers
-  // source en interne, mais ça ne concerne plus le jeu).
-  assert.equal(TEMPLATE_PACKS.length, 1, 'un seul pack déclaré depuis la fusion Classiques/Pépites');
+  // "Pépites" a fusionné dans "classiques" : c'est l'invariant à verrouiller
+  // ici, pas le nombre de packs — "snap" n'est déclaré que lorsqu'il contient
+  // au moins une image, donc 1 comme 2 packs sont des états valides.
   assert.ok(TEMPLATE_PACKS.some((p: any) => p.id === 'classiques'), 'le pack "classiques" existe');
+  assert.ok(
+    !TEMPLATE_PACKS.some((p: any) => p.id === 'pepites'),
+    '"pepites" a fusionné dans "classiques" : il ne doit plus être déclaré comme pack'
+  );
 
   // Un même meme présent deux fois (même sous deux ids/noms différents) peut
   // sortir deux fois dans la même partie : on vérifie l'unicité de l'id, mais

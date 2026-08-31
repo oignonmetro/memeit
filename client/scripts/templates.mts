@@ -3,6 +3,7 @@
 //   npm run templates:fingerprint          (re)calcule les empreintes des packs
 //   npm run templates:import candidats.json   filtre des candidats à l'import
 //   npm run templates:localize             télécharge les images vers public/templates/
+//   npm run templates:snap                 intègre les images déposées dans templates-snap/
 //
 // Le but : qu'aucun template déjà présent dans un pack ne soit importé une
 // seconde fois. Les métadonnées ne suffisent pas (un même meme peut être servi
@@ -10,22 +11,27 @@
 // sha256 des octets pour les fichiers identiques, dhash perceptuel pour les
 // ré-encodages et redimensionnements.
 //
-// Ces trois commandes ont besoin du réseau (accès à imgflip). Le test, lui, ne
-// relit que les empreintes figées dans fingerprints.generated.ts et les images
-// déjà locales dans public/templates/ : il reste hors-ligne.
+// import et localize ont besoin du réseau (accès à imgflip) ; fingerprint n'en
+// a plus besoin depuis que les images sont locales, et snap n'en a jamais eu
+// besoin (il lit des fichiers déposés à la main). Le test, lui, ne relit que
+// les empreintes figées dans fingerprints.generated.ts et les images déjà
+// locales dans public/templates/ : il reste hors-ligne.
 import { createHash } from 'node:crypto';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Jimp } from 'jimp';
 import { TEMPLATE_PACKS, getPackTemplates } from '../src/lib/packs/index.ts';
 import { findDuplicate, dhashDistance } from '../src/lib/packs/fingerprints.ts';
+import { formatBox } from './boxWriter.mts';
 import type { Template } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GENERATED_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const CLASSIQUES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'pepites.ts');
+const SNAP_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'snap.ts');
+const SNAP_DROP_DIR = path.join(HERE, '..', 'templates-snap');
 const TEMPLATES_DIR = path.join(HERE, '..', 'public', 'templates');
 const DHASH_SIZE = 16; // 16x16 => 256 bits
 const DOWNLOAD_CONCURRENCY = 8;
@@ -306,11 +312,24 @@ function extOf(url: string): string {
   return match ? match[1].toLowerCase() : 'jpg';
 }
 
+// Dans quel fichier source une entrée est-elle écrite ? Le pack ne le dit
+// plus depuis la fusion ("classiques" couvre classiques.ts ET pepites.ts) :
+// c'est le préfixe de l'id qui identifie le fichier de façon fiable, et qui
+// dit aussi sous quelle forme l'id y est écrit (classiques.ts référence l'id
+// nu, sans le préfixe "imgflip-" que porte Template.id).
+function sourceFileFor(templateId: string): { file: string; rawId: string } {
+  if (templateId.startsWith('imgflip-')) {
+    return { file: CLASSIQUES_FILE, rawId: templateId.replace(/^imgflip-/, '') };
+  }
+  if (templateId.startsWith('snap-')) return { file: SNAP_FILE, rawId: templateId };
+  return { file: PEPITES_FILE, rawId: templateId };
+}
+
 // Télécharge toutes les images encore distantes (url http...) vers
-// public/templates/ et réécrit classiques.ts/pepites.ts pour pointer vers
-// ces fichiers locaux. Idempotente : une fois une entrée localisée, son url
-// commence par "/" et download() la relit sur disque au lieu de refaire une
-// requête réseau, donc relancer la commande ne télécharge que ce qu'il reste.
+// public/templates/ et réécrit le fichier de pack correspondant pour pointer
+// vers ces fichiers locaux. Idempotente : une fois une entrée localisée, son
+// url commence par "/" et download() la relit sur disque au lieu de refaire
+// une requête réseau, donc relancer ne télécharge que ce qu'il reste.
 async function cmdLocalize(): Promise<number> {
   const entries = allPackTemplates().filter(({ template }) => template.url.startsWith('http'));
   if (!entries.length) {
@@ -322,17 +341,14 @@ async function cmdLocalize(): Promise<number> {
   await mkdir(TEMPLATES_DIR, { recursive: true });
 
   const failures: string[] = [];
-  const localized: { packId: string; rawId: string; newUrl: string }[] = [];
+  const localized: { templateId: string; newUrl: string }[] = [];
 
   await mapLimit(entries, DOWNLOAD_CONCURRENCY, async ({ packId, template }) => {
     try {
       const buf = await download(template.url);
       const fileName = `${template.id}.${extOf(template.url)}`;
       await writeFile(path.join(TEMPLATES_DIR, fileName), buf);
-      // classiques.ts référence l'id nu ('222403160'), sans le préfixe
-      // "imgflip-" que porte Template.id — pepites.ts utilise déjà l'id complet.
-      const rawId = packId === 'classiques' ? template.id.replace(/^imgflip-/, '') : template.id;
-      localized.push({ packId, rawId, newUrl: `/templates/${fileName}` });
+      localized.push({ templateId: template.id, newUrl: `/templates/${fileName}` });
     } catch (e) {
       failures.push(`  ⚠️  [${packId}] "${template.name}" (${template.id}) — ${(e as Error).message}`);
     }
@@ -344,19 +360,15 @@ async function cmdLocalize(): Promise<number> {
     return 1;
   }
 
-  let classiquesSource = await readFile(CLASSIQUES_FILE, 'utf8');
-  let pepitesSource = await readFile(PEPITES_FILE, 'utf8');
-
-  for (const { packId, rawId, newUrl } of localized) {
-    if (packId === 'classiques') {
-      classiquesSource = rewriteUrl(classiquesSource, rawId, newUrl);
-    } else {
-      pepitesSource = rewriteUrl(pepitesSource, rawId, newUrl);
-    }
+  // Chaque fichier n'est lu qu'une fois puis réécrit une fois, avec toutes
+  // ses entrées mises à jour d'affilée.
+  const sources = new Map<string, string>();
+  for (const { templateId, newUrl } of localized) {
+    const { file, rawId } = sourceFileFor(templateId);
+    if (!sources.has(file)) sources.set(file, await readFile(file, 'utf8'));
+    sources.set(file, rewriteUrl(sources.get(file)!, rawId, newUrl));
   }
-
-  await writeFile(CLASSIQUES_FILE, classiquesSource, 'utf8');
-  await writeFile(PEPITES_FILE, pepitesSource, 'utf8');
+  for (const [file, content] of sources) await writeFile(file, content, 'utf8');
 
   console.log(`✅ ${localized.length} image(s) téléchargée(s) et url(s) réécrites en chemins locaux.`);
   if (failures.length) {
@@ -367,6 +379,229 @@ async function cmdLocalize(): Promise<number> {
   console.log(
     "\nN'oublie pas : npm run templates:fingerprint --workspace client (les empreintes changent si l'image a été ré-encodée en transit), puis commit + push des images et du code."
   );
+  return 0;
+}
+
+// ---------- commande : snap ----------
+
+// Jimp ne décode ni le webp ni l'avif : une image dans un de ces formats
+// passerait l'import pour faire échouer templates:fingerprint plus tard, avec
+// un message sans rapport avec le fichier fautif. On les refuse ici, là où on
+// peut encore nommer le fichier à convertir.
+const SNAP_EXTS = new Set(['.jpg', '.jpeg', '.png']);
+const SNAP_REJECTED_EXTS = new Set(['.webp', '.avif', '.gif', '.heic', '.bmp', '.tiff']);
+
+const rel = (p: string) => path.relative(process.cwd(), p);
+const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+function slugify(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // accents : "café" -> "cafe"
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// "chat_qui_dort.jpg" -> "Chat qui dort" : le nom de fichier est ce que
+// l'utilisateur a sous les yeux, c'est le libellé le moins surprenant.
+function prettyName(fileBase: string): string {
+  const cleaned = fileBase.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned;
+}
+
+function quote(s: string): string {
+  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
+const SNAP_HEADER = `import type { Template } from '../../types';
+
+// FICHIER GÉNÉRÉ — régénéré par : npm run templates:snap --workspace client
+//
+// Pack "Snap français" : des memes qui ne viennent pas d'Imgflip, donc sans
+// catalogue public à télécharger. Les images sont déposées à la main dans
+// client/templates-snap/, et la commande ci-dessus les range dans
+// public/templates/ puis met ce fichier à jour.
+//
+// La commande est ADDITIVE : elle ajoute les nouvelles images sans jamais
+// toucher aux entrées déjà là (leurs zones, réglées dans l'éditeur visuel,
+// survivent donc à un ré-import). Pour retirer un template, passer par
+// « Supprimer ce template » dans l'éditeur.
+//
+// Le format reproduit exactement celui de pepites.ts (zones écrites en clair
+// dans l'entrée, une par ligne dès qu'il y en a deux) : c'est ce que sait
+// relire et réécrire boxWriter.mts, donc l'éditeur visuel de zones édite ce
+// pack comme les autres.
+//
+// Tant que ce tableau est vide, le pack n'est pas enregistré du tout dans
+// packs/index.ts : il n'apparaît ni dans le lobby, ni dans les tests.
+export const SNAP_TEMPLATES: Template[] = [`;
+
+function renderSnapEntry(t: Template): string {
+  const boxes =
+    t.boxes.length === 1
+      ? `    boxes: [${formatBox(t.boxes[0])}],`
+      : ['    boxes: [', ...t.boxes.map((b) => `      ${formatBox(b)},`), '    ],'].join('\n');
+  return [
+    '  {',
+    `    id: ${quote(t.id)},`,
+    `    url: ${quote(t.url)},`,
+    `    name: ${quote(t.name)},`,
+    `    source: 'library',`,
+    boxes,
+    '  },',
+  ].join('\n');
+}
+
+async function cmdSnap(): Promise<number> {
+  const { SNAP_TEMPLATES } = await import('../src/lib/packs/snap.ts');
+  const existing: Template[] = [...SNAP_TEMPLATES];
+
+  let entries: string[];
+  try {
+    entries = await readdir(SNAP_DROP_DIR);
+  } catch {
+    console.error(`❌ Dossier introuvable : ${rel(SNAP_DROP_DIR)}`);
+    console.error('   Crée-le et dépose les images dedans, puis relance.');
+    return 1;
+  }
+
+  const files = entries.filter((f) => SNAP_EXTS.has(path.extname(f).toLowerCase())).sort();
+  const badFormat = entries.filter((f) => SNAP_REJECTED_EXTS.has(path.extname(f).toLowerCase())).sort();
+
+  if (!files.length && !badFormat.length) {
+    console.log(`Aucune image dans ${rel(SNAP_DROP_DIR)} (formats acceptés : .jpg, .jpeg, .png).`);
+    return 0;
+  }
+
+  // Les empreintes figées couvrent tout ce qui est déjà commité ; on complète
+  // au vol pour les templates ajoutés depuis (typiquement un import snap
+  // précédent dont les empreintes n'ont pas encore été régénérées).
+  const { TEMPLATE_FINGERPRINTS } = await import('../src/lib/packs/fingerprints.generated.ts');
+  const pool: Record<string, { sha256: string; dhash: string }> = { ...TEMPLATE_FINGERPRINTS };
+  const packEntries = allPackTemplates();
+  const label = new Map(packEntries.map((e) => [e.template.id, `[${e.packId}] ${e.template.name}`]));
+  const knownNames = new Map(packEntries.map((e) => [normName(e.template.name), e.template.name]));
+  const knownIds = new Set(packEntries.map((e) => e.template.id));
+
+  const missing = packEntries.filter(({ template }) => !pool[template.id]);
+  if (missing.length) {
+    console.log(`Empreintes manquantes pour ${missing.length} template(s) déjà intégré(s), calcul...`);
+    await mapLimit(missing, DOWNLOAD_CONCURRENCY, async ({ template }) => {
+      try {
+        pool[template.id] = await fingerprintBuffer(await download(template.url));
+      } catch {
+        // Image illisible : on ne peut pas comparer contre elle, tant pis —
+        // mieux vaut continuer que bloquer tout l'import pour ça.
+      }
+    });
+  }
+
+  console.log(`${files.length} image(s) à examiner dans ${rel(SNAP_DROP_DIR)}.\n`);
+  await mkdir(TEMPLATES_DIR, { recursive: true });
+
+  const added: Template[] = [];
+  const skipped: string[] = [];
+  const problems: string[] = [];
+
+  for (const file of badFormat) {
+    problems.push(`  ⛔ ${file} — format non géré : convertis-la en .jpg ou .png`);
+  }
+
+  for (const file of files) {
+    const ext = path.extname(file).toLowerCase();
+    const base = path.basename(file, path.extname(file));
+    const slug = slugify(base);
+    if (!slug) {
+      problems.push(`  ⛔ ${file} — nom de fichier sans caractère exploitable, renomme-le`);
+      continue;
+    }
+    const id = `snap-${slug}`;
+    const name = prettyName(base);
+
+    let fingerprint: Fingerprint;
+    try {
+      fingerprint = await fingerprintBuffer(await readFile(path.join(SNAP_DROP_DIR, file)));
+    } catch (e) {
+      problems.push(`  ⛔ ${file} — image illisible : ${(e as Error).message}`);
+      continue;
+    }
+
+    // Déjà importée : même id (ré-import du même fichier) ou même image sous
+    // un autre nom de fichier. Dans les deux cas on passe, sans rien écraser.
+    const hit = findDuplicate(fingerprint, pool);
+    if (hit) {
+      const against = label.get(hit.againstId) ?? hit.againstId;
+      const how = hit.reason === 'sha256' ? 'image identique' : `même visuel (dhash ${hit.distance})`;
+      skipped.push(`  ↩︎  ${file} — ${how} que ${against}`);
+      continue;
+    }
+    if (knownIds.has(id)) {
+      problems.push(`  ⛔ ${file} — l'id ${id} existe déjà pour une autre image, renomme le fichier`);
+      continue;
+    }
+    if (knownNames.has(normName(name))) {
+      problems.push(`  ⛔ ${file} — même nom que "${knownNames.get(normName(name))}", renomme le fichier`);
+      continue;
+    }
+
+    const fileName = `${id}${ext === '.jpeg' ? '.jpg' : ext}`;
+    await writeFile(
+      path.join(TEMPLATES_DIR, fileName),
+      await readFile(path.join(SNAP_DROP_DIR, file))
+    );
+
+    const template: Template = {
+      id,
+      url: `/templates/${fileName}`,
+      name,
+      source: 'library',
+      // Disposition générique haut/bas, à recaler dans l'éditeur visuel : sans
+      // avoir vu l'image, toute autre position serait une devinette.
+      boxes: [
+        { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
+        { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
+      ],
+    };
+    added.push(template);
+    pool[id] = fingerprint;
+    label.set(id, `[snap] ${name}`);
+    knownIds.add(id);
+    knownNames.set(normName(name), name);
+  }
+
+  if (skipped.length) {
+    console.log(`Déjà intégrées (${skipped.length}) :`);
+    skipped.forEach((s) => console.log(s));
+    console.log('');
+  }
+  if (problems.length) {
+    console.error(`À corriger (${problems.length}) :`);
+    problems.forEach((p) => console.error(p));
+    console.error('');
+  }
+
+  if (!added.length) {
+    console.log('Aucune nouvelle image intégrée.');
+    return problems.length ? 1 : 0;
+  }
+
+  // Un fichier refusé ne fait pas échouer un import qui a par ailleurs
+  // fonctionné : il est déjà listé juste au-dessus, en clair, et sortir en
+  // erreur ferait afficher à npm un pavé rouge qui donne l'impression que
+  // rien n'a marché. On ne sort en erreur que si RIEN n'a pu être intégré
+  // (cas traité juste au-dessus).
+
+  const all = [...existing, ...added];
+  const body = all.map(renderSnapEntry).join('\n');
+  await writeFile(SNAP_FILE, `${SNAP_HEADER}\n${body}\n];\n`, 'utf8');
+
+  console.log(`✅ ${added.length} image(s) ajoutée(s) au pack Snap français (${all.length} au total).`);
+  added.forEach((t) => console.log(`  + ${t.name}`));
+  console.log('\nÀ faire ensuite :');
+  console.log('  1. npm run templates:fingerprint --workspace client   (empreintes des nouvelles images)');
+  console.log('  2. npm run boxes:edit --workspace client              (recaler les zones de texte)');
+  console.log('  3. commit + push');
   return 0;
 }
 
@@ -385,8 +620,10 @@ if (command === 'fingerprint') {
   }
 } else if (command === 'localize') {
   code = await cmdLocalize();
+} else if (command === 'snap') {
+  code = await cmdSnap();
 } else {
-  console.error('Commandes : fingerprint | import <candidats.json> | localize');
+  console.error('Commandes : fingerprint | import <candidats.json> | localize | snap');
   code = 1;
 }
 process.exit(code);

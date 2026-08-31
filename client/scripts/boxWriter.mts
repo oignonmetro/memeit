@@ -1,10 +1,13 @@
 // Réécriture des coordonnées de zones de texte dans les fichiers source.
 //
-// Les deux packs ne stockent pas leurs zones au même endroit :
-//   - Classiques : métadonnées seules, zones résolues via CURATED dans
+// Les fichiers de packs ne stockent pas leurs zones au même endroit :
+//   - classiques.ts : métadonnées seules, zones résolues via CURATED dans
 //     templateBoxes.ts (une entrée = une ligne, commentaire en fin de ligne).
-//   - Pépites : zones écrites en clair dans pepites.ts, à l'intérieur de
-//     l'objet du template.
+//   - pepites.ts et snap.ts : zones écrites en clair dans l'objet du
+//     template. Ces deux-là partagent exactement le même format, donc les
+//     mêmes fonctions (writePepitesBoxes / deletePepitesEntry, nommées
+//     d'après le premier fichier à l'avoir utilisé) les réécrivent toutes
+//     les deux — seul le fichier passé en entrée change.
 //
 // Ces fonctions sont pures (source texte -> source texte) pour être testables
 // sans navigateur ni serveur : elles réécrivent un fichier de données, une
@@ -85,21 +88,29 @@ export function deleteClassiqueEntry(source: string, imgflipId: string): string 
 }
 
 /**
- * Supprime l'entrée d'un template Pépites dans pepites.ts : tout le bloc,
+ * Supprime l'entrée d'un template au format "zones en clair" : tout le bloc,
  * de la ligne "{" qui précède "id: '...'," jusqu'au "}," qui referme l'objet
  * (pas seulement la ligne id, contrairement à classiques.ts où l'entrée est
  * sur une seule ligne).
+ *
+ * Sert à pepites.ts comme à snap.ts, qui partagent ce format — d'où
+ * `fileLabel`, uniquement là pour que le message d'erreur nomme le fichier
+ * réellement fouillé plutôt que d'envoyer chercher dans le mauvais.
  */
-export function deletePepitesEntry(source: string, templateId: string): string {
+export function deletePepitesEntry(
+  source: string,
+  templateId: string,
+  fileLabel = 'pepites.ts'
+): string {
   const { lines, eol } = splitLines(source);
   const idIdx = lines.findIndex((l) => l.trim() === `id: '${templateId}',`);
-  if (idIdx === -1) throw new Error(`Template ${templateId} introuvable dans pepites.ts`);
+  if (idIdx === -1) throw new Error(`Template ${templateId} introuvable dans ${fileLabel}`);
   const startIdx = idIdx - 1;
   if (startIdx < 0 || lines[startIdx].trim() !== '{') {
-    throw new Error(`Début d'entrée introuvable pour ${templateId} dans pepites.ts`);
+    throw new Error(`Début d'entrée introuvable pour ${templateId} dans ${fileLabel}`);
   }
   const endIdx = lines.findIndex((l, i) => i > idIdx && l.trim() === '},');
-  if (endIdx === -1) throw new Error(`Fin d'entrée introuvable pour ${templateId} dans pepites.ts`);
+  if (endIdx === -1) throw new Error(`Fin d'entrée introuvable pour ${templateId} dans ${fileLabel}`);
   lines.splice(startIdx, endIdx - startIdx + 1);
   return lines.join(eol);
 }
@@ -136,25 +147,31 @@ export function deleteFingerprintEntry(source: string, fullId: string): string {
 }
 
 /**
- * Met à jour les zones d'un template du pack Pépites dans pepites.ts.
- * Reproduit la convention du fichier : une seule zone tient sur une ligne,
- * deux zones ou plus sont réparties une par ligne.
+ * Met à jour les zones d'un template au format "zones en clair" (pepites.ts,
+ * snap.ts). Reproduit la convention du fichier : une seule zone tient sur une
+ * ligne, deux zones ou plus sont réparties une par ligne. `fileLabel` ne sert
+ * qu'aux messages d'erreur, pour nommer le fichier réellement fouillé.
  */
-export function writePepitesBoxes(source: string, templateId: string, boxes: TemplateBox[]): string {
+export function writePepitesBoxes(
+  source: string,
+  templateId: string,
+  boxes: TemplateBox[],
+  fileLabel = 'pepites.ts'
+): string {
   const { lines, eol } = splitLines(source);
 
   const idIdx = lines.findIndex((l) => l.trim() === `id: '${templateId}',`);
-  if (idIdx === -1) throw new Error(`Template ${templateId} introuvable dans pepites.ts`);
+  if (idIdx === -1) throw new Error(`Template ${templateId} introuvable dans ${fileLabel}`);
 
   const startIdx = lines.findIndex((l, i) => i > idIdx && l.trimStart().startsWith('boxes: ['));
-  if (startIdx === -1) throw new Error(`Zones de ${templateId} introuvables dans pepites.ts`);
+  if (startIdx === -1) throw new Error(`Zones de ${templateId} introuvables dans ${fileLabel}`);
 
   // Une entrée sur une seule ligne se termine par "],", sinon on avance
   // jusqu'à la ligne de fermeture du tableau.
   let endIdx = startIdx;
   if (!lines[startIdx].trimEnd().endsWith('],')) {
     endIdx = lines.findIndex((l, i) => i > startIdx && l.trim() === '],');
-    if (endIdx === -1) throw new Error(`Fin des zones de ${templateId} introuvable dans pepites.ts`);
+    if (endIdx === -1) throw new Error(`Fin des zones de ${templateId} introuvable dans ${fileLabel}`);
   }
 
   const replacement =
