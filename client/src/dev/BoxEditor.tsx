@@ -13,11 +13,10 @@ import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
 import { SNAP_TEMPLATES } from '../lib/packs/snap';
-import { TIKTOK_TEMPLATES } from '../lib/packs/tiktok';
 import { genericBoxes } from '../lib/templateBoxes';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
-type PackId = 'classiques' | 'pepites' | 'snap' | 'tiktok';
+type PackId = 'classiques' | 'pepites' | 'snap';
 type Entry = { template: Template; pack: PackId };
 type Filter = 'tous' | 'generiques' | 'personnalises' | 'nonrevus';
 type SampleMode = 'court' | 'long' | 'numeros';
@@ -26,25 +25,23 @@ const ENTRIES: Entry[] = [
   ...CLASSIQUES_TEMPLATES.map((template) => ({ template, pack: 'classiques' as const })),
   ...PEPITES_TEMPLATES.map((template) => ({ template, pack: 'pepites' as const })),
   ...SNAP_TEMPLATES.map((template) => ({ template, pack: 'snap' as const })),
-  ...TIKTOK_TEMPLATES.map((template) => ({ template, pack: 'tiktok' as const })),
 ];
 
 // Étiquette purement interne à l'éditeur (fichier source d'origine) — depuis
 // la fusion des packs "Classiques" et "Pépites" côté joueur, TEMPLATE_PACKS
 // n'en expose plus qu'un seul et ne peut donc plus servir à nommer les
 // différentes origines de fichier que l'éditeur doit encore distinguer pour
-// savoir où écrire (classiques.ts vs pepites.ts vs snap.ts vs tiktok.ts...).
+// savoir où écrire (classiques.ts vs pepites.ts vs snap.ts...).
 const PACK_NAME: Record<PackId, string> = {
   classiques: 'Classiques',
   pepites: 'Pépites',
   snap: 'Snap français',
-  tiktok: 'TikTok France',
 };
 
 // Les packs "faits main" (voir ci-dessous) n'ont pas de registre CURATED :
-// leurs entrées sont créées par l'import (templates:snap, templates:tiktok)
-// avec la disposition générique haut/bas, à recaler ensuite ici.
-const MANUAL_PACKS: PackId[] = ['snap', 'tiktok'];
+// leurs entrées sont créées par l'import (templates:snap) avec la
+// disposition générique haut/bas, à recaler ensuite ici.
+const MANUAL_PACKS: PackId[] = ['snap'];
 
 // Un template compte comme "personnalisé" s'il a une entrée CURATED dans
 // templateBoxes.ts (Classiques) — les Pépites ont toujours leurs zones

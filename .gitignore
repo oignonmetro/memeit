@@ -15,5 +15,3 @@ client/.env.local
 # d'emploi de chaque dossier, lui, est suivi.
 client/templates-snap/*
 !client/templates-snap/LISEZ-MOI.md
-client/templates-tiktok/*
-!client/templates-tiktok/LISEZ-MOI.md

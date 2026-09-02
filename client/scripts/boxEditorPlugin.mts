@@ -25,34 +25,31 @@ const TEMPLATE_BOXES = path.join(CLIENT, 'src', 'lib', 'templateBoxes.ts');
 const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
-const TIKTOK = path.join(CLIENT, 'src', 'lib', 'packs', 'tiktok.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const REVIEWED = path.join(HERE, 'boxes-reviewed.json');
 
-type PackId = 'classiques' | 'pepites' | 'snap' | 'tiktok';
+type PackId = 'classiques' | 'pepites' | 'snap';
 
-// pepites.ts et les packs "faits main" (snap.ts, tiktok.ts...) partagent
-// exactement le même format (zones écrites en clair dans l'entrée, id
-// complet, entrée multi-lignes) : seul le fichier change, donc les mêmes
-// fonctions de réécriture servent à tous. classiques.ts est à part — ses
-// zones vivent dans CURATED (templateBoxes.ts), sous l'id nu sans le
-// préfixe "imgflip-".
+// pepites.ts et les packs "faits main" (snap.ts...) partagent exactement le
+// même format (zones écrites en clair dans l'entrée, id complet, entrée
+// multi-lignes) : seul le fichier change, donc les mêmes fonctions de
+// réécriture servent à tous. classiques.ts est à part — ses zones vivent
+// dans CURATED (templateBoxes.ts), sous l'id nu sans le préfixe "imgflip-".
 const INLINE_PACK_FILES: Partial<Record<PackId, string>> = {
   pepites: PEPITES,
   snap: SNAP,
-  tiktok: TIKTOK,
 };
 
 interface SavePayload {
   pack: PackId;
-  id: string; // id du template dans le pack (imgflip-…, pepites-…, snap-… ou tiktok-…)
+  id: string; // id du template dans le pack (imgflip-…, pepites-… ou snap-…)
   name: string;
   boxes: TemplateBox[];
 }
 
 interface DeletePayload {
   pack: PackId;
-  id: string; // id complet du template (imgflip-…, pepites-…, snap-… ou tiktok-…)
+  id: string; // id complet du template (imgflip-…, pepites-… ou snap-…)
 }
 
 function readBody(req: import('node:http').IncomingMessage): Promise<string> {

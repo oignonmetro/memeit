@@ -4,10 +4,9 @@
 //   npm run templates:import candidats.json   filtre des candidats à l'import
 //   npm run templates:localize             télécharge les images vers public/templates/
 //   npm run templates:snap                 intègre les images déposées dans templates-snap/
-//   npm run templates:tiktok               intègre les images déposées dans templates-tiktok/
 //
-// snap et tiktok sont deux instances de la même commande générique (voir
-// DROP_PACKS plus bas) : des packs "faits main", sans catalogue en ligne à
+// snap est une instance de la commande générique import-drop (voir
+// DROP_PACKS plus bas) : un pack "fait main", sans catalogue en ligne à
 // interroger, dont les images sont déposées par un humain dans un dossier
 // dédié. En ajouter un nouveau n'a rien d'un copier-coller de tout ce
 // fichier — une entrée dans DROP_PACKS suffit.
@@ -40,7 +39,7 @@ const PEPITES_FILE = path.join(HERE, '..', 'src', 'lib', 'packs', 'pepites.ts');
 const TEMPLATES_DIR = path.join(HERE, '..', 'public', 'templates');
 
 interface DropPackConfig {
-  id: string; // préfixe d'id ('snap-...', 'tiktok-...') et nom de commande npm
+  id: string; // préfixe d'id ('snap-...') et nom de commande npm
   packName: string; // nom affiché (messages, commentaires du fichier généré)
   exportName: string; // nom de la constante exportée, ex. 'SNAP_TEMPLATES'
   file: string; // chemin vers src/lib/packs/<id>.ts
@@ -64,13 +63,6 @@ const DROP_PACKS: Record<string, DropPackConfig> = {
     exportName: 'SNAP_TEMPLATES',
     file: path.join(HERE, '..', 'src', 'lib', 'packs', 'snap.ts'),
     dropDir: path.join(HERE, '..', 'templates-snap'),
-  },
-  tiktok: {
-    id: 'tiktok',
-    packName: 'TikTok France',
-    exportName: 'TIKTOK_TEMPLATES',
-    file: path.join(HERE, '..', 'src', 'lib', 'packs', 'tiktok.ts'),
-    dropDir: path.join(HERE, '..', 'templates-tiktok'),
   },
 };
 const DHASH_SIZE = 16; // 16x16 => 256 bits
@@ -424,7 +416,7 @@ async function cmdLocalize(): Promise<number> {
   return 0;
 }
 
-// ---------- commande : import-drop (packs "faits main", ex. snap, tiktok) ----------
+// ---------- commande : import-drop (packs "faits main", ex. snap) ----------
 
 // Jimp ne décode ni le webp ni l'avif : une image dans un de ces formats
 // passerait l'import pour faire échouer templates:fingerprint plus tard, avec
@@ -684,7 +676,7 @@ if (command === 'fingerprint') {
 } else if (command === 'localize') {
   code = await cmdLocalize();
 } else if (command && DROP_PACKS[command]) {
-  // Chaque pack "fait main" (snap, tiktok...) déclaré dans DROP_PACKS
+  // Chaque pack "fait main" (snap...) déclaré dans DROP_PACKS
   // devient automatiquement une commande, sans rien à ajouter ici.
   code = await cmdImportDrop(command);
 } else {

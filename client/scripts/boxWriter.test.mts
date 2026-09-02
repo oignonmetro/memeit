@@ -20,7 +20,6 @@ import {
 import { CLASSIQUES_TEMPLATES } from '../src/lib/packs/classiques.ts';
 import { PEPITES_TEMPLATES } from '../src/lib/packs/pepites.ts';
 import { SNAP_TEMPLATES } from '../src/lib/packs/snap.ts';
-import { TIKTOK_TEMPLATES } from '../src/lib/packs/tiktok.ts';
 import type { TemplateBox } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +29,6 @@ const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
-const TIKTOK = path.join(CLIENT, 'src', 'lib', 'packs', 'tiktok.ts');
 
 const tbSrc = readFileSync(TEMPLATE_BOXES, 'utf8');
 const ppSrc = readFileSync(PEPITES, 'utf8');
@@ -192,16 +190,13 @@ console.log('PASS  suppr. empreintes → entrée retirée, id inconnu rejeté');
 
 console.log('--- packs "faits main" (même format que pepites.ts) ---');
 
-// 12. snap.ts et tiktok.ts sont générés par templates:<id> mais réécrits par
-//     l'éditeur via les mêmes fonctions que pepites.ts : le round-trip doit y
-//     être tout aussi neutre. Chacun est vide tant qu'aucune image n'a été
-//     déposée — le test devient réellement mordant au premier import. Une
-//     boucle plutôt qu'un bloc par pack : un futur pack "fait main" (voir
-//     DROP_PACKS dans templates.mts) n'a qu'à s'ajouter à cette liste pour
-//     être couvert, sans dupliquer les assertions.
+// 12. snap.ts est généré par templates:snap mais réécrit par l'éditeur via
+//     les mêmes fonctions que pepites.ts : le round-trip doit y être tout
+//     aussi neutre. Une boucle plutôt qu'un bloc unique : un futur pack
+//     "fait main" (voir DROP_PACKS dans templates.mts) n'a qu'à s'ajouter à
+//     cette liste pour être couvert, sans dupliquer les assertions.
 const MANUAL_PACKS = [
   { file: SNAP, templates: SNAP_TEMPLATES, label: 'snap.ts', prefix: 'snap' },
-  { file: TIKTOK, templates: TIKTOK_TEMPLATES, label: 'tiktok.ts', prefix: 'tiktok' },
 ];
 
 for (const { file, templates, label, prefix } of MANUAL_PACKS) {

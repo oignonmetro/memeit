@@ -2,7 +2,6 @@ import type { Template } from '../../types';
 import { CLASSIQUES_TEMPLATES } from './classiques';
 import { PEPITES_TEMPLATES } from './pepites';
 import { SNAP_TEMPLATES } from './snap';
-import { TIKTOK_TEMPLATES } from './tiktok';
 
 export interface TemplatePackMeta {
   id: string;
@@ -15,26 +14,18 @@ export interface TemplatePackMeta {
 // restent séparés en interne parce que l'éditeur visuel de zones s'appuie
 // dessus pour savoir où écrire, mais ça ne concerne plus que l'outillage).
 //
-// "Snap français" et "TikTok France" sont des packs "faits main" : leurs
-// images ne viennent d'aucun catalogue en ligne, elles sont déposées à la
-// main (voir npm run templates:snap / templates:tiktok — même mécanisme
-// générique, scripts/templates.mts). Chacun ne s'ajoute à la liste que
-// lorsqu'il contient au moins un template : vide, il resterait sélectionnable
-// dans le lobby pour ne rien donner, et ferait échouer le test "pack non
-// vide". Il apparaît donc tout seul le jour où des images arrivent, sans
-// rien à rebrancher ici.
+// "Snap français" est un pack "fait main" : ses images ne viennent d'aucun
+// catalogue en ligne, elles sont déposées à la main (voir
+// npm run templates:snap, scripts/templates.mts). Il ne s'ajoute à la liste
+// que lorsqu'il contient au moins un template : vide, il resterait
+// sélectionnable dans le lobby pour ne rien donner, et ferait échouer le
+// test "pack non vide".
 const MANUAL_PACKS: (TemplatePackMeta & { templates: Template[] })[] = [
   {
     id: 'snap',
     name: 'Snap français',
     description: 'Des memes bien de chez nous, absents d\'Imgflip',
     templates: SNAP_TEMPLATES,
-  },
-  {
-    id: 'tiktok',
-    name: 'TikTok France',
-    description: 'Les trends et memes TikTok français des dernières années',
-    templates: TIKTOK_TEMPLATES,
   },
 ];
 
