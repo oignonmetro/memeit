@@ -39,7 +39,7 @@ const CURATED: Record<string, TemplateBox[]> = {
   '87743020': [{ xPct: 26, yPct: 15, widthPct: 28, heightPct: 10, rotationDeg: -16 }, { xPct: 58, yPct: 11, widthPct: 24, heightPct: 9, rotationDeg: -10 }, { xPct: 50, yPct: 88, widthPct: 86, heightPct: 16 }], // Two Buttons
   '93895088': [{ xPct: 24, yPct: 13, widthPct: 46, heightPct: 21 }, { xPct: 25, yPct: 38, widthPct: 46, heightPct: 21 }, { xPct: 25, yPct: 62, widthPct: 46, heightPct: 19 }, { xPct: 25, yPct: 87, widthPct: 46, heightPct: 20 }], // Expanding Brain
   '99683372': [{ xPct: 25, yPct: 25, widthPct: 46, heightPct: 40 }, { xPct: 25, yPct: 75, widthPct: 46, heightPct: 40 }], // Sleeping Shaq / I sleep real shit (blank left column, one caption per face)
-  '100777631': [{ xPct: 29, yPct: 27, widthPct: 34, heightPct: 20 }, { xPct: 84, yPct: 18, widthPct: 30, heightPct: 16 }], // Is This A Pigeon (2 zones seulement, la 3e était redondante ; le "IS THIS A" est baked au centre, texte 2 complète la question près du papillon)
+  '100777631': [{ xPct: 29, yPct: 27, widthPct: 34, heightPct: 20 }, { xPct: 84, yPct: 18, widthPct: 30, heightPct: 16 }], // Is This A Pigeon (2 zones seulement, la 3e était redondante)
   '104893621': [{ xPct: 20, yPct: 20, widthPct: 26, heightPct: 18 }, { xPct: 45, yPct: 20, widthPct: 24, heightPct: 18 }, { xPct: 70, yPct: 20, widthPct: 24, heightPct: 18 }], // Grim Reaper Knocking Door
   '110133729': [{ xPct: 27, yPct: 55, widthPct: 25, heightPct: 24 }, { xPct: 76, yPct: 52, widthPct: 30, heightPct: 24 }], // spiderman pointing at spiderman
   '112126428': [{ xPct: 30, yPct: 72, widthPct: 26, heightPct: 20 }, { xPct: 58, yPct: 50, widthPct: 26, heightPct: 20 }, { xPct: 86, yPct: 58, widthPct: 24, heightPct: 20 }], // Distracted Boyfriend
