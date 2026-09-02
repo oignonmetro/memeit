@@ -22,14 +22,13 @@
 // n'en ont jamais eu besoin (ils lisent des fichiers déposés à la main). Le
 // test, lui, ne relit que les empreintes figées dans fingerprints.generated.ts
 // et les images déjà locales dans public/templates/ : il reste hors-ligne.
-import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { Jimp } from 'jimp';
 import { TEMPLATE_PACKS, getPackTemplates } from '../src/lib/packs/index.ts';
 import { findDuplicate, dhashDistance } from '../src/lib/packs/fingerprints.ts';
 import { formatBox } from './boxWriter.mts';
+import { fingerprintBuffer, type Fingerprint } from './imageFingerprint.mts';
 import type { Template } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -65,15 +64,7 @@ const DROP_PACKS: Record<string, DropPackConfig> = {
     dropDir: path.join(HERE, '..', 'templates-snap'),
   },
 };
-const DHASH_SIZE = 16; // 16x16 => 256 bits
 const DOWNLOAD_CONCURRENCY = 8;
-
-interface Fingerprint {
-  sha256: string;
-  dhash: string;
-  width: number;
-  height: number;
-}
 
 // Une fois localisé (npm run templates:localize), template.url n'est plus une
 // URL réseau mais un chemin public Vite ("/templates/xxx.jpg") : on le relit
@@ -85,32 +76,6 @@ async function download(url: string): Promise<Buffer> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} sur ${url}`);
   return Buffer.from(await res.arrayBuffer());
-}
-
-// dhash : on compare chaque pixel à son voisin de droite sur une vignette en
-// niveaux de gris. Insensible à la luminosité globale et à la compression,
-// contrairement à un hash cryptographique.
-async function fingerprintBuffer(buf: Buffer): Promise<Fingerprint> {
-  const img = await Jimp.read(buf);
-  const small = img.clone().greyscale().resize({ w: DHASH_SIZE + 1, h: DHASH_SIZE });
-  const { data } = small.bitmap; // RVBA, 4 octets par pixel
-  const grey = (row: number, col: number) => data[(row * (DHASH_SIZE + 1) + col) * 4];
-
-  let bits = '';
-  for (let row = 0; row < DHASH_SIZE; row += 1) {
-    for (let col = 0; col < DHASH_SIZE; col += 1) {
-      bits += grey(row, col) < grey(row, col + 1) ? '1' : '0';
-    }
-  }
-  let dhash = '';
-  for (let i = 0; i < bits.length; i += 4) dhash += parseInt(bits.slice(i, i + 4), 2).toString(16);
-
-  return {
-    sha256: createHash('sha256').update(buf).digest('hex'),
-    dhash,
-    width: img.bitmap.width,
-    height: img.bitmap.height,
-  };
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {

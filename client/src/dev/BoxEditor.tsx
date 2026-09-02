@@ -9,11 +9,14 @@
 // approximation. Un éditeur qui rendrait "à peu près" pareil ferait corriger
 // contre une cible fausse.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
 import { SNAP_TEMPLATES } from '../lib/packs/snap';
 import { genericBoxes } from '../lib/templateBoxes';
+import { SUBTITLE_FONT_STACK, blobToDataUrl, renderTemplateWithSubtitles } from './subtitleRender';
+import type { SubtitleEntry } from './subtitleRender';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
 type PackId = 'classiques' | 'pepites' | 'snap';
@@ -168,6 +171,17 @@ export default function BoxEditor() {
   const [frameReady, setFrameReady] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
 
+  // Sous-titres : texte incrusté à demeure dans le fichier image au moment de
+  // « Incruster », contrairement aux zones ci-dessus (draft) qui restent
+  // éditables par les joueurs à chaque partie. Ils ne viennent d'aucune
+  // source persistée — une fois incrustés ils disparaissent de cette liste,
+  // il n'y a donc rien à recharger au changement de template.
+  const [subtitles, setSubtitles] = useState<SubtitleEntry[]>([]);
+  const [selectedSubtitle, setSelectedSubtitle] = useState(0);
+  const [baking, setBaking] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return ENTRIES.filter(({ template, pack }) => {
@@ -194,12 +208,27 @@ export default function BoxEditor() {
   // Le brouillon se réinitialise sur le template courant. Après un
   // enregistrement, le HMR recharge le module du pack : les valeurs
   // rechargées sont alors identiques au brouillon, donc rien ne saute.
+  // Révoque l'URL d'objet du dernier aperçu généré (renderTemplateWithSubtitles
+  // produit un Blob local, jamais uploadé tant que "Incruster" n'a pas été
+  // cliqué) — sans ça chaque aperçu fuirait de la mémoire jusqu'au rechargement
+  // de la page.
+  const clearPreview = useCallback(() => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setPreviewUrl(null);
+  }, []);
+
+  useEffect(() => () => clearPreview(), [clearPreview]);
+
   useEffect(() => {
     if (!template) return;
     setDraft(template.boxes.map((b) => ({ ...b })));
     setSelected(0);
     setStatus(null);
-  }, [template]);
+    setSubtitles([]);
+    setSelectedSubtitle(0);
+    clearPreview();
+  }, [template, clearPreview]);
 
   // Tant que l'image du template n'est pas chargée, le cadre est plat : une
   // conversion pixels -> pourcentages y donnerait des coordonnées aberrantes,
@@ -427,120 +456,221 @@ export default function BoxEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [nudge, nudgeRotation, move, save, toggleReviewed, selected, moveZone, deleteZone, addZone]);
 
-  // Un seul gestionnaire pour le déplacement et le redimensionnement : on
-  // capture le pointeur (souris comme doigt) et on convertit les deltas en
-  // pourcentages de la taille du cadre.
-  function startDrag(
-    e: React.PointerEvent,
-    boxIndex: number,
-    handle: { sx: -1 | 0 | 1; sy: -1 | 0 | 1 } | null
+  // Un seul gestionnaire pour le déplacement et le redimensionnement (et un
+  // second pour le pivot) : on capture le pointeur (souris comme doigt) et on
+  // convertit les deltas en pourcentages de la taille du cadre. Paramétré par
+  // un couple (boxes, setBoxes) plutôt que câblé sur `draft`/`setDraft` : les
+  // zones de texte (draft) et les sous-titres incrustables (subtitles, plus
+  // bas) sont deux tableaux de TemplateBox indépendants, mais partagent
+  // exactement la même manipulation directe — dupliquer ces ~90 lignes pour
+  // les sous-titres serait la même logique recopiée, pas une logique différente.
+  function makeBoxHandlers(
+    boxes: TemplateBox[],
+    setBoxes: Dispatch<SetStateAction<TemplateBox[]>>,
+    setSelectedIndex: Dispatch<SetStateAction<number>>
   ) {
-    e.preventDefault();
-    e.stopPropagation();
-    blurActiveField();
-    setSelected(boxIndex);
-    const frame = frameRef.current;
-    if (!frame) return;
-    const rect = frame.getBoundingClientRect();
-    if (!frameReady || !rect.width || !rect.height) {
-      setStatus('Image non chargée : édition désactivée (les coordonnées seraient fausses).');
-      return;
-    }
-    const start = draft[boxIndex];
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
+    function startDrag(
+      e: React.PointerEvent,
+      boxIndex: number,
+      handle: { sx: -1 | 0 | 1; sy: -1 | 0 | 1 } | null
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      blurActiveField();
+      setSelectedIndex(boxIndex);
+      const frame = frameRef.current;
+      if (!frame) return;
+      const rect = frame.getBoundingClientRect();
+      if (!frameReady || !rect.width || !rect.height) {
+        setStatus('Image non chargée : édition désactivée (les coordonnées seraient fausses).');
+        return;
+      }
+      const start = boxes[boxIndex];
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture(e.pointerId);
 
-    const onMove = (ev: PointerEvent) => {
-      const dxScreen = ((ev.clientX - startX) / rect.width) * 100;
-      const dyScreen = ((ev.clientY - startY) / rect.height) * 100;
-      setDraft((prev) =>
-        prev.map((b, i) => {
-          if (i !== boxIndex) return b;
-          if (!handle) {
-            // Déplacer ne dépend pas de l'orientation de la zone : xPct/yPct
-            // vivent dans le repère de l'image, pas dans celui de la zone.
-            return {
-              ...b,
-              xPct: round(clamp(start.xPct + dxScreen, 0, 100)),
-              yPct: round(clamp(start.yPct + dyScreen, 0, 100)),
-            };
-          }
-          // Redimensionner, en revanche, doit suivre les bords de la zone
-          // elle-même : sur une zone pivotée, "tirer vers la droite" à
-          // l'écran ne correspond plus à "élargir vers la droite" pour la
-          // zone. On ramène donc le delta écran dans le repère local (non
-          // tourné) de la zone avant d'appliquer la même formule qu'avant
-          // (le bord opposé reste fixe), puis on repasse le déplacement du
-          // centre dans le repère de l'image, seul espace où xPct/yPct ont
-          // un sens.
-          const rot = start.rotationDeg || 0;
-          const { dx, dy } = rotateVec(dxScreen, dyScreen, -rot);
-          const next = { ...b };
-          let shiftX = 0;
-          let shiftY = 0;
-          if (handle.sx !== 0) {
-            next.widthPct = round(clamp(start.widthPct + handle.sx * dx, MIN_W, 100));
-            shiftX = dx / 2;
-          }
-          if (handle.sy !== 0) {
-            next.heightPct = round(clamp(start.heightPct + handle.sy * dy, MIN_H, 100));
-            shiftY = dy / 2;
-          }
-          if (shiftX || shiftY) {
-            const shift = rotateVec(shiftX, shiftY, rot);
-            next.xPct = round(clamp(start.xPct + shift.dx, 0, 100));
-            next.yPct = round(clamp(start.yPct + shift.dy, 0, 100));
-          }
-          return next;
-        })
-      );
-    };
-    const onUp = () => {
-      target.releasePointerCapture(e.pointerId);
-      target.removeEventListener('pointermove', onMove);
-      target.removeEventListener('pointerup', onUp);
-    };
-    target.addEventListener('pointermove', onMove);
-    target.addEventListener('pointerup', onUp);
+      const onMove = (ev: PointerEvent) => {
+        const dxScreen = ((ev.clientX - startX) / rect.width) * 100;
+        const dyScreen = ((ev.clientY - startY) / rect.height) * 100;
+        setBoxes((prev) =>
+          prev.map((b, i) => {
+            if (i !== boxIndex) return b;
+            if (!handle) {
+              // Déplacer ne dépend pas de l'orientation de la zone : xPct/yPct
+              // vivent dans le repère de l'image, pas dans celui de la zone.
+              return {
+                ...b,
+                xPct: round(clamp(start.xPct + dxScreen, 0, 100)),
+                yPct: round(clamp(start.yPct + dyScreen, 0, 100)),
+              };
+            }
+            // Redimensionner, en revanche, doit suivre les bords de la zone
+            // elle-même : sur une zone pivotée, "tirer vers la droite" à
+            // l'écran ne correspond plus à "élargir vers la droite" pour la
+            // zone. On ramène donc le delta écran dans le repère local (non
+            // tourné) de la zone avant d'appliquer la même formule qu'avant
+            // (le bord opposé reste fixe), puis on repasse le déplacement du
+            // centre dans le repère de l'image, seul espace où xPct/yPct ont
+            // un sens.
+            const rot = start.rotationDeg || 0;
+            const { dx, dy } = rotateVec(dxScreen, dyScreen, -rot);
+            const next = { ...b };
+            let shiftX = 0;
+            let shiftY = 0;
+            if (handle.sx !== 0) {
+              next.widthPct = round(clamp(start.widthPct + handle.sx * dx, MIN_W, 100));
+              shiftX = dx / 2;
+            }
+            if (handle.sy !== 0) {
+              next.heightPct = round(clamp(start.heightPct + handle.sy * dy, MIN_H, 100));
+              shiftY = dy / 2;
+            }
+            if (shiftX || shiftY) {
+              const shift = rotateVec(shiftX, shiftY, rot);
+              next.xPct = round(clamp(start.xPct + shift.dx, 0, 100));
+              next.yPct = round(clamp(start.yPct + shift.dy, 0, 100));
+            }
+            return next;
+          })
+        );
+      };
+      const onUp = () => {
+        target.releasePointerCapture(e.pointerId);
+        target.removeEventListener('pointermove', onMove);
+        target.removeEventListener('pointerup', onUp);
+      };
+      target.addEventListener('pointermove', onMove);
+      target.addEventListener('pointerup', onUp);
+    }
+
+    // Le pivot se manipule différemment d'un redimensionnement : on suit
+    // l'angle entre le centre de la zone et le pointeur, pas un delta linéaire.
+    function startRotate(e: React.PointerEvent, boxIndex: number) {
+      e.preventDefault();
+      e.stopPropagation();
+      blurActiveField();
+      setSelectedIndex(boxIndex);
+      const frame = frameRef.current;
+      if (!frame) return;
+      const rect = frame.getBoundingClientRect();
+      if (!frameReady || !rect.width || !rect.height) {
+        setStatus('Image non chargée : édition désactivée (les coordonnées seraient fausses).');
+        return;
+      }
+      const start = boxes[boxIndex];
+      const cx = rect.left + (start.xPct / 100) * rect.width;
+      const cy = rect.top + (start.yPct / 100) * rect.height;
+      const angleOf = (x: number, y: number) => Math.atan2(y - cy, x - cx) * (180 / Math.PI);
+      const startAngle = angleOf(e.clientX, e.clientY);
+      const startRotation = start.rotationDeg || 0;
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture(e.pointerId);
+
+      const onMove = (ev: PointerEvent) => {
+        const deg = normDeg(round(startRotation + (angleOf(ev.clientX, ev.clientY) - startAngle)));
+        setBoxes((prev) => prev.map((b, i) => (i === boxIndex ? { ...b, rotationDeg: deg } : b)));
+      };
+      const onUp = () => {
+        target.releasePointerCapture(e.pointerId);
+        target.removeEventListener('pointermove', onMove);
+        target.removeEventListener('pointerup', onUp);
+      };
+      target.addEventListener('pointermove', onMove);
+      target.addEventListener('pointerup', onUp);
+    }
+
+    return { startDrag, startRotate };
   }
 
-  // Le pivot se manipule différemment d'un redimensionnement : on suit
-  // l'angle entre le centre de la zone et le pointeur, pas un delta linéaire.
-  function startRotate(e: React.PointerEvent, boxIndex: number) {
-    e.preventDefault();
-    e.stopPropagation();
-    blurActiveField();
-    setSelected(boxIndex);
-    const frame = frameRef.current;
-    if (!frame) return;
-    const rect = frame.getBoundingClientRect();
-    if (!frameReady || !rect.width || !rect.height) {
-      setStatus('Image non chargée : édition désactivée (les coordonnées seraient fausses).');
-      return;
-    }
-    const start = draft[boxIndex];
-    const cx = rect.left + (start.xPct / 100) * rect.width;
-    const cy = rect.top + (start.yPct / 100) * rect.height;
-    const angleOf = (x: number, y: number) => Math.atan2(y - cy, x - cx) * (180 / Math.PI);
-    const startAngle = angleOf(e.clientX, e.clientY);
-    const startRotation = start.rotationDeg || 0;
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
+  const zoneHandlers = makeBoxHandlers(draft, setDraft, setSelected);
 
-    const onMove = (ev: PointerEvent) => {
-      const deg = normDeg(round(startRotation + (angleOf(ev.clientX, ev.clientY) - startAngle)));
-      setDraft((prev) => prev.map((b, i) => (i === boxIndex ? { ...b, rotationDeg: deg } : b)));
-    };
-    const onUp = () => {
-      target.releasePointerCapture(e.pointerId);
-      target.removeEventListener('pointermove', onMove);
-      target.removeEventListener('pointerup', onUp);
-    };
-    target.addEventListener('pointermove', onMove);
-    target.addEventListener('pointerup', onUp);
-  }
+  // Les sous-titres sont stockés avec leur texte ({box, text}), pas comme un
+  // TemplateBox[] nu : ce setter fait le pont, en ne touchant qu'au champ box
+  // de chaque entrée pour que makeBoxHandlers puisse les manipuler sans rien
+  // savoir du texte qu'elles portent.
+  const setSubtitleBoxes: Dispatch<SetStateAction<TemplateBox[]>> = useCallback((updater) => {
+    setSubtitles((prev) => {
+      const prevBoxes = prev.map((s) => s.box);
+      const nextBoxes = typeof updater === 'function' ? (updater as (p: TemplateBox[]) => TemplateBox[])(prevBoxes) : updater;
+      return prev.map((s, i) => ({ ...s, box: nextBoxes[i] }));
+    });
+  }, []);
+  const subtitleHandlers = makeBoxHandlers(
+    subtitles.map((s) => s.box),
+    setSubtitleBoxes,
+    setSelectedSubtitle
+  );
+
+  // Ajoute toujours en fin de liste, comme addZone. Pas de plafond à 9 : les
+  // sous-titres n'ont pas de raccourci clavier 1-9 à préserver.
+  const addSubtitle = useCallback(() => {
+    setSubtitles((prev) => [...prev, { box: { xPct: 50, yPct: 88, widthPct: 80, heightPct: 14 }, text: 'Sous-titre' }]);
+    setSelectedSubtitle(subtitles.length);
+  }, [subtitles.length]);
+
+  const deleteSubtitle = useCallback((idx: number) => {
+    setSubtitles((prev) => prev.filter((_, j) => j !== idx));
+    setSelectedSubtitle((s) => Math.max(0, s > idx ? s - 1 : s));
+  }, []);
+
+  const updateSubtitleText = useCallback((idx: number, text: string) => {
+    setSubtitles((prev) => prev.map((s, j) => (j === idx ? { ...s, text } : s)));
+  }, []);
+
+  // Aperçu non destructif : compose template + sous-titres dans un canvas
+  // local (comme au moment d'incruster), sans rien écrire sur le disque —
+  // l'incrustation, elle, écrase le fichier image, donc mieux vaut pouvoir
+  // vérifier avant.
+  const previewSubtitles = useCallback(async () => {
+    if (!template || !subtitles.length) return;
+    setStatus('Aperçu…');
+    try {
+      const { blob } = await renderTemplateWithSubtitles(template.url, subtitles);
+      const url = URL.createObjectURL(blob);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = url;
+      setPreviewUrl(url);
+      setStatus(null);
+    } catch (err) {
+      setStatus(`Aperçu impossible : ${err instanceof Error ? err.message : 'erreur inconnue'}`);
+    }
+  }, [template, subtitles]);
+
+  // Incruste : envoie l'image composée au serveur de dev, qui écrase le
+  // fichier et recalcule son empreinte. Irréversible depuis l'éditeur (il n'y
+  // a pas de "annuler" pour un pixel déjà écrasé) — d'où la confirmation.
+  const bake = useCallback(async () => {
+    if (!template || !entry || !subtitles.length) return;
+    const ok = window.confirm(
+      `Incruster définitivement ${subtitles.length} sous-titre(s) dans l'image de « ${template.name} » ?\n\n` +
+        `Contrairement aux zones de texte, ceci réécrit le fichier image lui-même : ` +
+        `impossible à annuler depuis l'éditeur (il faudrait remettre l'image d'origine à la main).`
+    );
+    if (!ok) return;
+    setBaking(true);
+    setStatus('Incrustation…');
+    try {
+      const { blob } = await renderTemplateWithSubtitles(template.url, subtitles);
+      const dataUrl = await blobToDataUrl(blob);
+      const res = await fetch('/__boxes/bake-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: template.id, url: template.url, dataUrl }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      setSubtitles([]);
+      setSelectedSubtitle(0);
+      clearPreview();
+      setStatus('Sous-titre(s) incrusté(s) ✓ (le fichier image a changé sur le disque)');
+    } catch (err) {
+      setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
+    } finally {
+      setBaking(false);
+    }
+  }, [template, entry, subtitles, clearPreview]);
 
   if (!template) {
     return (
@@ -620,8 +750,14 @@ export default function BoxEditor() {
               Image du template non chargée — édition désactivée le temps qu'elle arrive.
             </p>
           )}
+          {previewUrl && (
+            <p className="be-preview-banner">
+              Aperçu de l'incrustation — l'image sur le disque n'a pas encore changé.{' '}
+              <button type="button" onClick={clearPreview}>Quitter l'aperçu</button>
+            </p>
+          )}
           <div className="be-frame" ref={frameRef}>
-            <MemeRender templateUrl={template.url} layers={layers} />
+            <MemeRender templateUrl={previewUrl || template.url} layers={layers} />
             {showOverlay && (
               <div className="be-overlay">
                 {draft.map((b, i) => (
@@ -638,7 +774,7 @@ export default function BoxEditor() {
                       // zone quand elle tourne, sans calcul de position séparé.
                       transform: `translate(-50%, -50%) rotate(${b.rotationDeg || 0}deg)`,
                     }}
-                    onPointerDown={(e) => startDrag(e, i, null)}
+                    onPointerDown={(e) => zoneHandlers.startDrag(e, i, null)}
                   >
                     <span className="be-box-tag">{i + 1}</span>
                     {i === selected && (
@@ -652,14 +788,52 @@ export default function BoxEditor() {
                               top: `${50 + h.sy * 50}%`,
                               cursor: h.cursor,
                             }}
-                            onPointerDown={(e) => startDrag(e, i, h)}
+                            onPointerDown={(e) => zoneHandlers.startDrag(e, i, h)}
                           />
                         ))}
                         <span className="be-rotate-stalk" />
                         <span
                           className="be-rotate-handle"
                           title="Glisser pour pivoter"
-                          onPointerDown={(e) => startRotate(e, i)}
+                          onPointerDown={(e) => zoneHandlers.startRotate(e, i)}
+                        />
+                      </>
+                    )}
+                  </div>
+                ))}
+                {subtitles.map(({ box: b }, i) => (
+                  <div
+                    key={`sub-${i}`}
+                    className={`be-box be-box-subtitle ${i === selectedSubtitle ? 'sel' : ''}`}
+                    style={{
+                      left: `${b.xPct}%`,
+                      top: `${b.yPct}%`,
+                      width: `${b.widthPct}%`,
+                      height: `${b.heightPct}%`,
+                      transform: `translate(-50%, -50%) rotate(${b.rotationDeg || 0}deg)`,
+                    }}
+                    onPointerDown={(e) => subtitleHandlers.startDrag(e, i, null)}
+                  >
+                    <span className="be-box-tag">S{i + 1}</span>
+                    {i === selectedSubtitle && (
+                      <>
+                        {HANDLES.map((h) => (
+                          <span
+                            key={`${h.sx}${h.sy}`}
+                            className="be-handle"
+                            style={{
+                              left: `${50 + h.sx * 50}%`,
+                              top: `${50 + h.sy * 50}%`,
+                              cursor: h.cursor,
+                            }}
+                            onPointerDown={(e) => subtitleHandlers.startDrag(e, i, h)}
+                          />
+                        ))}
+                        <span className="be-rotate-stalk" />
+                        <span
+                          className="be-rotate-handle"
+                          title="Glisser pour pivoter"
+                          onPointerDown={(e) => subtitleHandlers.startRotate(e, i)}
                         />
                       </>
                     )}
@@ -762,6 +936,63 @@ export default function BoxEditor() {
             + Ajouter une zone
           </button>
 
+          <div className="be-subtitle-section">
+            <h3 className="be-subtitle-title">
+              Sous-titres (texte incrusté à demeure — police {SUBTITLE_FONT_STACK.split(',')[0].replace(/'/g, '')})
+            </h3>
+            <p className="be-subtitle-hint">
+              Contrairement aux zones ci-dessus, ce texte est peint directement dans l'image au
+              moment d'« Incruster » : les joueurs ne peuvent plus le modifier. Sert aux sous-titres.
+            </p>
+            {subtitles.map((s, i) => (
+              <div
+                key={i}
+                className={`be-row ${i === selectedSubtitle ? 'sel' : ''}`}
+                onClick={() => setSelectedSubtitle(i)}
+              >
+                <span className="be-row-tag">S{i + 1}</span>
+                <input
+                  type="text"
+                  className="be-subtitle-input"
+                  value={s.text}
+                  placeholder="Texte du sous-titre"
+                  onChange={(e) => updateSubtitleText(i, e.target.value)}
+                  onFocus={() => setSelectedSubtitle(i)}
+                />
+                <button
+                  type="button"
+                  className="be-row-btn be-row-btn--danger"
+                  title="Supprimer ce sous-titre"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteSubtitle(i);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button type="button" className="be-add-zone" onClick={addSubtitle} title="Ajouter un sous-titre">
+              + Ajouter un sous-titre
+            </button>
+            {subtitles.length > 0 && (
+              <div className="be-actions">
+                <button type="button" onClick={previewSubtitles} disabled={!frameReady}>
+                  Aperçu
+                </button>
+                <button
+                  type="button"
+                  className="be-primary"
+                  onClick={bake}
+                  disabled={baking || !frameReady}
+                  title="Écrit ces sous-titres dans le fichier image — irréversible depuis l'éditeur"
+                >
+                  {baking ? 'Incrustation…' : `Incruster (${subtitles.length})`}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="be-actions">
             <button className="be-primary" onClick={save} disabled={!dirty || !frameReady}>
               Enregistrer (s)
@@ -788,6 +1019,10 @@ export default function BoxEditor() {
             une ligne) : réordonner — l'ordre du tableau, c'est Texte 1, Texte 2... en jeu.
             « Supprimer ce template » (pas de raccourci clavier, confirmation demandée) retire le
             template entier des fichiers source, pas juste une zone.
+            Les sous-titres (encadrés en pointillés, étiquette « S1, S2... ») se déplacent et se
+            redimensionnent à la souris comme les zones, mais n'ont pas de raccourci clavier —
+            « Incruster » peint leur texte directement dans le fichier image, ce qui est irréversible
+            depuis l'éditeur.
           </p>
           <code className="be-code">[{draft.map(formatBoxPreview).join(', ')}]</code>
         </aside>
@@ -832,6 +1067,10 @@ function Styles() {
          plusieurs zones qui se chevauchent, ses poignées se retrouvaient
          sinon sous une zone voisine, donc impossibles à attraper. */
       .be-box.sel { border-color: #06d6a0; border-style: solid; background: rgba(6,214,160,.1); z-index: 2; }
+      /* Couleur distincte des zones (jaune) : les sous-titres sont un
+         mécanisme différent (texte peint dans l'image, pas une zone
+         éditable par les joueurs), la couleur le rappelle d'un coup d'œil. */
+      .be-box-subtitle { border-color: rgba(76,201,240,.8); background: rgba(76,201,240,.08); }
       .be-box-tag { position: absolute; top: -9px; left: -9px; width: 18px; height: 18px;
         border-radius: 50%; background: #ffd166; color: #23150a; font-size: .7rem; font-weight: 900;
         display: flex; align-items: center; justify-content: center; }
@@ -874,6 +1113,17 @@ function Styles() {
       .be-empty { color: #b8a9d4; }
       .be-warn { font-size: .78rem; font-weight: 700; color: #23150a; background: #ffd166;
         padding: 6px 10px; border-radius: 8px; margin: 0 0 8px; }
+      .be-preview-banner { font-size: .78rem; font-weight: 700; color: #061a2e; background: #4cc9f0;
+        padding: 6px 10px; border-radius: 8px; margin: 0 0 8px; display: flex; align-items: center;
+        justify-content: space-between; gap: 8px; }
+      .be-preview-banner button { background: #061a2e !important; color: #4cc9f0 !important;
+        border-color: #061a2e !important; padding: 3px 8px !important; }
+      .be-subtitle-section { display: flex; flex-direction: column; gap: 6px; padding: 10px;
+        border: 1px solid rgba(76,201,240,.3); border-radius: 10px; background: rgba(76,201,240,.05); }
+      .be-subtitle-title { font-size: .82rem; margin: 0; color: #4cc9f0; }
+      .be-subtitle-hint { font-size: .68rem; color: #b8a9d4; margin: 0 0 4px; line-height: 1.4; }
+      .be-subtitle-input { flex: 1; background: rgba(0,0,0,.35); color: #f5f0ff;
+        border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 5px 8px; font-size: .8rem; }
     `}</style>
   );
 }

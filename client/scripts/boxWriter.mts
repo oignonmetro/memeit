@@ -13,6 +13,7 @@
 // sans navigateur ni serveur : elles réécrivent un fichier de données, une
 // erreur de découpage y serait silencieuse et destructrice.
 import type { TemplateBox } from '../src/types.ts';
+import type { Fingerprint } from './imageFingerprint.mts';
 
 export function formatBox(b: TemplateBox): string {
   const base = `xPct: ${b.xPct}, yPct: ${b.yPct}, widthPct: ${b.widthPct}, heightPct: ${b.heightPct}`;
@@ -143,6 +144,29 @@ export function deleteFingerprintEntry(source: string, fullId: string): string {
   const idx = lines.findIndex((l) => entryRe.test(l));
   if (idx === -1) throw new Error(`Empreinte ${fullId} introuvable dans fingerprints.generated.ts`);
   lines.splice(idx, 1);
+  return lines.join(eol);
+}
+
+/**
+ * Met à jour (ou crée) l'empreinte d'un template dans
+ * fingerprints.generated.ts. Sert après une incrustation de sous-titres dans
+ * l'éditeur visuel : l'image change sur disque, son empreinte doit suivre
+ * sans attendre le prochain `npm run templates:fingerprint` complet.
+ */
+export function upsertFingerprintEntry(source: string, fullId: string, fingerprint: Fingerprint): string {
+  const { lines, eol } = splitLines(source);
+  const entry = `  '${fullId}': { sha256: '${fingerprint.sha256}', dhash: '${fingerprint.dhash}', width: ${fingerprint.width}, height: ${fingerprint.height} },`;
+
+  const entryRe = new RegExp(`^  '${escapeRe(fullId)}': \\{`);
+  const idx = lines.findIndex((l) => entryRe.test(l));
+  if (idx !== -1) {
+    lines[idx] = entry;
+    return lines.join(eol);
+  }
+
+  const closeIdx = lines.findIndex((l) => l === '};');
+  if (closeIdx === -1) throw new Error('Fin de TEMPLATE_FINGERPRINTS introuvable dans fingerprints.generated.ts');
+  lines.splice(closeIdx, 0, entry);
   return lines.join(eol);
 }
 

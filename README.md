@@ -320,6 +320,27 @@ L'éditeur est un **outil de développement** : il vit dans son propre point d'e
 pas une élimination de code mort mais une séparation structurelle, verrouillée par un test qui
 échoue si la moindre trace de l'éditeur apparaît dans `dist/`.
 
+### Sous-titres incrustés (texte peint dans l'image)
+
+Le même éditeur permet aussi d'écrire du texte **à demeure dans le fichier image**, à ne pas
+confondre avec les zones ci-dessus : une zone reste une case vide que chaque joueur remplit à sa
+façon à chaque partie, un sous-titre est un texte fixe, choisi une fois pour toutes, qui devient
+un pixel de l'image — les joueurs ne peuvent plus le changer. Sert par exemple à sous-titrer un
+template vidéo/capture dont le texte d'origine est illisible ou absent.
+
+- Encadré « Sous-titres » dans la barre latérale : `+ Ajouter un sous-titre`, puis on tape le
+  texte, on le repositionne comme une zone (glisser/redimensionner/pivoter à la souris — pas de
+  raccourci clavier, pour ne pas entrer en conflit avec ceux des zones).
+- Police volontairement **différente d'Impact** (réservée aux légendes de meme) : une police de
+  sous-titrage courante (`'Segoe UI', Roboto, Arial, Helvetica, sans-serif`, texte blanc cerné de
+  noir), sans mise en majuscules forcée.
+- **`Aperçu`** compose le rendu final (template + sous-titres) dans un canvas local, sans rien
+  écrire sur le disque — utile puisque l'étape suivante, elle, ne l'est pas.
+- **`Incruster`** envoie l'image composée au serveur de dev, qui écrase le fichier dans
+  `public/templates/` et recalcule son empreinte. **Irréversible depuis l'éditeur** (confirmation
+  demandée) : il n'y a pas de "annuler" pour un pixel déjà écrasé, contrairement à l'enregistrement
+  d'une zone qui ne touche qu'un fichier source versionné.
+
 ### Anti-doublon à l'import de nouveaux templates
 
 Un même meme peut exister sur Imgflip sous **plusieurs ids, URLs et noms différents** : c'est

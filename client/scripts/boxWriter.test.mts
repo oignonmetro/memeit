@@ -16,6 +16,7 @@ import {
   deletePepitesEntry,
   deleteCuratedBoxes,
   deleteFingerprintEntry,
+  upsertFingerprintEntry,
 } from './boxWriter.mts';
 import { CLASSIQUES_TEMPLATES } from '../src/lib/packs/classiques.ts';
 import { PEPITES_TEMPLATES } from '../src/lib/packs/pepites.ts';
@@ -187,6 +188,24 @@ const deletedFp = deleteFingerprintEntry(fpSrc, 'imgflip-181913649');
 assert.ok(!deletedFp.includes("'imgflip-181913649':"), 'empreinte encore présente');
 assert.throws(() => deleteFingerprintEntry(fpSrc, 'imgflip-000000000'), /introuvable/, 'id inconnu non rejeté');
 console.log('PASS  suppr. empreintes → entrée retirée, id inconnu rejeté');
+
+// 11bis. upsertFingerprintEntry (sert après une incrustation de sous-titres,
+// côté /__boxes/bake-text) : met à jour une entrée existante en place, sans
+// toucher aux autres lignes, et insère une entrée entièrement nouvelle avant
+// la fermeture de l'objet.
+const sampleFp = { sha256: 'a'.repeat(64), dhash: 'b'.repeat(64), width: 10, height: 20 };
+const updatedFp = upsertFingerprintEntry(fpSrc, 'imgflip-181913649', sampleFp);
+const fpBeforeLines = fpSrc.split('\n');
+const fpAfterLines = updatedFp.split('\n');
+assert.equal(fpBeforeLines.length, fpAfterLines.length, 'upsert (mise à jour) a changé le nombre de lignes');
+const fpChanged = fpAfterLines.filter((l, i) => l !== fpBeforeLines[i]);
+assert.equal(fpChanged.length, 1, `${fpChanged.length} lignes modifiées au lieu d'une seule`);
+assert.ok(fpChanged[0].includes(`sha256: '${sampleFp.sha256}'`), 'nouvelle empreinte absente');
+
+const insertedFp = upsertFingerprintEntry(fpSrc, 'imgflip-000000000', sampleFp);
+assert.equal(insertedFp.split('\n').length, fpBeforeLines.length + 1, 'upsert (ajout) aurait dû ajouter une ligne');
+assert.ok(insertedFp.includes(`'imgflip-000000000': { sha256: '${sampleFp.sha256}'`), 'nouvelle entrée absente');
+console.log('PASS  upsert empreintes → mise à jour en place, insertion si absente');
 
 console.log('--- packs "faits main" (même format que pepites.ts) ---');
 

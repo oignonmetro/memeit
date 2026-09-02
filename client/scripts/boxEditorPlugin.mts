@@ -16,7 +16,9 @@ import {
   deletePepitesEntry,
   deleteCuratedBoxes,
   deleteFingerprintEntry,
+  upsertFingerprintEntry,
 } from './boxWriter.mts';
+import { fingerprintBuffer } from './imageFingerprint.mts';
 import type { TemplateBox } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -26,6 +28,7 @@ const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
+const TEMPLATES_DIR = path.join(CLIENT, 'public', 'templates');
 const REVIEWED = path.join(HERE, 'boxes-reviewed.json');
 
 type PackId = 'classiques' | 'pepites' | 'snap';
@@ -52,12 +55,21 @@ interface DeletePayload {
   id: string; // id complet du template (imgflip-…, pepites-… ou snap-…)
 }
 
-function readBody(req: import('node:http').IncomingMessage): Promise<string> {
+interface BakeTextPayload {
+  id: string; // id complet du template (imgflip-…, pepites-… ou snap-…), pour l'empreinte
+  url: string; // template.url, ex. "/templates/xxx.jpg" — désigne le fichier à écraser
+  dataUrl: string; // image déjà composée côté client (template + sous-titres), en data: URL
+}
+
+// Une image encodée en data: URL (base64, ~+33%) peut largement dépasser la
+// taille du fichier d'origine : le plafond des autres routes (payloads JSON
+// de quelques coordonnées) serait bien trop bas ici.
+function readBody(req: import('node:http').IncomingMessage, maxBytes = 1_000_000): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = '';
     req.on('data', (c) => {
       data += c;
-      if (data.length > 1_000_000) reject(new Error('Corps de requête trop volumineux'));
+      if (data.length > maxBytes) reject(new Error('Corps de requête trop volumineux'));
     });
     req.on('end', () => resolve(data));
     req.on('error', reject);
@@ -209,6 +221,47 @@ export function boxEditorPlugin(): Plugin {
           res.end(JSON.stringify({ ok: true }));
         } catch (err) {
           fail(400, err instanceof Error ? err.message : 'Suppression impossible');
+        }
+      });
+
+      // Incruste des sous-titres à demeure dans le fichier image : écrase
+      // public/templates/<fichier> avec l'image déjà composée côté client
+      // (canvas), puis recalcule son empreinte. Contrairement à /save et
+      // /delete, ceci ne touche aucun fichier source TypeScript — seul le
+      // binaire de l'image change, à un chemin déjà connu du pack.
+      server.middlewares.use('/__boxes/bake-text', async (req, res) => {
+        const fail = (code: number, message: string) => {
+          res.statusCode = code;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: false, error: message }));
+        };
+        if (req.method !== 'POST') return fail(405, 'POST attendu');
+        try {
+          const payload: BakeTextPayload = JSON.parse(await readBody(req, 25_000_000));
+
+          // Le chemin cible doit rester un fichier direct de public/templates/
+          // — pas de ".." ni de séparateur supplémentaire — avant même de le
+          // résoudre, pour qu'aucune donnée du client ne puisse faire écrire
+          // en dehors de ce dossier.
+          const match = /^\/templates\/([a-zA-Z0-9._-]+\.(?:jpg|jpeg|png))$/.exec(payload.url || '');
+          if (!match) throw new Error(`url de template invalide : ${payload.url}`);
+          const target = path.join(TEMPLATES_DIR, match[1]);
+          if (path.dirname(target) !== TEMPLATES_DIR) throw new Error('Chemin de template invalide');
+
+          const dataMatch = /^data:[^;]+;base64,(.+)$/.exec(payload.dataUrl || '');
+          if (!dataMatch) throw new Error('Image manquante ou mal encodée');
+          const buf = Buffer.from(dataMatch[1], 'base64');
+
+          await writeFile(target, buf);
+
+          const fingerprint = await fingerprintBuffer(buf);
+          const fpSource = await readFile(FINGERPRINTS, 'utf8');
+          await writeFile(FINGERPRINTS, upsertFingerprintEntry(fpSource, payload.id, fingerprint), 'utf8');
+
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: true }));
+        } catch (err) {
+          fail(400, err instanceof Error ? err.message : 'Incrustation impossible');
         }
       });
 
