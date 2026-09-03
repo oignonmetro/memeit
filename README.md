@@ -341,6 +341,24 @@ template vidéo/capture dont le texte d'origine est illisible ou absent.
   demandée) : il n'y a pas de "annuler" pour un pixel déjà écrasé, contrairement à l'enregistrement
   d'une zone qui ne touche qu'un fichier source versionné.
 
+### Rognage de l'image
+
+Toujours dans le même éditeur, `Rogner l'image…` découpe le fichier image à un rectangle choisi à
+la souris — utile pour retirer des bandes noires, un filigrane ou un cadre inutile. Contrairement
+au rognage d'une photo au hasard, l'opération est **consciente des zones déjà placées** :
+
+- Le rectangle de rognage (encadré orange, sans rotation — un rognage reste toujours droit)
+  masque temporairement les zones/sous-titres pendant l'ajustement, pour ne pas encombrer
+  l'aperçu.
+- **`Rogner`** recalcule d'abord les zones de texte existantes dans le repère de la nouvelle
+  image (même position et taille **physiques**, donc visuellement inchangées, juste réexprimées
+  en pourcentage d'une image plus petite), puis envoie l'image découpée et les zones recalculées
+  au serveur de dev en une seule requête : l'image sur le disque, l'empreinte et l'entrée du pack
+  changent ensemble, pour ne jamais laisser des zones qui pointent dans le vide sur la nouvelle
+  image.
+- **Irréversible depuis l'éditeur**, comme l'incrustation de sous-titres : le fichier d'origine
+  n'est conservé nulle part une fois le rognage appliqué.
+
 ### Anti-doublon à l'import de nouveaux templates
 
 Un même meme peut exister sur Imgflip sous **plusieurs ids, URLs et noms différents** : c'est

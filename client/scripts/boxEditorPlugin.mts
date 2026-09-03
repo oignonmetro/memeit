@@ -61,6 +61,15 @@ interface BakeTextPayload {
   dataUrl: string; // image déjà composée côté client (template + sous-titres), en data: URL
 }
 
+interface CropPayload {
+  pack: PackId;
+  id: string; // id complet du template, pour l'empreinte et l'entrée de pack
+  name: string;
+  url: string; // template.url — désigne le fichier à écraser
+  dataUrl: string; // image déjà rognée côté client, en data: URL
+  boxes: TemplateBox[]; // zones déjà recalculées dans le repère de l'image rognée
+}
+
 // Une image encodée en data: URL (base64, ~+33%) peut largement dépasser la
 // taille du fichier d'origine : le plafond des autres routes (payloads JSON
 // de quelques coordonnées) serait bien trop bas ici.
@@ -111,6 +120,40 @@ function sanitizeBoxes(input: unknown): TemplateBox[] {
   });
 }
 
+// Résout et valide le chemin disque désigné par une url de template
+// ("/templates/xxx.jpg"), et décode l'image que le client a déjà composée en
+// data: URL — partagé par /bake-text et /crop, les deux routes qui écrasent
+// un fichier image. Le chemin cible doit rester un fichier direct de
+// public/templates/ — pas de ".." ni de séparateur supplémentaire — avant
+// même de le résoudre, pour qu'aucune donnée du client ne puisse faire
+// écrire en dehors de ce dossier.
+function resolveTemplateWrite(url: string, dataUrl: string): { target: string; buf: Buffer } {
+  const match = /^\/templates\/([a-zA-Z0-9._-]+\.(?:jpg|jpeg|png))$/.exec(url || '');
+  if (!match) throw new Error(`url de template invalide : ${url}`);
+  const target = path.join(TEMPLATES_DIR, match[1]);
+  if (path.dirname(target) !== TEMPLATES_DIR) throw new Error('Chemin de template invalide');
+
+  const dataMatch = /^data:[^;]+;base64,(.+)$/.exec(dataUrl || '');
+  if (!dataMatch) throw new Error('Image manquante ou mal encodée');
+  return { target, buf: Buffer.from(dataMatch[1], 'base64') };
+}
+
+// Réécrit l'entrée d'un template dans le bon fichier source selon son pack —
+// partagé par /save et /crop, qui doivent tous deux persister des zones
+// (recalculées ou non) après validation. classiques.ts est à part : ses
+// zones vivent dans CURATED (templateBoxes.ts), sous l'id nu.
+async function writeBoxesToPack(pack: PackId, id: string, name: string, boxes: TemplateBox[]): Promise<void> {
+  const inlineFile = INLINE_PACK_FILES[pack];
+  if (inlineFile) {
+    const source = await readFile(inlineFile, 'utf8');
+    await writeFile(inlineFile, writePepitesBoxes(source, id, boxes, path.basename(inlineFile)), 'utf8');
+  } else {
+    const imgflipId = id.replace(/^imgflip-/, '');
+    const source = await readFile(TEMPLATE_BOXES, 'utf8');
+    await writeFile(TEMPLATE_BOXES, writeCuratedBoxes(source, imgflipId, boxes, name), 'utf8');
+  }
+}
+
 export function boxEditorPlugin(): Plugin {
   return {
     name: 'memeit-box-editor',
@@ -133,24 +176,7 @@ export function boxEditorPlugin(): Plugin {
         try {
           const payload: SavePayload = JSON.parse(await readBody(req));
           const boxes = sanitizeBoxes(payload.boxes);
-
-          const inlineFile = INLINE_PACK_FILES[payload.pack];
-          if (inlineFile) {
-            const source = await readFile(inlineFile, 'utf8');
-            await writeFile(
-              inlineFile,
-              writePepitesBoxes(source, payload.id, boxes, path.basename(inlineFile)),
-              'utf8'
-            );
-          } else {
-            const imgflipId = payload.id.replace(/^imgflip-/, '');
-            const source = await readFile(TEMPLATE_BOXES, 'utf8');
-            await writeFile(
-              TEMPLATE_BOXES,
-              writeCuratedBoxes(source, imgflipId, boxes, payload.name),
-              'utf8'
-            );
-          }
+          await writeBoxesToPack(payload.pack, payload.id, payload.name, boxes);
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ ok: true, boxes }));
         } catch (err) {
@@ -238,19 +264,7 @@ export function boxEditorPlugin(): Plugin {
         if (req.method !== 'POST') return fail(405, 'POST attendu');
         try {
           const payload: BakeTextPayload = JSON.parse(await readBody(req, 25_000_000));
-
-          // Le chemin cible doit rester un fichier direct de public/templates/
-          // — pas de ".." ni de séparateur supplémentaire — avant même de le
-          // résoudre, pour qu'aucune donnée du client ne puisse faire écrire
-          // en dehors de ce dossier.
-          const match = /^\/templates\/([a-zA-Z0-9._-]+\.(?:jpg|jpeg|png))$/.exec(payload.url || '');
-          if (!match) throw new Error(`url de template invalide : ${payload.url}`);
-          const target = path.join(TEMPLATES_DIR, match[1]);
-          if (path.dirname(target) !== TEMPLATES_DIR) throw new Error('Chemin de template invalide');
-
-          const dataMatch = /^data:[^;]+;base64,(.+)$/.exec(payload.dataUrl || '');
-          if (!dataMatch) throw new Error('Image manquante ou mal encodée');
-          const buf = Buffer.from(dataMatch[1], 'base64');
+          const { target, buf } = resolveTemplateWrite(payload.url, payload.dataUrl);
 
           await writeFile(target, buf);
 
@@ -262,6 +276,38 @@ export function boxEditorPlugin(): Plugin {
           res.end(JSON.stringify({ ok: true }));
         } catch (err) {
           fail(400, err instanceof Error ? err.message : 'Incrustation impossible');
+        }
+      });
+
+      // Rogne l'image d'un template : écrase le fichier avec le rectangle déjà
+      // découpé côté client, recalcule son empreinte, ET réécrit ses zones —
+      // contrairement à /bake-text, rogner change les dimensions de l'image,
+      // donc le repère xPct/yPct/widthPct/heightPct des zones existantes.
+      // Le client envoie les zones déjà recalculées (cropRender.ts,
+      // remapBoxToCrop) ; sanitizeBoxes rattrape ce qui déborderait du cadre.
+      server.middlewares.use('/__boxes/crop', async (req, res) => {
+        const fail = (code: number, message: string) => {
+          res.statusCode = code;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: false, error: message }));
+        };
+        if (req.method !== 'POST') return fail(405, 'POST attendu');
+        try {
+          const payload: CropPayload = JSON.parse(await readBody(req, 25_000_000));
+          const { target, buf } = resolveTemplateWrite(payload.url, payload.dataUrl);
+          const boxes = sanitizeBoxes(payload.boxes);
+
+          await writeFile(target, buf);
+          await writeBoxesToPack(payload.pack, payload.id, payload.name, boxes);
+
+          const fingerprint = await fingerprintBuffer(buf);
+          const fpSource = await readFile(FINGERPRINTS, 'utf8');
+          await writeFile(FINGERPRINTS, upsertFingerprintEntry(fpSource, payload.id, fingerprint), 'utf8');
+
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: true, boxes }));
+        } catch (err) {
+          fail(400, err instanceof Error ? err.message : 'Rognage impossible');
         }
       });
 

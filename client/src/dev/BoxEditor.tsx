@@ -17,6 +17,7 @@ import { SNAP_TEMPLATES } from '../lib/packs/snap';
 import { genericBoxes } from '../lib/templateBoxes';
 import { SUBTITLE_FONT_STACK, blobToDataUrl, renderTemplateWithSubtitles } from './subtitleRender';
 import type { SubtitleEntry } from './subtitleRender';
+import { cropTemplate, remapBoxToCrop } from './cropRender';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
 type PackId = 'classiques' | 'pepites' | 'snap';
@@ -182,6 +183,19 @@ export default function BoxEditor() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 
+  // Incrémenté après toute écriture qui change le fichier image sur le
+  // disque sans changer son chemin (incrustation, rognage) : sans ça, le
+  // navigateur continuerait d'afficher l'image mise en cache sous la même
+  // url, alors que le fichier a changé.
+  const [imgVersion, setImgVersion] = useState(0);
+
+  // Rognage : un seul rectangle (pas de rotation — un rognage reste toujours
+  // droit), actif seulement en mode rognage pour ne pas encombrer l'aperçu
+  // des cadres de zones/sous-titres pendant qu'on ajuste le cadrage.
+  const [cropMode, setCropMode] = useState(false);
+  const [cropBox, setCropBox] = useState<TemplateBox>({ xPct: 50, yPct: 50, widthPct: 90, heightPct: 90 });
+  const [cropping, setCropping] = useState(false);
+
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return ENTRIES.filter(({ template, pack }) => {
@@ -228,6 +242,9 @@ export default function BoxEditor() {
     setSubtitles([]);
     setSelectedSubtitle(0);
     clearPreview();
+    setImgVersion(0);
+    setCropMode(false);
+    setCropBox({ xPct: 50, yPct: 50, widthPct: 90, heightPct: 90 });
   }, [template, clearPreview]);
 
   // Tant que l'image du template n'est pas chargée, le cadre est plat : une
@@ -664,6 +681,7 @@ export default function BoxEditor() {
       setSubtitles([]);
       setSelectedSubtitle(0);
       clearPreview();
+      setImgVersion((v) => v + 1);
       setStatus('Sous-titre(s) incrusté(s) ✓ (le fichier image a changé sur le disque)');
     } catch (err) {
       setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
@@ -671,6 +689,70 @@ export default function BoxEditor() {
       setBaking(false);
     }
   }, [template, entry, subtitles, clearPreview]);
+
+  // Même pont que setSubtitleBoxes, en plus simple : un seul rectangle, pas
+  // de champ à préserver à côté (contrairement à {box, text} des sous-titres).
+  const setCropBoxArray: Dispatch<SetStateAction<TemplateBox[]>> = useCallback((updater) => {
+    setCropBox((prev) => {
+      const nextArr = typeof updater === 'function' ? (updater as (p: TemplateBox[]) => TemplateBox[])([prev]) : updater;
+      return nextArr[0] ?? prev;
+    });
+  }, []);
+  // setSelectedIndex n'a pas de sens ici (un seul rectangle) : no-op.
+  const cropHandlers = makeBoxHandlers([cropBox], setCropBoxArray, () => {});
+
+  const startCrop = useCallback(() => {
+    setCropMode(true);
+    setCropBox({ xPct: 50, yPct: 50, widthPct: 90, heightPct: 90 });
+    setStatus(null);
+  }, []);
+
+  // Rogne : recalcule d'abord les zones existantes dans le repère de l'image
+  // une fois rognée (remapBoxToCrop), pour qu'elles restent au même endroit
+  // visuellement, puis envoie image + zones au serveur en une seule requête —
+  // les deux doivent changer ensemble, sinon les zones pointeraient dans le
+  // vide sur la nouvelle image. Irréversible depuis l'éditeur, comme bake().
+  const applyCrop = useCallback(async () => {
+    if (!template || !entry) return;
+    if (cropBox.widthPct >= 99 && cropBox.heightPct >= 99) {
+      setStatus("Le rectangle couvre toute l'image : rien à rogner.");
+      return;
+    }
+    const ok = window.confirm(
+      `Rogner définitivement l'image de « ${template.name} » ?\n\n` +
+        `Ceci réécrit le fichier image ET les zones de texte existantes (repositionnées pour ` +
+        `rester au même endroit visuellement). Impossible à annuler depuis l'éditeur.`
+    );
+    if (!ok) return;
+    setCropping(true);
+    setStatus('Rognage…');
+    try {
+      const { blob, naturalWidth, naturalHeight, cropPx } = await cropTemplate(template.url, cropBox);
+      const newBoxes = draft.map((b) => remapBoxToCrop(b, cropPx, naturalWidth, naturalHeight));
+      const dataUrl = await blobToDataUrl(blob);
+      const res = await fetch('/__boxes/crop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pack: entry.pack,
+          id: template.id,
+          name: template.name,
+          url: template.url,
+          dataUrl,
+          boxes: newBoxes,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      setCropMode(false);
+      setImgVersion((v) => v + 1);
+      setStatus('Image rognée ✓ (fichier et zones mis à jour)');
+    } catch (err) {
+      setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
+    } finally {
+      setCropping(false);
+    }
+  }, [template, entry, cropBox, draft]);
 
   if (!template) {
     return (
@@ -756,9 +838,17 @@ export default function BoxEditor() {
               <button type="button" onClick={clearPreview}>Quitter l'aperçu</button>
             </p>
           )}
+          {cropMode && (
+            <p className="be-crop-banner">
+              Mode rognage — ajuste le rectangle à garder, puis « Rogner » dans la barre latérale.
+            </p>
+          )}
           <div className="be-frame" ref={frameRef}>
-            <MemeRender templateUrl={previewUrl || template.url} layers={layers} />
-            {showOverlay && (
+            <MemeRender
+              templateUrl={previewUrl || (imgVersion ? `${template.url}?v=${imgVersion}` : template.url)}
+              layers={layers}
+            />
+            {showOverlay && !cropMode && (
               <div className="be-overlay">
                 {draft.map((b, i) => (
                   <div
@@ -839,6 +929,34 @@ export default function BoxEditor() {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+            {cropMode && (
+              <div className="be-overlay">
+                <div
+                  className="be-box be-box-crop sel"
+                  style={{
+                    left: `${cropBox.xPct}%`,
+                    top: `${cropBox.yPct}%`,
+                    width: `${cropBox.widthPct}%`,
+                    height: `${cropBox.heightPct}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                  onPointerDown={(e) => cropHandlers.startDrag(e, 0, null)}
+                >
+                  {HANDLES.map((h) => (
+                    <span
+                      key={`${h.sx}${h.sy}`}
+                      className="be-handle"
+                      style={{
+                        left: `${50 + h.sx * 50}%`,
+                        top: `${50 + h.sy * 50}%`,
+                        cursor: h.cursor,
+                      }}
+                      onPointerDown={(e) => cropHandlers.startDrag(e, 0, h)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -993,6 +1111,43 @@ export default function BoxEditor() {
             )}
           </div>
 
+          <div className="be-crop-section">
+            <h3 className="be-crop-title">Rogner l'image</h3>
+            {!cropMode ? (
+              <button
+                type="button"
+                className="be-add-zone"
+                onClick={startCrop}
+                disabled={!frameReady}
+                title="Découper l'image du template"
+              >
+                Rogner l'image…
+              </button>
+            ) : (
+              <>
+                <p className="be-crop-hint">
+                  Glisser le cadre pour déplacer, les poignées pour redimensionner (pas de rotation :
+                  un rognage reste toujours droit). Les zones ci-dessus sont recalculées pour rester
+                  au même endroit.
+                </p>
+                <div className="be-actions">
+                  <button type="button" onClick={() => setCropMode(false)} disabled={cropping}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="be-primary"
+                    onClick={applyCrop}
+                    disabled={cropping}
+                    title="Écrit l'image et les zones recalculées — irréversible depuis l'éditeur"
+                  >
+                    {cropping ? 'Rognage…' : 'Rogner'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="be-actions">
             <button className="be-primary" onClick={save} disabled={!dirty || !frameReady}>
               Enregistrer (s)
@@ -1022,6 +1177,10 @@ export default function BoxEditor() {
             Les sous-titres (encadrés en pointillés, étiquette « S1, S2... ») se déplacent et se
             redimensionnent à la souris comme les zones, mais n'ont pas de raccourci clavier —
             « Incruster » peint leur texte directement dans le fichier image, ce qui est irréversible
+            depuis l'éditeur.
+            « Rogner l'image… » masque temporairement zones et sous-titres pour n'afficher que le
+            rectangle à garder (souris uniquement, pas de rotation) ; « Rogner » écrase le fichier
+            image ET recalcule les zones existantes pour qu'elles restent au même endroit — irréversible
             depuis l'éditeur.
           </p>
           <code className="be-code">[{draft.map(formatBoxPreview).join(', ')}]</code>
@@ -1124,6 +1283,17 @@ function Styles() {
       .be-subtitle-hint { font-size: .68rem; color: #b8a9d4; margin: 0 0 4px; line-height: 1.4; }
       .be-subtitle-input { flex: 1; background: rgba(0,0,0,.35); color: #f5f0ff;
         border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 5px 8px; font-size: .8rem; }
+      .be-crop-banner { font-size: .78rem; font-weight: 700; color: #2b1500; background: #f77f00;
+        padding: 6px 10px; border-radius: 8px; margin: 0 0 8px; }
+      .be-crop-section { display: flex; flex-direction: column; gap: 6px; padding: 10px;
+        border: 1px solid rgba(247,127,0,.35); border-radius: 10px; background: rgba(247,127,0,.05); }
+      .be-crop-title { font-size: .82rem; margin: 0; color: #f77f00; }
+      .be-crop-hint { font-size: .68rem; color: #b8a9d4; margin: 0 0 4px; line-height: 1.4; }
+      /* Toujours affiché "sélectionné" (be-box.sel) : un seul rectangle actif
+         à la fois, pas besoin de distinguer un état non sélectionné. Couleur
+         orange propre, différente du jaune des zones et du cyan des
+         sous-titres, pour qu'un rognage se reconnaisse d'un coup d'œil. */
+      .be-box-crop.sel { border-color: #f77f00; background: rgba(247,127,0,.12); }
     `}</style>
   );
 }
