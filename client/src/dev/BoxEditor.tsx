@@ -14,7 +14,6 @@ import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
 import { SNAP_TEMPLATES } from '../lib/packs/snap';
-import { genericBoxes } from '../lib/templateBoxes';
 import { SUBTITLE_FONT_STACK, blobToDataUrl, renderTemplateWithSubtitles } from './subtitleRender';
 import type { SubtitleEntry } from './subtitleRender';
 import { cropTemplate, remapBoxToCrop } from './cropRender';
@@ -22,7 +21,11 @@ import type { Template, TemplateBox, TextLayer } from '../types';
 
 type PackId = 'classiques' | 'pepites' | 'snap';
 type Entry = { template: Template; pack: PackId };
-type Filter = 'tous' | 'generiques' | 'personnalises' | 'nonrevus';
+// Sélection par pack "joueur" : côté lobby, classiques.ts et pepites.ts sont
+// fusionnés en un seul pack "Classiques" (voir packs/index.ts) — le
+// sélecteur reproduit ce découpage-là plutôt que les 3 PackId internes, pour
+// que "choisir un pack" corresponde à ce que les joueurs voient réellement.
+type PackFilter = 'tous' | 'classiques' | 'snap';
 type SampleMode = 'court' | 'long' | 'numeros';
 
 const ENTRIES: Entry[] = [
@@ -42,30 +45,10 @@ const PACK_NAME: Record<PackId, string> = {
   snap: 'Snap français',
 };
 
-// Les packs "faits main" (voir ci-dessous) n'ont pas de registre CURATED :
-// leurs entrées sont créées par l'import (templates:snap) avec la
-// disposition générique haut/bas, à recaler ensuite ici.
-const MANUAL_PACKS: PackId[] = ['snap'];
-
-// Un template compte comme "personnalisé" s'il a une entrée CURATED dans
-// templateBoxes.ts (Classiques) — les Pépites ont toujours leurs zones
-// écrites à la main, donc toujours personnalisées.
-//
-// Pour un pack "fait main", on compare les zones elles-mêmes à ce que
-// l'import écrit par défaut, faute de registre CURATED équivalent — sinon
-// les templates fraîchement importés s'annonceraient "personnalisés" alors
-// qu'ils sont justement ceux qui restent à faire, et le filtre "Disposition
-// générique" ne servirait plus à rien pour ces packs.
-function isCuratedEntry(pack: PackId, template: Template, curatedIds: Set<string>): boolean {
-  if (MANUAL_PACKS.includes(pack)) return !sameBoxes(template.boxes, genericBoxes(2));
-  return pack === 'pepites' || curatedIds.has(template.id.replace(/^imgflip-/, ''));
-}
-
-function matchesFilter(filter: Filter, isCurated: boolean, isReviewed: boolean): boolean {
-  if (filter === 'personnalises') return isCurated;
-  if (filter === 'generiques') return !isCurated;
-  if (filter === 'nonrevus') return !isReviewed;
-  return true;
+function matchesPackFilter(pack: PackId, packFilter: PackFilter): boolean {
+  if (packFilter === 'tous') return true;
+  if (packFilter === 'classiques') return pack === 'classiques' || pack === 'pepites';
+  return pack === packFilter;
 }
 
 // Les légendes longues sont le vrai test : c'est le texte long qui révèle les
@@ -160,13 +143,12 @@ const HANDLES: { sx: -1 | 0 | 1; sy: -1 | 0 | 1; cursor: string }[] = [
 
 export default function BoxEditor() {
   const [index, setIndex] = useState(0);
-  const [filter, setFilter] = useState<Filter>('tous');
+  const [packFilter, setPackFilter] = useState<PackFilter>('tous');
   const [search, setSearch] = useState('');
   const [sample, setSample] = useState<SampleMode>('long');
   const [showOverlay, setShowOverlay] = useState(true);
   const [draft, setDraft] = useState<TemplateBox[]>([]);
   const [selected, setSelected] = useState(0);
-  const [curatedIds, setCuratedIds] = useState<Set<string>>(new Set());
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<string | null>(null);
   const [frameReady, setFrameReady] = useState(false);
@@ -200,11 +182,9 @@ export default function BoxEditor() {
     const q = search.trim().toLowerCase();
     return ENTRIES.filter(({ template, pack }) => {
       if (q && !template.name.toLowerCase().includes(q)) return false;
-      const isCurated = isCuratedEntry(pack, template, curatedIds);
-      const isReviewed = reviewedIds.has(template.id);
-      return matchesFilter(filter, isCurated, isReviewed);
+      return matchesPackFilter(pack, packFilter);
     });
-  }, [search, filter, curatedIds, reviewedIds]);
+  }, [search, packFilter]);
 
   const entry = visible[Math.min(index, visible.length - 1)];
   const template = entry?.template;
@@ -212,10 +192,7 @@ export default function BoxEditor() {
   useEffect(() => {
     fetch('/__boxes/meta')
       .then((r) => r.json())
-      .then((d) => {
-        setCuratedIds(new Set(d.curatedIds));
-        setReviewedIds(new Set(d.reviewedIds));
-      })
+      .then((d) => setReviewedIds(new Set(d.reviewedIds)))
       .catch(() => setStatus('Métadonnées indisponibles (serveur de dev ?)'));
   }, []);
 
@@ -364,19 +341,12 @@ export default function BoxEditor() {
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
-      const raw = entry.template.id.replace(/^imgflip-/, '');
-      setCuratedIds((prev) => new Set(prev).add(raw));
       setStatus('Enregistré dans le fichier source ✓');
-      // Enregistrer peut faire sortir ce template du filtre actif (ex.
-      // "Disposition générique" : il vient de devenir personnalisé). Dans ce
-      // cas la liste filtrée rétrécit toute seule et le template suivant
-      // glisse déjà à cette place — avancer l'index en plus le sauterait.
-      // Sinon (filtre "Tous", ou filtre inchangé par ce save), on avance.
-      if (matchesFilter(filter, true, reviewedIds.has(entry.template.id))) move(1);
+      move(1);
     } catch (err) {
       setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
     }
-  }, [entry, draft, filter, reviewedIds, move]);
+  }, [entry, draft, move]);
 
   // Supprime le template entier (pas juste une zone) : son entrée dans le
   // pack, sa disposition personnalisée et son empreinte. Confirmation
@@ -411,7 +381,7 @@ export default function BoxEditor() {
   }, [entry, template]);
 
   const toggleReviewed = useCallback(() => {
-    if (!template || !entry) return;
+    if (!template) return;
     const next = !reviewedIds.has(template.id);
     setReviewedIds((prev) => {
       const copy = new Set(prev);
@@ -426,12 +396,9 @@ export default function BoxEditor() {
     }).catch(() => setStatus('Statut « revu » non enregistré'));
     // Seulement en passant à "revu" : après "non revu" on reste sur place,
     // pour pouvoir reconsidérer le template qu'on vient de dé-marquer sans
-    // en être éjecté. Même logique de rétrécissement de liste que save().
-    if (next) {
-      const isCurated = isCuratedEntry(entry.pack, template, curatedIds);
-      if (matchesFilter(filter, isCurated, true)) move(1);
-    }
-  }, [template, entry, reviewedIds, curatedIds, filter, move]);
+    // en être éjecté.
+    if (next) move(1);
+  }, [template, reviewedIds, move]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -764,7 +731,6 @@ export default function BoxEditor() {
   }
 
   const layers: TextLayer[] = draft.map((b, i) => ({ ...b, text: sampleText(sample, i) }));
-  const isCurated = isCuratedEntry(entry.pack, template, curatedIds);
   const isReviewed = reviewedIds.has(template.id);
 
   return (
@@ -778,13 +744,6 @@ export default function BoxEditor() {
         </span>
         <button onClick={() => move(1)}>▶</button>
         <strong className="be-name">{template.name}</strong>
-        <span className={`be-chip ${isCurated ? 'ok' : 'warn'}`}>
-          {isCurated ? 'personnalisé' : 'générique'}
-        </span>
-        <span className={`be-chip ${isReviewed ? 'ok' : ''}`}>
-          {isReviewed ? 'revu' : 'non revu'}
-        </span>
-        <span className="be-chip">{PACK_NAME[entry.pack]}</span>
         {dirty && <span className="be-chip dirty">modifié</span>}
       </header>
 
@@ -799,16 +758,15 @@ export default function BoxEditor() {
           }}
         />
         <select
-          value={filter}
+          value={packFilter}
           onChange={(e) => {
-            setFilter(e.target.value as Filter);
+            setPackFilter(e.target.value as PackFilter);
             setIndex(0);
           }}
         >
-          <option value="tous">Tous</option>
-          <option value="generiques">Disposition générique</option>
-          <option value="personnalises">Disposition personnalisée</option>
-          <option value="nonrevus">Jamais revus</option>
+          <option value="tous">Tous les packs</option>
+          <option value="classiques">Classiques</option>
+          <option value="snap">Snap français</option>
         </select>
         <select value={sample} onChange={(e) => setSample(e.target.value as SampleMode)}>
           <option value="long">Légendes longues</option>
