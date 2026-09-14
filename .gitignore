@@ -8,3 +8,10 @@ client/.env
 client/.env.local
 .firebaserc
 .firebase/
+
+# Dépôts d'images pour les packs "faits main" (npm run templates:<id>) :
+# zones de transit, les images retenues sont copiées dans
+# client/public/templates/ (inutile de les versionner deux fois). Le mode
+# d'emploi de chaque dossier, lui, est suivi.
+client/templates-snap/*
+!client/templates-snap/LISEZ-MOI.md

@@ -6,11 +6,15 @@ export type TemplateSource = 'library' | 'upload';
 
 // A predefined text zone on a template (imgflip-style). Coordinates are
 // percentages of the image; (xPct,yPct) is the CENTER of the box.
+// rotationDeg is optional and omitted from the data files when 0 (the
+// overwhelming majority of zones), so untouched entries keep their exact
+// existing formatting — only zones an editor actually rotated grow the field.
 export interface TemplateBox {
   xPct: number;
   yPct: number;
   widthPct: number;
   heightPct: number;
+  rotationDeg?: number;
 }
 
 export interface Template {
@@ -28,6 +32,7 @@ export interface TextLayer {
   yPct: number;
   widthPct: number;
   heightPct: number;
+  rotationDeg?: number;
 }
 
 export interface RoomSettings {
@@ -134,6 +139,7 @@ export interface RoundStartedPayload {
   totalRounds: number;
   template: Template | null; // the viewer's own template (null on TV in non-meme modes)
   changesLeft: number; // template re-rolls the viewer still has this round
+  isFirstTemplate: boolean; // viewer hasn't re-rolled yet this round — still on the one first assigned
   // True when this round assigned the SAME template to every player ("même
   // meme" mode actually in effect). Re-rolling one's own template is disabled
   // then — it would silently break the "everyone gets the same meme" premise.
@@ -147,12 +153,17 @@ export interface RevealMemePayload {
   template: Template;
   meme: { authorId: string; layers: TextLayer[] };
   deadline: number;
-  // How many connected players have hit "Vu" on the currently displayed meme.
-  // Once seenCount reaches seenTotal, the room advances immediately instead
-  // of waiting for the deadline.
+  // How many connected players (excluding the meme's own author — see
+  // isAuthor) have hit "Vu" on the currently displayed meme. Once seenCount
+  // reaches seenTotal, the room advances immediately instead of waiting for
+  // the deadline.
   seenCount: number;
   seenTotal: number;
   selfSeen: boolean;
+  // True when the viewer is the author of the meme currently shown: they
+  // already know it, so the "Vu" button is disabled for them and they don't
+  // count towards seenTotal.
+  isAuthor: boolean;
 }
 
 export interface VoteMeme {
@@ -205,7 +216,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   mode: 'normal',
   rounds: 3,
   captionTimeSec: 120,
-  revealTimeSec: 10,
+  revealTimeSec: 13,
   voteTimeSec: 25,
   maxTemplateChanges: 5,
   templateSource: 'both',

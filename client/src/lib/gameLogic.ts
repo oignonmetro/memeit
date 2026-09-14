@@ -165,13 +165,17 @@ export function reduceCaption(room: DbRoom | null, now: number): DbRoom | null {
 // Advances the reveal once either the cooldown deadline has passed, or every
 // connected player has hit "Vu" on the meme currently shown — whichever
 // comes first, so a fast-reading group isn't stuck waiting out the timer.
+// The meme's own author is excluded from that requirement: they already know
+// their own meme, so waiting on their "Vu" would only slow the group down.
 export function reduceReveal(room: DbRoom | null, now: number): DbRoom | null {
   if (!room || room.status !== 'reveal') return room;
   const connectedIds = Object.entries(room.players || {})
     .filter(([, p]) => p.connected)
     .map(([id]) => id);
+  const authorId = room.revealOrder?.[room.revealIndex];
+  const requiredIds = connectedIds.filter((id) => id !== authorId);
   const deadlinePassed = room.revealDeadline != null && now >= room.revealDeadline;
-  const allSeen = connectedIds.length > 0 && connectedIds.every((id) => room.revealSeenBy?.[id]);
+  const allSeen = connectedIds.length > 0 && requiredIds.every((id) => room.revealSeenBy?.[id]);
   if (!deadlinePassed && !allSeen) return room;
   const nextIndex = room.revealIndex + 1;
   if (nextIndex >= (room.revealOrder || []).length) {
@@ -200,8 +204,13 @@ export function reduceReveal(room: DbRoom | null, now: number): DbRoom | null {
 // A player marks the currently displayed meme as "seen". Immediately
 // re-checks the advance condition so the round skips ahead the moment the
 // last connected player clicks, instead of waiting for the next tick.
+// The author clicking their own meme is a no-op: they're excluded from the
+// requirement in reduceReveal, so recording it would never matter — but
+// leaving it out of revealSeenBy entirely (rather than storing an unused
+// entry) keeps that record meaning exactly what its name says.
 export function reduceMarkSeen(room: DbRoom | null, playerId: string, now: number): DbRoom | null {
   if (!room || room.status !== 'reveal') return room;
+  if (playerId === room.revealOrder?.[room.revealIndex]) return room;
   if (room.revealSeenBy?.[playerId]) return room;
   const marked = { ...room, revealSeenBy: { ...(room.revealSeenBy || {}), [playerId]: true }, lastActivityAt: now };
   return reduceReveal(marked, now);

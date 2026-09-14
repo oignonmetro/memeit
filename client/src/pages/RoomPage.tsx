@@ -10,6 +10,17 @@ import { useCountdown } from '../hooks/useCountdown';
 import { getDefaultNickname, setDefaultNickname } from '../lib/nickname';
 import { downloadMeme } from '../lib/memeImage';
 
+// revealMeme.index repart de 0 à chaque manche : sans autre chose pour les
+// distinguer, le premier meme téléchargé en manche 1 et celui de la manche 2
+// portent le même nom de fichier ("memeit-XXXX-1.png") et l'un écrase l'autre
+// (ou le navigateur ajoute un "(1)" peu lisible). L'horodatage à la seconde
+// rend chaque téléchargement unique, quelle que soit la manche.
+function downloadTimestamp(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
 export default function RoomPage() {
   const { code = '' } = useParams();
   const navigate = useNavigate();
@@ -106,7 +117,7 @@ export default function RoomPage() {
       await downloadMeme(
         revealMeme.template.url,
         revealMeme.meme.layers,
-        `memeit-${code.toUpperCase()}-${revealMeme.index + 1}.png`
+        `memeit-${code.toUpperCase()}-${revealMeme.index + 1}-${downloadTimestamp()}.png`
       );
     } catch (err: any) {
       setDownloadError(err?.message || 'Téléchargement impossible.');
@@ -116,7 +127,7 @@ export default function RoomPage() {
   }
 
   async function handleMarkSeen() {
-    if (!revealMeme || revealMeme.selfSeen || marking) return;
+    if (!revealMeme || revealMeme.selfSeen || revealMeme.isAuthor || marking) return;
     setMarking(true);
     try {
       await markMemeSeen();
@@ -223,6 +234,7 @@ export default function RoomPage() {
               template={roundStarted.template}
               submitting={submitting}
               changesLeft={roundStarted.changesLeft}
+              isFirstTemplate={roundStarted.isFirstTemplate}
               isSharedTemplate={roundStarted.isSharedTemplate}
               onChangeTemplate={changeTemplate}
               onSubmit={async (layers) => {
@@ -251,8 +263,17 @@ export default function RoomPage() {
               <button className="btn btn-secondary btn-sm" onClick={handleDownloadRevealed} disabled={downloading}>
                 {downloading ? 'Préparation...' : '⬇️ Télécharger ce meme'}
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={handleMarkSeen} disabled={marking || revealMeme.selfSeen}>
-                {revealMeme.selfSeen ? `👀 Vu (${revealMeme.seenCount}/${revealMeme.seenTotal})` : '👀 Vu'}
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleMarkSeen}
+                disabled={marking || revealMeme.selfSeen || revealMeme.isAuthor}
+                title={revealMeme.isAuthor ? "C'est ton meme, pas besoin de le confirmer" : undefined}
+              >
+                {revealMeme.isAuthor
+                  ? '👀 Ton meme'
+                  : revealMeme.selfSeen
+                  ? `👀 Vu (${revealMeme.seenCount}/${revealMeme.seenTotal})`
+                  : '👀 Vu'}
               </button>
             </div>
             {downloadError && (
@@ -262,7 +283,7 @@ export default function RoomPage() {
               <div className="timer-fill" style={{ width: `${revealCountdown.pct}%` }} />
             </div>
             <div className="center-note">
-              {revealMeme.selfSeen
+              {revealMeme.isAuthor || revealMeme.selfSeen
                 ? `En attente des autres (${revealMeme.seenCount}/${revealMeme.seenTotal} ont vu)...`
                 : 'Le vote arrive quand tous les memes sont passés. Clique "Vu" pour accélérer.'}
             </div>

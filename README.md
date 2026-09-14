@@ -137,8 +137,7 @@ disponibles instantanément.
    local pour les prochaines parties), bouton "Créer une partie", ou champ code + bouton
    "Rejoindre" — sans étape intermédiaire. Les joueurs rejoignent depuis leur téléphone avec le
    code à 4 lettres (ou en scannant le QR code affiché sur la TV). Tous les réglages de partie — mode de jeu, **nombre de manches**,
-   temps de légende, nombre de changements de template, **packs de templates** (plusieurs à la fois
-   possibles, cumulés dans le même pool) — se règlent depuis
+   temps de légende, nombre de changements de template — se règlent depuis
    le lobby par l'hôte, une fois la salle créée, et restent modifiables jusqu'au lancement. L'hôte
    peut aussi exclure un joueur de la salle (petit bouton rouge à côté de son pseudo, uniquement
    avant le lancement) — le joueur exclu peut toujours rejoindre à nouveau avec le code.
@@ -212,26 +211,153 @@ réel comme le reste, sans infrastructure séparée. Compteur de non-lus quand l
 fermé, pseudo coloré par joueur (couleur stable selon l'ordre d'arrivée). Envoyer un message ne
 compte pas comme une action de jeu (ça ne perturbe pas les minuteurs de manche).
 
-## Packs de templates intégrés
+## Templates intégrés
 
 Les templates de base ne sont plus récupérés en direct depuis l'API Imgflip à chaque partie :
-ils sont regroupés en **packs statiques**, sélectionnables (plusieurs à la fois) par l'hôte dans le
-lobby (`client/src/lib/packs/`) — les templates de tous les packs cochés sont réunis dans le même
-pool, sans doublon :
+ils sont figés dans un **pack statique unique** ("Classiques", `client/src/lib/packs/`), réuni à
+partir de deux fichiers source distincts en interne :
 
-- **Classiques** (`classiques.ts`) — les ~100 templates les plus utilisés sur Imgflip au moment
-  de la capture (nom, image, nombre de zones), figés dans le code. Le placement des zones de
-  texte de chacun reste résolu via `templateBoxes.ts` (positions vérifiées une à une en rendant
-  l'image réelle avec des légendes d'exemple) — ce fichier reste la source de vérité pour la mise
-  en page, `classiques.ts` ne fige que la liste des templates eux-mêmes.
-- **Pépites** (`pepites.ts`) — une sélection complémentaire de memes cultes qui ne faisaient pas
-  partie du instantané "Classiques", récupérés directement sur Imgflip et curés avec la même
-  méthode (positions vérifiées par rendu réel).
+- **`classiques.ts`** — les ~100 templates les plus utilisés sur Imgflip au moment de la capture
+  (nom, image, nombre de zones), figés dans le code. Le placement des zones de texte de chacun
+  reste résolu via `templateBoxes.ts` (positions vérifiées une à une en rendant l'image réelle
+  avec des légendes d'exemple) — ce fichier reste la source de vérité pour la mise en page,
+  `classiques.ts` ne fige que la liste des templates eux-mêmes.
+- **`pepites.ts`** — une sélection complémentaire de memes cultes qui ne faisaient pas partie de
+  l'instantané "Classiques", récupérés directement sur Imgflip et curés avec la même méthode
+  (positions vérifiées par rendu réel).
 
-Comme ces packs sont des données statiques embarquées dans l'application, il n'y a plus aucun
-appel réseau ni cache à gérer pour charger les templates de base — l'app fonctionne même hors
-ligne pour cette partie-là. Ajouter un pack revient à créer un nouveau fichier dans
-`client/src/lib/packs/` et à l'enregistrer dans `packs/index.ts`.
+Ces deux fichiers formaient à l'origine deux packs séparés et sélectionnables ("Classiques" et
+"Pépites"). Ils ont depuis fusionné en un seul pack côté joueur — la séparation en deux fichiers
+ne survit que comme détail d'implémentation pour l'éditeur visuel de zones (voir plus bas), qui a
+encore besoin de savoir dans lequel des deux écrire.
+
+Comme ces templates sont des données statiques embarquées dans l'application, il n'y a plus aucun
+appel réseau ni cache à gérer pour les charger — l'app fonctionne même hors ligne pour cette
+partie-là.
+
+### Packs "faits main" (images déposées à la main)
+
+Certains memes **ne viennent d'aucun catalogue en ligne** (contrairement à Imgflip pour
+Classiques) : il n'y a rien à télécharger automatiquement, les images se déposent à la main.
+Un pack de ce type existe aujourd'hui ("Snap français"), construit par une commande générique
+(`scripts/templates.mts`, registre `DROP_PACKS`) conçue pour en accueillir d'autres sans rien
+dupliquer :
+
+| Pack | Fichier | Dossier de dépôt | Commande |
+|---|---|---|---|
+| Snap français | `snap.ts` | `client/templates-snap/` | `npm run templates:snap` |
+
+```bash
+# 1. déposer les images (.jpg / .png) dans le dossier du pack visé
+npm run templates:snap --workspace client           # les intègre au pack
+npm run templates:fingerprint --workspace client    # empreintes des nouvelles images
+npm run boxes:edit --workspace client               # recaler les zones de texte
+```
+
+Chaque commande refuse les formats que Jimp ne sait pas décoder (`.webp`, `.avif`…) — sinon
+l'erreur ne serait remontée que plus tard par `templates:fingerprint`, sans dire quel fichier
+est en cause. Elle écarte aussi les images déjà présentes dans un pack, même sous un autre nom
+de fichier (comparaison de l'image elle-même, cf. empreintes ci-dessous). Le nom du fichier
+devient le nom du template (`chat_qui_dort.jpg` → « Chat qui dort », id `snap-chat-qui-dort`).
+
+Elle est **additive** : elle n'écrase jamais une entrée déjà présente, donc les zones réglées
+dans l'éditeur visuel survivent à un import ultérieur. Pour retirer un template, passer par
+« Supprimer ce template » dans l'éditeur.
+
+Chaque pack n'est **enregistré dans `packs/index.ts` que s'il contient au moins une image** : un
+pack vide serait sélectionnable dans le lobby sans rien pouvoir tirer. Il apparaît donc tout seul
+(et avec lui le sélecteur de packs du lobby, masqué tant qu'il n'y a qu'un pack) le jour où des
+images arrivent. Le contenu de `client/templates-snap/` n'est pas versionné : c'est une zone de
+transit, les images retenues vivent dans `client/public/templates/`.
+
+Ajouter un nouveau pack "fait main" : une entrée dans `DROP_PACKS` (`scripts/templates.mts`), un
+fichier `src/lib/packs/<id>.ts` vide (`export const <ID>_TEMPLATES: Template[] = [];`), un
+dossier `templates-<id>/` (copier un `LISEZ-MOI.md` existant comme modèle), une ligne dans
+`package.json`, et l'enregistrement conditionnel dans `packs/index.ts` (`MANUAL_PACKS`) — la
+commande d'import, elle, n'a rien à dupliquer.
+
+### Éditeur visuel des zones de texte
+
+Positionner une zone de texte est une tâche de manipulation directe : la décrire en prose
+("un peu plus à gauche, au-dessus de la tête") pour la traduire ensuite en `xPct`/`yPct` est
+lent et approximatif. D'où un éditeur qui écrit directement dans les fichiers source :
+
+```bash
+npm run boxes:edit --workspace client    # puis ouvrir /dev-boxes.html
+```
+
+- L'aperçu utilise le **vrai composant `MemeRender`**, pas une approximation : ce qu'on voit en
+  éditant est exactement ce que voient les joueurs (même police, même contour, même calcul de
+  taille de police). Un éditeur qui rendrait "à peu près" pareil ferait corriger contre une
+  cible fausse.
+- On glisse le cadre pour déplacer, les poignées pour redimensionner (le bord opposé reste
+  fixe), le petit rond en haut de la zone sélectionnée pour la pivoter (comme sur l'éditeur
+  Imgflip). Le redimensionnement compense la rotation : sur une zone pivotée, une poignée de
+  bord ne suit que l'axe local de ce bord, pas les axes de l'écran — sinon "tirer à droite"
+  déformerait la zone au lieu de l'élargir le long de son propre bord. Flèches : nudge 1 %
+  (Maj : 5 %) ; `,` / `.` : pivoter 1° (Maj : 5°). `1`-`9` sélectionne une zone, `[` / `]`
+  change de template, `s` enregistre, `r` marque le template comme relu. La rotation est
+  optionnelle (`rotationDeg`, omis du fichier quand elle vaut 0) et s'applique aussi bien à
+  l'aperçu DOM (`MemeRender`) qu'à l'export PNG téléchargé par les joueurs (`memeImage.ts`),
+  donc le fichier téléchargé correspond toujours à ce qui a été affiché en jeu.
+- L'enregistrement réécrit **le bon fichier selon le pack** : entrée `CURATED` de
+  `templateBoxes.ts` pour les Classiques (créée si le template était encore sur la disposition
+  générique, commentaire de fin de ligne conservé), bloc `boxes:` de `pepites.ts` pour les
+  Pépites. Le format de chaque fichier est respecté, donc les diffs restent minimaux.
+- Les légendes d'exemple se basculent entre courtes, longues et numéros. **Les longues sont le
+  vrai test** : c'est le texte long qui révèle les chevauchements.
+- Filtre "jamais revus" + bouton "marquer revu" (`scripts/boxes-reviewed.json`) : sans ça, rien
+  ne distingue un template *vérifié et correct sur la disposition générique* d'un template
+  *jamais regardé*. 86 des 149 templates sont encore sur la disposition générique.
+- Si l'image du template ne se charge pas (URL morte, hors-ligne), l'édition est désactivée :
+  le cadre serait plat et les coordonnées calculées seraient aberrantes.
+
+`vite --host` permet d'ouvrir la page depuis un téléphone, pour corriger au doigt une position
+repérée en jouant.
+
+L'éditeur est un **outil de développement** : il vit dans son propre point d'entrée
+(`dev-boxes.html` + `src/dev/`), que le build de production ne prend jamais en entrée. Ce n'est
+pas une élimination de code mort mais une séparation structurelle, verrouillée par un test qui
+échoue si la moindre trace de l'éditeur apparaît dans `dist/`.
+
+### Sous-titres incrustés (texte peint dans l'image)
+
+Le même éditeur permet aussi d'écrire du texte **à demeure dans le fichier image**, à ne pas
+confondre avec les zones ci-dessus : une zone reste une case vide que chaque joueur remplit à sa
+façon à chaque partie, un sous-titre est un texte fixe, choisi une fois pour toutes, qui devient
+un pixel de l'image — les joueurs ne peuvent plus le changer. Sert par exemple à sous-titrer un
+template vidéo/capture dont le texte d'origine est illisible ou absent.
+
+- Encadré « Sous-titres » dans la barre latérale : `+ Ajouter un sous-titre`, puis on tape le
+  texte, on le repositionne comme une zone (glisser/redimensionner/pivoter à la souris — pas de
+  raccourci clavier, pour ne pas entrer en conflit avec ceux des zones).
+- Police volontairement **différente d'Impact** (réservée aux légendes de meme) : une police de
+  sous-titrage courante (`'Segoe UI', Roboto, Arial, Helvetica, sans-serif`, texte blanc cerné de
+  noir), sans mise en majuscules forcée.
+- **`Aperçu`** compose le rendu final (template + sous-titres) dans un canvas local, sans rien
+  écrire sur le disque — utile puisque l'étape suivante, elle, ne l'est pas.
+- **`Incruster`** envoie l'image composée au serveur de dev, qui écrase le fichier dans
+  `public/templates/` et recalcule son empreinte. **Irréversible depuis l'éditeur** (confirmation
+  demandée) : il n'y a pas de "annuler" pour un pixel déjà écrasé, contrairement à l'enregistrement
+  d'une zone qui ne touche qu'un fichier source versionné.
+
+### Rognage de l'image
+
+Toujours dans le même éditeur, `Rogner l'image…` découpe le fichier image à un rectangle choisi à
+la souris — utile pour retirer des bandes noires, un filigrane ou un cadre inutile. Contrairement
+au rognage d'une photo au hasard, l'opération est **consciente des zones déjà placées** :
+
+- Le rectangle de rognage (encadré orange, sans rotation — un rognage reste toujours droit)
+  masque temporairement les zones/sous-titres pendant l'ajustement, pour ne pas encombrer
+  l'aperçu.
+- **`Rogner`** recalcule d'abord les zones de texte existantes dans le repère de la nouvelle
+  image (même position et taille **physiques**, donc visuellement inchangées, juste réexprimées
+  en pourcentage d'une image plus petite), puis envoie l'image découpée et les zones recalculées
+  au serveur de dev en une seule requête : l'image sur le disque, l'empreinte et l'entrée du pack
+  changent ensemble, pour ne jamais laisser des zones qui pointent dans le vide sur la nouvelle
+  image.
+- **Irréversible depuis l'éditeur**, comme l'incrustation de sous-titres : le fichier d'origine
+  n'est conservé nulle part une fois le rognage appliqué.
 
 ### Anti-doublon à l'import de nouveaux templates
 
@@ -293,6 +419,8 @@ client/                  PWA React — pages Home / Room (joueur) / Tv (grand é
 client/src/lib/firebase.ts   Initialisation Firebase (conditionnelle)
 client/src/lib/roomApi.ts    Toute la logique de salle : create/join, transactions de phase, votes
 client/src/lib/playerId.ts   Identité joueur (UUID en localStorage)
+client/src/dev/           Éditeur visuel des zones de texte (dev uniquement, hors build)
+client/dev-boxes.html     Point d'entrée de cet éditeur, servi par vite dev seulement
 client/.env.example       Variables d'environnement Firebase à copier vers client/.env
 firebase.json              Config Firebase Hosting + emplacement des règles Database
 database.rules.json        Règles de sécurité Realtime Database

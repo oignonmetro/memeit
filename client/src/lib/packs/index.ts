@@ -1,6 +1,7 @@
 import type { Template } from '../../types';
 import { CLASSIQUES_TEMPLATES } from './classiques';
 import { PEPITES_TEMPLATES } from './pepites';
+import { SNAP_TEMPLATES } from './snap';
 
 export interface TemplatePackMeta {
   id: string;
@@ -8,24 +9,44 @@ export interface TemplatePackMeta {
   description: string;
 }
 
+// "Classiques" réunit classiques.ts et pepites.ts : c'était deux packs
+// sélectionnables à l'origine, fusionnés depuis (les deux fichiers source
+// restent séparés en interne parce que l'éditeur visuel de zones s'appuie
+// dessus pour savoir où écrire, mais ça ne concerne plus que l'outillage).
+//
+// "Snap français" est un pack "fait main" : ses images ne viennent d'aucun
+// catalogue en ligne, elles sont déposées à la main (voir
+// npm run templates:snap, scripts/templates.mts). Il ne s'ajoute à la liste
+// que lorsqu'il contient au moins un template : vide, il resterait
+// sélectionnable dans le lobby pour ne rien donner, et ferait échouer le
+// test "pack non vide".
+const MANUAL_PACKS: (TemplatePackMeta & { templates: Template[] })[] = [
+  {
+    id: 'snap',
+    name: 'Snap français',
+    description: 'Des memes bien de chez nous, absents d\'Imgflip',
+    templates: SNAP_TEMPLATES,
+  },
+];
+
 export const TEMPLATE_PACKS: TemplatePackMeta[] = [
-  { id: 'classiques', name: 'Classiques', description: 'Les ~100 memes les plus utilisés sur Imgflip' },
-  { id: 'pepites', name: 'Pépites', description: 'Une sélection de memes cultes en plus des classiques' },
+  { id: 'classiques', name: 'Classiques', description: 'Tous les memes cultes intégrés à MemeIt' },
+  ...MANUAL_PACKS.filter((p) => p.templates.length).map(({ id, name, description }) => ({ id, name, description })),
 ];
 
 const PACKS: Record<string, Template[]> = {
-  classiques: CLASSIQUES_TEMPLATES,
-  pepites: PEPITES_TEMPLATES,
+  classiques: [...CLASSIQUES_TEMPLATES, ...PEPITES_TEMPLATES],
+  ...Object.fromEntries(MANUAL_PACKS.filter((p) => p.templates.length).map((p) => [p.id, p.templates])),
 };
 
 export const DEFAULT_PACK_ID = 'classiques';
 
-// All packs are static, bundled data — no network round-trip, unlike the old
-// live Imgflip fetch. The host can select several packs at once; templates
-// from every selected pack are pooled together (deduped by id, in case a
-// template were ever listed in more than one pack). Unknown/removed ids are
-// dropped silently, and an empty selection falls back to "classiques" (e.g.
-// a room created before a pack was renamed or retired).
+// Pack statique, bundlé — pas d'appel réseau, contrairement à l'ancien fetch
+// Imgflip en direct. Une salle créée avant la fusion peut encore avoir
+// templatePackIds: ['pepites'] ou ['classiques', 'pepites'] en base : l'id
+// "pepites" n'existe plus dans PACKS, il est donc filtré ci-dessous — la
+// sélection ne contient alors plus que "classiques" (ou tombe sur le
+// fallback si "pepites" était le seul id), qui contient désormais tout.
 export function getPackTemplates(packIds: string[]): Template[] {
   const ids = (packIds || []).filter((id) => PACKS[id]);
   const effectiveIds = ids.length ? ids : [DEFAULT_PACK_ID];
