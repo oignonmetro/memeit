@@ -51,16 +51,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     boxes: [{ xPct: 50, yPct: 8, widthPct: 88, heightPct: 14 }],
   },
   {
-    id: 'pepites-success-kid',
-    url: '/templates/pepites-success-kid.jpg',
-    name: 'Success Kid',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 10, widthPct: 90, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 90, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-free-real-estate',
     url: '/templates/pepites-free-real-estate.jpg',
     name: "It's Free Real Estate",
@@ -73,16 +63,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     name: 'Confused Nick Young',
     source: 'library',
     boxes: [{ xPct: 49, yPct: 78, widthPct: 92, heightPct: 33 }],
-  },
-  {
-    id: 'pepites-doge',
-    url: '/templates/pepites-doge.jpg',
-    name: 'Doge',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 13, widthPct: 88, heightPct: 22 },
-      { xPct: 50, yPct: 88, widthPct: 88, heightPct: 20 },
-    ],
   },
   {
     id: 'pepites-sad-keanu',
@@ -180,36 +160,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     ],
   },
   {
-    id: 'pepites-confession-bear',
-    url: '/templates/pepites-confession-bear.jpg',
-    name: 'Confession Bear',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 11, widthPct: 88, heightPct: 18 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
-    id: 'pepites-y-u-no',
-    url: '/templates/pepites-y-u-no.jpg',
-    name: 'Y U No',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 12, widthPct: 88, heightPct: 18 },
-      { xPct: 50, yPct: 88, widthPct: 88, heightPct: 18 },
-    ],
-  },
-  {
-    id: 'pepites-unpopular-opinion-puffin',
-    url: '/templates/pepites-unpopular-opinion-puffin.jpg',
-    name: 'Unpopular Opinion Puffin',
-    source: 'library',
-    boxes: [
-      { xPct: 28, yPct: 15, widthPct: 46, heightPct: 24 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-hard-to-swallow-pills',
     url: '/templates/pepites-hard-to-swallow-pills.jpg',
     name: 'Hard To Swallow Pills',
@@ -227,26 +177,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     boxes: [
       { xPct: 50, yPct: 8, widthPct: 88, heightPct: 12 },
       { xPct: 50, yPct: 92, widthPct: 88, heightPct: 12 },
-    ],
-  },
-  {
-    id: 'pepites-skeptical-baby',
-    url: '/templates/pepites-skeptical-baby.jpg',
-    name: 'Skeptical Baby',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 12, widthPct: 88, heightPct: 20 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
-    id: 'pepites-grumpy-cat',
-    url: '/templates/pepites-grumpy-cat.jpg',
-    name: 'Grumpy Cat',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 10, widthPct: 88, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
     ],
   },
   {
@@ -312,16 +242,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     boxes: [{ xPct: 50, yPct: 10, widthPct: 90, heightPct: 16 }],
   },
   {
-    id: 'pepites-trollface',
-    url: '/templates/pepites-trollface.png',
-    name: 'Trollface',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 12, widthPct: 80, heightPct: 16 },
-      { xPct: 50, yPct: 88, widthPct: 80, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-mj-popcorn',
     url: '/templates/pepites-mj-popcorn.jpg',
     name: 'Michael Jackson Popcorn',
@@ -366,16 +286,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     boxes: [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 16 }],
   },
   {
-    id: 'pepites-buscemi-fellow-kids',
-    url: '/templates/pepites-buscemi-fellow-kids.jpg',
-    name: 'Steve Buscemi Fellow Kids',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 8, widthPct: 86, heightPct: 14 },
-      { xPct: 50, yPct: 92, widthPct: 86, heightPct: 14 },
-    ],
-  },
-  {
     id: 'pepites-dr-evil-air-quotes',
     url: '/templates/pepites-dr-evil-air-quotes.jpg',
     name: 'Dr Evil Air Quotes',
@@ -410,16 +320,6 @@ export const PEPITES_TEMPLATES: Template[] = [
     boxes: [
       { xPct: 50, yPct: 8, widthPct: 84, heightPct: 14 },
       { xPct: 50, yPct: 92, widthPct: 84, heightPct: 12 },
-    ],
-  },
-  {
-    id: 'pepites-forever-alone',
-    url: '/templates/pepites-forever-alone.jpg',
-    name: 'Forever Alone',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 10, widthPct: 84, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 84, heightPct: 16 },
     ],
   },
   {
