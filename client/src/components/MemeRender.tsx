@@ -61,6 +61,10 @@ function MemeTextLayer({ layer, frameW, frameH }: { layer: TextLayer; frameW: nu
         width: `${layer.widthPct}%`,
         fontSize: `${startSize}px`,
         WebkitTextStrokeWidth: `${strokeWidthFor(startSize)}px`,
+        // The base translate(-50%,-50%) (in .meme-text-layer) centers the box
+        // on (xPct,yPct); rotate is appended so it turns around that same
+        // center rather than the frame's origin.
+        transform: layer.rotationDeg ? `translate(-50%, -50%) rotate(${layer.rotationDeg}deg)` : undefined,
       }}
     >
       {layer.text}

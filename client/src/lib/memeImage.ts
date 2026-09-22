@@ -106,11 +106,22 @@ export async function renderMemeToBlob(templateUrl: string, layers: TextLayer[])
     // (xPct,yPct) is the CENTER of the box, so the block is centred on it.
     const firstY = cy - ((lines.length - 1) * lineStep) / 2;
 
+    // Rotate around the box's own center (cx,cy) — same anchor as the DOM
+    // preview's translate(-50%,-50%) rotate(...) — by moving the origin
+    // there first and drawing the lines at their offset from it.
+    const rotate = layer.rotationDeg ? (layer.rotationDeg * Math.PI) / 180 : 0;
+    if (rotate) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotate);
+    }
     lines.forEach((line, i) => {
       const y = firstY + i * lineStep;
-      ctx.strokeText(line, cx, y);
-      ctx.fillText(line, cx, y);
+      const [x, ty] = rotate ? [0, y - cy] : [cx, y];
+      ctx.strokeText(line, x, ty);
+      ctx.fillText(line, x, ty);
     });
+    if (rotate) ctx.restore();
   }
 
   return new Promise((resolve, reject) => {

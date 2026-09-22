@@ -8,34 +8,34 @@ import type { Template } from '../../types';
 export const PEPITES_TEMPLATES: Template[] = [
   {
     id: 'pepites-stonks',
-    url: 'https://i.imgflip.com/3388rw.png',
+    url: '/templates/pepites-stonks.png',
     name: 'Stonks',
     source: 'library',
-    boxes: [{ xPct: 70, yPct: 12, widthPct: 54, heightPct: 18 }],
+    boxes: [{ xPct: 50, yPct: 86, widthPct: 98, heightPct: 26 }],
   },
   {
     id: 'pepites-chopper',
-    url: 'https://i.imgflip.com/27r7xc.jpg',
+    url: '/templates/pepites-chopper.jpg',
     name: 'American Chopper Argument',
     source: 'library',
     boxes: [
-      { xPct: 40, yPct: 16, widthPct: 60, heightPct: 8 },
-      { xPct: 53, yPct: 36, widthPct: 44, heightPct: 6 },
-      { xPct: 51, yPct: 55, widthPct: 70, heightPct: 7 },
-      { xPct: 27, yPct: 76, widthPct: 40, heightPct: 7 },
+      { xPct: 49, yPct: 16, widthPct: 71, heightPct: 4 },
+      { xPct: 53, yPct: 37, widthPct: 44, heightPct: 4 },
+      { xPct: 50, yPct: 57, widthPct: 68, heightPct: 5 },
+      { xPct: 22, yPct: 76, widthPct: 33, heightPct: 7 },
       { xPct: 81, yPct: 96, widthPct: 36, heightPct: 7 },
     ],
   },
   {
     id: 'pepites-bugs-bunny-no',
-    url: 'https://i.imgflip.com/34mv9a.png',
+    url: '/templates/pepites-bugs-bunny-no.png',
     name: 'Bugs Bunny No',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 6, widthPct: 92, heightPct: 10 }],
+    boxes: [{ xPct: 50, yPct: 9, widthPct: 92, heightPct: 15 }],
   },
   {
     id: 'pepites-kombucha-girl',
-    url: 'https://i.imgflip.com/3fldan.png',
+    url: '/templates/pepites-kombucha-girl.png',
     name: 'Kombucha Girl',
     source: 'library',
     boxes: [
@@ -45,55 +45,35 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-spongebob-head-out',
-    url: 'https://i.imgflip.com/3aado5.jpg',
+    url: '/templates/pepites-spongebob-head-out.jpg',
     name: 'Spongebob Ight Imma Head Out',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 8, widthPct: 88, heightPct: 14 }],
   },
   {
-    id: 'pepites-success-kid',
-    url: 'https://i.imgflip.com/3rxib.jpg',
-    name: 'Success Kid',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 10, widthPct: 90, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 90, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-free-real-estate',
-    url: 'https://i.imgflip.com/24r48o.jpg',
+    url: '/templates/pepites-free-real-estate.jpg',
     name: "It's Free Real Estate",
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 7, widthPct: 80, heightPct: 10 }],
+    boxes: [{ xPct: 50, yPct: 12, widthPct: 80, heightPct: 19 }],
   },
   {
     id: 'pepites-confused-nick-young',
-    url: 'https://i.imgflip.com/1n28ay.jpg',
+    url: '/templates/pepites-confused-nick-young.jpg',
     name: 'Confused Nick Young',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 10, widthPct: 92, heightPct: 16 }],
-  },
-  {
-    id: 'pepites-doge',
-    url: 'https://imgflip.com/s/meme/Doge.jpg',
-    name: 'Doge',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 13, widthPct: 88, heightPct: 22 },
-      { xPct: 50, yPct: 88, widthPct: 88, heightPct: 20 },
-    ],
+    boxes: [{ xPct: 49, yPct: 78, widthPct: 92, heightPct: 33 }],
   },
   {
     id: 'pepites-sad-keanu',
-    url: 'https://imgflip.com/s/meme/Sad-Keanu.jpg',
+    url: '/templates/pepites-sad-keanu.jpg',
     name: 'Sad Keanu',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 12, widthPct: 88, heightPct: 20 }],
+    boxes: [{ xPct: 49, yPct: 87, widthPct: 88, heightPct: 20 }],
   },
   {
     id: 'pepites-gigachad',
-    url: 'https://i.imgflip.com/3bdd27.jpg',
+    url: '/templates/pepites-gigachad.jpg',
     name: 'Gigachad',
     source: 'library',
     boxes: [
@@ -103,7 +83,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-condescending-wonka',
-    url: 'https://i.imgflip.com/1cxbum.jpg',
+    url: '/templates/pepites-condescending-wonka.jpg',
     name: 'Condescending Wonka',
     source: 'library',
     boxes: [
@@ -113,7 +93,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-matrix-morpheus',
-    url: 'https://imgflip.com/s/meme/Matrix-Morpheus.jpg',
+    url: '/templates/pepites-matrix-morpheus.jpg',
     name: 'Matrix Morpheus',
     source: 'library',
     boxes: [
@@ -123,7 +103,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-gandalf',
-    url: 'https://i.imgflip.com/mzhyr.jpg',
+    url: '/templates/pepites-gandalf.jpg',
     name: 'Gandalf You Shall Not Pass',
     source: 'library',
     boxes: [
@@ -133,7 +113,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-sparta',
-    url: 'https://i.imgflip.com/65vgw.jpg',
+    url: '/templates/pepites-sparta.jpg',
     name: 'This Is Sparta',
     source: 'library',
     boxes: [
@@ -144,14 +124,14 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-uno-reverse',
-    url: 'https://i.imgflip.com/2m6idj.jpg',
+    url: '/templates/pepites-uno-reverse.jpg',
     name: 'Uno Reverse Card',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 50, widthPct: 88, heightPct: 80 }],
   },
   {
     id: 'pepites-bad-luck-brian',
-    url: 'https://imgflip.com/s/meme/Bad-Luck-Brian.jpg',
+    url: '/templates/pepites-bad-luck-brian.jpg',
     name: 'Bad Luck Brian',
     source: 'library',
     boxes: [
@@ -161,7 +141,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-overly-attached-girlfriend',
-    url: 'https://imgflip.com/s/meme/Overly-Attached-Girlfriend.jpg',
+    url: '/templates/pepites-overly-attached-girlfriend.jpg',
     name: 'Overly Attached Girlfriend',
     source: 'library',
     boxes: [
@@ -171,7 +151,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-first-world-problems',
-    url: 'https://imgflip.com/s/meme/First-World-Problems.jpg',
+    url: '/templates/pepites-first-world-problems.jpg',
     name: 'First World Problems',
     source: 'library',
     boxes: [
@@ -180,45 +160,18 @@ export const PEPITES_TEMPLATES: Template[] = [
     ],
   },
   {
-    id: 'pepites-confession-bear',
-    url: 'https://imgflip.com/s/meme/Confession-Bear.jpg',
-    name: 'Confession Bear',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 11, widthPct: 88, heightPct: 18 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
-    id: 'pepites-y-u-no',
-    url: 'https://imgflip.com/s/meme/Y-U-No.jpg',
-    name: 'Y U No',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 12, widthPct: 88, heightPct: 18 },
-      { xPct: 50, yPct: 88, widthPct: 88, heightPct: 18 },
-    ],
-  },
-  {
-    id: 'pepites-unpopular-opinion-puffin',
-    url: 'https://imgflip.com/s/meme/Unpopular-Opinion-Puffin.jpg',
-    name: 'Unpopular Opinion Puffin',
-    source: 'library',
-    boxes: [
-      { xPct: 28, yPct: 15, widthPct: 46, heightPct: 24 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-hard-to-swallow-pills',
-    url: 'https://imgflip.com/s/meme/Hard-To-Swallow-Pills.jpg',
+    url: '/templates/pepites-hard-to-swallow-pills.jpg',
     name: 'Hard To Swallow Pills',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 56, widthPct: 80, heightPct: 10 }],
+    boxes: [
+      { xPct: 56, yPct: 66, widthPct: 33, heightPct: 15 },
+      { xPct: 20, yPct: 94, widthPct: 37, heightPct: 11 },
+    ],
   },
   {
     id: 'pepites-third-world-skeptical-kid',
-    url: 'https://imgflip.com/s/meme/Third-World-Skeptical-Kid.jpg',
+    url: '/templates/pepites-third-world-skeptical-kid.jpg',
     name: 'Third World Skeptical Kid',
     source: 'library',
     boxes: [
@@ -227,42 +180,22 @@ export const PEPITES_TEMPLATES: Template[] = [
     ],
   },
   {
-    id: 'pepites-skeptical-baby',
-    url: 'https://i.imgflip.com/de1qu.jpg',
-    name: 'Skeptical Baby',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 12, widthPct: 88, heightPct: 20 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
-    id: 'pepites-grumpy-cat',
-    url: 'https://imgflip.com/s/meme/Grumpy-Cat.jpg',
-    name: 'Grumpy Cat',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 10, widthPct: 88, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 88, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-vote-for-pedro',
-    url: 'https://i.imgflip.com/17tswa.jpg',
+    url: '/templates/pepites-vote-for-pedro.jpg',
     name: 'Vote For Pedro',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 8, widthPct: 80, heightPct: 12 }],
   },
   {
     id: 'pepites-homer-bush',
-    url: 'https://i.imgflip.com/9yed5.jpg',
+    url: '/templates/pepites-homer-bush.jpg',
     name: 'Homer Simpson Backing Into Bushes',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 10, widthPct: 90, heightPct: 11 }],
+    boxes: [{ xPct: 50, yPct: 7, widthPct: 90, heightPct: 11 }],
   },
   {
     id: 'pepites-press-x-to-doubt',
-    url: 'https://i.imgflip.com/1txerc.jpg',
+    url: '/templates/pepites-press-x-to-doubt.jpg',
     name: 'Press X To Doubt',
     source: 'library',
     boxes: [
@@ -272,7 +205,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-ryan-gosling',
-    url: 'https://i.imgflip.com/vx8ys.jpg',
+    url: '/templates/pepites-ryan-gosling.jpg',
     name: 'Ryan Gosling Hey Girl',
     source: 'library',
     boxes: [
@@ -282,45 +215,35 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-confused-math-lady',
-    url: 'https://i.imgflip.com/1j9mu4.jpg',
+    url: '/templates/pepites-confused-math-lady.jpg',
     name: 'Confused Math Lady',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 6, widthPct: 90, heightPct: 10 }],
   },
   {
     id: 'pepites-big-brain-time',
-    url: 'https://i.imgflip.com/3518id.png',
+    url: '/templates/pepites-big-brain-time.png',
     name: 'Big Brain Time',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 8, widthPct: 84, heightPct: 14 }],
+    boxes: [{ xPct: 50, yPct: 11, widthPct: 84, heightPct: 21 }],
   },
   {
     id: 'pepites-coffin-dance',
-    url: 'https://i.imgflip.com/3ul12m.jpg',
+    url: '/templates/pepites-coffin-dance.jpg',
     name: 'Coffin Dance',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 8, widthPct: 84, heightPct: 12 }],
   },
   {
     id: 'pepites-blinking-white-guy',
-    url: 'https://i.imgflip.com/3jdj4d.jpg',
+    url: '/templates/pepites-blinking-white-guy.jpg',
     name: 'Blinking White Guy',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 10, widthPct: 90, heightPct: 16 }],
   },
   {
-    id: 'pepites-trollface',
-    url: 'https://i.imgflip.com/65r9wp.png',
-    name: 'Trollface',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 12, widthPct: 80, heightPct: 16 },
-      { xPct: 50, yPct: 88, widthPct: 80, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-mj-popcorn',
-    url: 'https://imgflip.com/s/meme/Michael-Jackson-Popcorn.jpg',
+    url: '/templates/pepites-mj-popcorn.jpg',
     name: 'Michael Jackson Popcorn',
     source: 'library',
     boxes: [
@@ -330,7 +253,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-baby-yoda-tea',
-    url: 'https://i.imgflip.com/3i0iiq.jpg',
+    url: '/templates/pepites-baby-yoda-tea.jpg',
     name: 'Baby Yoda Drinking Tea',
     source: 'library',
     boxes: [
@@ -340,41 +263,31 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-internal-screaming',
-    url: 'https://i.imgflip.com/6f7ppl.jpg',
+    url: '/templates/pepites-internal-screaming.jpg',
     name: 'Internal Screaming',
     source: 'library',
-    boxes: [{ xPct: 50, yPct: 10, widthPct: 86, heightPct: 16 }],
+    boxes: [{ xPct: 50, yPct: 9, widthPct: 86, heightPct: 14 }],
   },
   {
     id: 'pepites-kevins-chili',
-    url: 'https://i.imgflip.com/2ovv1u.jpg',
+    url: '/templates/pepites-kevins-chili.jpg',
     name: "Kevin's Chili",
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 5, widthPct: 90, heightPct: 8 },
+      { xPct: 50, yPct: 43, widthPct: 90, heightPct: 8 },
       { xPct: 50, yPct: 95, widthPct: 90, heightPct: 8 },
     ],
   },
   {
     id: 'pepites-michael-scott-no-god',
-    url: 'https://i.imgflip.com/78llpq.png',
+    url: '/templates/pepites-michael-scott-no-god.png',
     name: 'Michael Scott No God',
     source: 'library',
     boxes: [{ xPct: 50, yPct: 10, widthPct: 84, heightPct: 16 }],
   },
   {
-    id: 'pepites-buscemi-fellow-kids',
-    url: 'https://i.imgflip.com/z2nqj.jpg',
-    name: 'Steve Buscemi Fellow Kids',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 8, widthPct: 86, heightPct: 14 },
-      { xPct: 50, yPct: 92, widthPct: 86, heightPct: 14 },
-    ],
-  },
-  {
     id: 'pepites-dr-evil-air-quotes',
-    url: 'https://i.imgflip.com/136hly.jpg',
+    url: '/templates/pepites-dr-evil-air-quotes.jpg',
     name: 'Dr Evil Air Quotes',
     source: 'library',
     boxes: [
@@ -384,24 +297,24 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-american-psycho',
-    url: 'https://i.imgflip.com/2luwn3.jpg',
+    url: '/templates/pepites-american-psycho.jpg',
     name: 'American Psycho Business Card',
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 10, widthPct: 80, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 80, heightPct: 14 },
+      { xPct: 23, yPct: 18, widthPct: 32, heightPct: 33 },
+      { xPct: 38, yPct: 67, widthPct: 13, heightPct: 19, rotationDeg: 21 },
     ],
   },
   {
     id: 'pepites-marge-neat',
-    url: 'https://i.imgflip.com/3tjygl.png',
+    url: '/templates/pepites-marge-neat.png',
     name: "Marge - I Just Think They're Neat",
     source: 'library',
     boxes: [{ xPct: 50, yPct: 10, widthPct: 70, heightPct: 16 }],
   },
   {
     id: 'pepites-weird-flex',
-    url: 'https://i.imgflip.com/2m9ulw.jpg',
+    url: '/templates/pepites-weird-flex.jpg',
     name: 'Weird Flex But Okay',
     source: 'library',
     boxes: [
@@ -410,28 +323,18 @@ export const PEPITES_TEMPLATES: Template[] = [
     ],
   },
   {
-    id: 'pepites-forever-alone',
-    url: 'https://imgflip.com/s/meme/Forever-Alone.jpg',
-    name: 'Forever Alone',
-    source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 10, widthPct: 84, heightPct: 16 },
-      { xPct: 50, yPct: 90, widthPct: 84, heightPct: 16 },
-    ],
-  },
-  {
     id: 'pepites-skinner-out-of-touch',
-    url: 'https://i.imgflip.com/1jgrgn.jpg',
+    url: '/templates/pepites-skinner-out-of-touch.jpg',
     name: 'Skinner Out Of Touch',
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 7, widthPct: 80, heightPct: 10 },
-      { xPct: 50, yPct: 57, widthPct: 80, heightPct: 10 },
+      { xPct: 50, yPct: 44, widthPct: 80, heightPct: 10 },
+      { xPct: 50, yPct: 94, widthPct: 80, heightPct: 10 },
     ],
   },
   {
     id: 'pepites-rock-eyebrow',
-    url: 'https://i.imgflip.com/luys2.jpg',
+    url: '/templates/pepites-rock-eyebrow.jpg',
     name: 'The Rock Eyebrow',
     source: 'library',
     boxes: [
@@ -441,7 +344,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-over-9000',
-    url: 'https://i.imgflip.com/a58so.jpg',
+    url: '/templates/pepites-over-9000.jpg',
     name: "It's Over 9000",
     source: 'library',
     boxes: [
@@ -451,7 +354,7 @@ export const PEPITES_TEMPLATES: Template[] = [
   },
   {
     id: 'pepites-chill-guy',
-    url: 'https://i.imgflip.com/9au02y.jpg',
+    url: '/templates/pepites-chill-guy.jpg',
     name: 'Chill Guy',
     source: 'library',
     boxes: [
