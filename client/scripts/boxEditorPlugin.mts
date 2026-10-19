@@ -27,36 +27,39 @@ const TEMPLATE_BOXES = path.join(CLIENT, 'src', 'lib', 'templateBoxes.ts');
 const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
+const MEMESFR = path.join(CLIENT, 'src', 'lib', 'packs', 'memesfr.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const TEMPLATES_DIR = path.join(CLIENT, 'public', 'templates');
 const REVIEWED = path.join(HERE, 'boxes-reviewed.json');
 
-type PackId = 'classiques' | 'pepites' | 'snap';
+type PackId = 'classiques' | 'pepites' | 'snap' | 'memesfr';
 
-// pepites.ts et les packs "faits main" (snap.ts...) partagent exactement le
-// même format (zones écrites en clair dans l'entrée, id complet, entrée
-// multi-lignes) : seul le fichier change, donc les mêmes fonctions de
-// réécriture servent à tous. classiques.ts est à part — ses zones vivent
-// dans CURATED (templateBoxes.ts), sous l'id nu sans le préfixe "imgflip-".
+// pepites.ts et les packs "faits main" (snap.ts, memesfr.ts...) partagent
+// exactement le même format (zones écrites en clair dans l'entrée, id
+// complet, entrée multi-lignes) : seul le fichier change, donc les mêmes
+// fonctions de réécriture servent à tous. classiques.ts est à part — ses
+// zones vivent dans CURATED (templateBoxes.ts), sous l'id nu sans le
+// préfixe "imgflip-".
 const INLINE_PACK_FILES: Partial<Record<PackId, string>> = {
   pepites: PEPITES,
   snap: SNAP,
+  memesfr: MEMESFR,
 };
 
 interface SavePayload {
   pack: PackId;
-  id: string; // id du template dans le pack (imgflip-…, pepites-… ou snap-…)
+  id: string; // id du template dans le pack (imgflip-…, pepites-…, snap-… ou memesfr-…)
   name: string;
   boxes: TemplateBox[];
 }
 
 interface DeletePayload {
   pack: PackId;
-  id: string; // id complet du template (imgflip-…, pepites-… ou snap-…)
+  id: string; // id complet du template (imgflip-…, pepites-…, snap-… ou memesfr-…)
 }
 
 interface BakeTextPayload {
-  id: string; // id complet du template (imgflip-…, pepites-… ou snap-…), pour l'empreinte
+  id: string; // id complet du template (imgflip-…, pepites-…, snap-… ou memesfr-…), pour l'empreinte
   url: string; // template.url, ex. "/templates/xxx.jpg" — désigne le fichier à écraser
   dataUrl: string; // image déjà composée côté client (template + sous-titres), en data: URL
 }

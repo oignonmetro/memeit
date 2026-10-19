@@ -4,8 +4,9 @@
 //   npm run templates:import candidats.json   filtre des candidats à l'import
 //   npm run templates:localize             télécharge les images vers public/templates/
 //   npm run templates:snap                 intègre les images déposées dans templates-snap/
+//   npm run templates:memesfr              intègre les images déposées dans templates-memesfr/
 //
-// snap est une instance de la commande générique import-drop (voir
+// snap et memesfr sont deux instances de la commande générique import-drop (voir
 // DROP_PACKS plus bas) : un pack "fait main", sans catalogue en ligne à
 // interroger, dont les images sont déposées par un humain dans un dossier
 // dédié. En ajouter un nouveau n'a rien d'un copier-coller de tout ce
@@ -62,6 +63,13 @@ const DROP_PACKS: Record<string, DropPackConfig> = {
     exportName: 'SNAP_TEMPLATES',
     file: path.join(HERE, '..', 'src', 'lib', 'packs', 'snap.ts'),
     dropDir: path.join(HERE, '..', 'templates-snap'),
+  },
+  memesfr: {
+    id: 'memesfr',
+    packName: 'Memes français',
+    exportName: 'MEMESFR_TEMPLATES',
+    file: path.join(HERE, '..', 'src', 'lib', 'packs', 'memesfr.ts'),
+    dropDir: path.join(HERE, '..', 'templates-memesfr'),
   },
 };
 const DOWNLOAD_CONCURRENCY = 8;
@@ -381,7 +389,7 @@ async function cmdLocalize(): Promise<number> {
   return 0;
 }
 
-// ---------- commande : import-drop (packs "faits main", ex. snap) ----------
+// ---------- commande : import-drop (packs "faits main", ex. snap, memesfr) ----------
 
 // Jimp ne décode ni le webp ni l'avif : une image dans un de ces formats
 // passerait l'import pour faire échouer templates:fingerprint plus tard, avec
@@ -641,7 +649,7 @@ if (command === 'fingerprint') {
 } else if (command === 'localize') {
   code = await cmdLocalize();
 } else if (command && DROP_PACKS[command]) {
-  // Chaque pack "fait main" (snap...) déclaré dans DROP_PACKS
+  // Chaque pack "fait main" (snap, memesfr...) déclaré dans DROP_PACKS
   // devient automatiquement une commande, sans rien à ajouter ici.
   code = await cmdImportDrop(command);
 } else {

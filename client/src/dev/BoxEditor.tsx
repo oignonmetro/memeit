@@ -14,35 +14,38 @@ import MemeRender from '../components/MemeRender';
 import { CLASSIQUES_TEMPLATES } from '../lib/packs/classiques';
 import { PEPITES_TEMPLATES } from '../lib/packs/pepites';
 import { SNAP_TEMPLATES } from '../lib/packs/snap';
+import { MEMESFR_TEMPLATES } from '../lib/packs/memesfr';
 import { SUBTITLE_FONT_STACK, blobToDataUrl, renderTemplateWithSubtitles } from './subtitleRender';
 import type { SubtitleEntry } from './subtitleRender';
 import { cropTemplate, remapBoxToCrop } from './cropRender';
 import type { Template, TemplateBox, TextLayer } from '../types';
 
-type PackId = 'classiques' | 'pepites' | 'snap';
+type PackId = 'classiques' | 'pepites' | 'snap' | 'memesfr';
 type Entry = { template: Template; pack: PackId };
 // Sélection par pack "joueur" : côté lobby, classiques.ts et pepites.ts sont
 // fusionnés en un seul pack "Classiques" (voir packs/index.ts) — le
-// sélecteur reproduit ce découpage-là plutôt que les 3 PackId internes, pour
+// sélecteur reproduit ce découpage-là plutôt que les PackId internes, pour
 // que "choisir un pack" corresponde à ce que les joueurs voient réellement.
-type PackFilter = 'tous' | 'classiques' | 'snap';
+type PackFilter = 'tous' | 'classiques' | 'snap' | 'memesfr';
 type SampleMode = 'court' | 'long' | 'numeros';
 
 const ENTRIES: Entry[] = [
   ...CLASSIQUES_TEMPLATES.map((template) => ({ template, pack: 'classiques' as const })),
   ...PEPITES_TEMPLATES.map((template) => ({ template, pack: 'pepites' as const })),
   ...SNAP_TEMPLATES.map((template) => ({ template, pack: 'snap' as const })),
+  ...MEMESFR_TEMPLATES.map((template) => ({ template, pack: 'memesfr' as const })),
 ];
 
 // Étiquette purement interne à l'éditeur (fichier source d'origine) — depuis
 // la fusion des packs "Classiques" et "Pépites" côté joueur, TEMPLATE_PACKS
 // n'en expose plus qu'un seul et ne peut donc plus servir à nommer les
 // différentes origines de fichier que l'éditeur doit encore distinguer pour
-// savoir où écrire (classiques.ts vs pepites.ts vs snap.ts...).
+// savoir où écrire (classiques.ts vs pepites.ts vs snap.ts vs memesfr.ts...).
 const PACK_NAME: Record<PackId, string> = {
   classiques: 'Classiques',
   pepites: 'Pépites',
   snap: 'Snap français',
+  memesfr: 'Memes français',
 };
 
 function matchesPackFilter(pack: PackId, packFilter: PackFilter): boolean {
@@ -767,6 +770,7 @@ export default function BoxEditor() {
           <option value="tous">Tous les packs</option>
           <option value="classiques">Classiques</option>
           <option value="snap">Snap français</option>
+          <option value="memesfr">Memes français</option>
         </select>
         <select value={sample} onChange={(e) => setSample(e.target.value as SampleMode)}>
           <option value="long">Légendes longues</option>

@@ -2,6 +2,7 @@ import type { Template } from '../../types';
 import { CLASSIQUES_TEMPLATES } from './classiques';
 import { PEPITES_TEMPLATES } from './pepites';
 import { SNAP_TEMPLATES } from './snap';
+import { MEMESFR_TEMPLATES } from './memesfr';
 
 export interface TemplatePackMeta {
   id: string;
@@ -14,9 +15,10 @@ export interface TemplatePackMeta {
 // restent séparés en interne parce que l'éditeur visuel de zones s'appuie
 // dessus pour savoir où écrire, mais ça ne concerne plus que l'outillage).
 //
-// "Snap français" est un pack "fait main" : ses images ne viennent d'aucun
-// catalogue en ligne, elles sont déposées à la main (voir
-// npm run templates:snap, scripts/templates.mts). Il ne s'ajoute à la liste
+// "Snap français" et "Memes français" sont des packs "faits main" : leurs
+// images ne viennent d'aucun catalogue en ligne interrogé automatiquement,
+// elles sont déposées à la main (voir npm run templates:snap /
+// templates:memesfr, scripts/templates.mts). Chacun ne s'ajoute à la liste
 // que lorsqu'il contient au moins un template : vide, il resterait
 // sélectionnable dans le lobby pour ne rien donner, et ferait échouer le
 // test "pack non vide".
@@ -26,6 +28,12 @@ const MANUAL_PACKS: (TemplatePackMeta & { templates: Template[] })[] = [
     name: 'Snap français',
     description: 'Des memes bien de chez nous, absents d\'Imgflip',
     templates: SNAP_TEMPLATES,
+  },
+  {
+    id: 'memesfr',
+    name: 'Memes français',
+    description: 'Des templates déjà en français',
+    templates: MEMESFR_TEMPLATES,
   },
 ];
 
