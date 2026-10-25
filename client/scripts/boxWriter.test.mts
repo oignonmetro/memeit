@@ -21,6 +21,7 @@ import {
 import { CLASSIQUES_TEMPLATES } from '../src/lib/packs/classiques.ts';
 import { PEPITES_TEMPLATES } from '../src/lib/packs/pepites.ts';
 import { SNAP_TEMPLATES } from '../src/lib/packs/snap.ts';
+import { FRANCAIS_TEMPLATES } from '../src/lib/packs/francais.ts';
 import type { TemplateBox } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -30,6 +31,7 @@ const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
+const FRANCAIS = path.join(CLIENT, 'src', 'lib', 'packs', 'francais.ts');
 
 const tbSrc = readFileSync(TEMPLATE_BOXES, 'utf8');
 const ppSrc = readFileSync(PEPITES, 'utf8');
@@ -216,6 +218,7 @@ console.log('--- packs "faits main" (même format que pepites.ts) ---');
 //     cette liste pour être couvert, sans dupliquer les assertions.
 const MANUAL_PACKS = [
   { file: SNAP, templates: SNAP_TEMPLATES, label: 'snap.ts', prefix: 'snap' },
+  { file: FRANCAIS, templates: FRANCAIS_TEMPLATES, label: 'francais.ts', prefix: 'francais' },
 ];
 
 for (const { file, templates, label, prefix } of MANUAL_PACKS) {

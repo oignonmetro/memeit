@@ -27,11 +27,12 @@ const TEMPLATE_BOXES = path.join(CLIENT, 'src', 'lib', 'templateBoxes.ts');
 const CLASSIQUES = path.join(CLIENT, 'src', 'lib', 'packs', 'classiques.ts');
 const PEPITES = path.join(CLIENT, 'src', 'lib', 'packs', 'pepites.ts');
 const SNAP = path.join(CLIENT, 'src', 'lib', 'packs', 'snap.ts');
+const FRANCAIS = path.join(CLIENT, 'src', 'lib', 'packs', 'francais.ts');
 const FINGERPRINTS = path.join(CLIENT, 'src', 'lib', 'packs', 'fingerprints.generated.ts');
 const TEMPLATES_DIR = path.join(CLIENT, 'public', 'templates');
 const REVIEWED = path.join(HERE, 'boxes-reviewed.json');
 
-type PackId = 'classiques' | 'pepites' | 'snap';
+type PackId = 'classiques' | 'pepites' | 'snap' | 'francais';
 
 // pepites.ts et les packs "faits main" (snap.ts...) partagent exactement le
 // même format (zones écrites en clair dans l'entrée, id complet, entrée
@@ -41,6 +42,7 @@ type PackId = 'classiques' | 'pepites' | 'snap';
 const INLINE_PACK_FILES: Partial<Record<PackId, string>> = {
   pepites: PEPITES,
   snap: SNAP,
+  francais: FRANCAIS,
 };
 
 interface SavePayload {

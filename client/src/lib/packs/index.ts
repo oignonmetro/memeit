@@ -2,6 +2,7 @@ import type { Template } from '../../types';
 import { CLASSIQUES_TEMPLATES } from './classiques';
 import { PEPITES_TEMPLATES } from './pepites';
 import { SNAP_TEMPLATES } from './snap';
+import { FRANCAIS_TEMPLATES } from './francais';
 
 export interface TemplatePackMeta {
   id: string;
@@ -26,6 +27,12 @@ const MANUAL_PACKS: (TemplatePackMeta & { templates: Template[] })[] = [
     name: 'Snap français',
     description: 'Des memes bien de chez nous, absents d\'Imgflip',
     templates: SNAP_TEMPLATES,
+  },
+  {
+    id: 'francais',
+    name: 'Memes français',
+    description: 'La culture française : le sel, les panneaux de ville, la police…',
+    templates: FRANCAIS_TEMPLATES,
   },
 ];
 

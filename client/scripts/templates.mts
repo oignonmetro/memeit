@@ -4,6 +4,7 @@
 //   npm run templates:import candidats.json   filtre des candidats à l'import
 //   npm run templates:localize             télécharge les images vers public/templates/
 //   npm run templates:snap                 intègre les images déposées dans templates-snap/
+//   npm run templates:francais             idem pour templates-francais/ (pack « Memes français »)
 //
 // snap est une instance de la commande générique import-drop (voir
 // DROP_PACKS plus bas) : un pack "fait main", sans catalogue en ligne à
@@ -62,6 +63,13 @@ const DROP_PACKS: Record<string, DropPackConfig> = {
     exportName: 'SNAP_TEMPLATES',
     file: path.join(HERE, '..', 'src', 'lib', 'packs', 'snap.ts'),
     dropDir: path.join(HERE, '..', 'templates-snap'),
+  },
+  francais: {
+    id: 'francais',
+    packName: 'Memes français',
+    exportName: 'FRANCAIS_TEMPLATES',
+    file: path.join(HERE, '..', 'src', 'lib', 'packs', 'francais.ts'),
+    dropDir: path.join(HERE, '..', 'templates-francais'),
   },
 };
 const DOWNLOAD_CONCURRENCY = 8;

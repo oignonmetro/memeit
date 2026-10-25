@@ -12,7 +12,8 @@
     "templates:fingerprint": "tsx scripts/templates.mts fingerprint",
     "templates:import": "tsx scripts/templates.mts import",
     "templates:localize": "tsx scripts/templates.mts localize",
-    "templates:snap": "tsx scripts/templates.mts snap"
+    "templates:snap": "tsx scripts/templates.mts snap",
+    "templates:francais": "tsx scripts/templates.mts francais"
   },
   "dependencies": {
     "firebase": "^10.13.0",

@@ -246,6 +246,7 @@ dupliquer :
 | Pack | Fichier | Dossier de dépôt | Commande |
 |---|---|---|---|
 | Snap français | `snap.ts` | `client/templates-snap/` | `npm run templates:snap` |
+| Memes français | `francais.ts` | `client/templates-francais/` | `npm run templates:francais` |
 
 ```bash
 # 1. déposer les images (.jpg / .png) dans le dossier du pack visé
@@ -294,8 +295,8 @@ npm run boxes:edit --workspace client    # puis ouvrir /dev-boxes.html
   fixe), le petit rond en haut de la zone sélectionnée pour la pivoter (comme sur l'éditeur
   Imgflip). Le redimensionnement compense la rotation : sur une zone pivotée, une poignée de
   bord ne suit que l'axe local de ce bord, pas les axes de l'écran — sinon "tirer à droite"
-  déformerait la zone au lieu de l'élargir le long de son propre bord. Flèches : nudge 1 %
-  (Maj : 5 %) ; `,` / `.` : pivoter 1° (Maj : 5°). `1`-`9` sélectionne une zone, `[` / `]`
+  déformerait la zone au lieu de l'élargir le long de son propre bord. Ctrl + flèches : nudge 1 %
+  (Ctrl + Maj : 5 %) ; `,` / `.` : pivoter 1° (Maj : 5°). `1`-`9` sélectionne une zone, `←` / `→` (ou `[` / `]`)
   change de template, `s` enregistre, `r` marque le template comme relu. La rotation est
   optionnelle (`rotationDeg`, omis du fichier quand elle vaut 0) et s'applique aussi bien à
   l'aperçu DOM (`MemeRender`) qu'à l'export PNG téléchargé par les joueurs (`memeImage.ts`),
