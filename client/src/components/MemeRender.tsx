@@ -32,10 +32,18 @@ function MemeTextLayer({ layer, frameW, frameH }: { layer: TextLayer; frameW: nu
   useEffect(() => {
     const el = ref.current;
     if (!el || !frameW || !frameH || !layer.text.trim()) return;
-    const maxW = (frameW * layer.widthPct) / 100;
-    const maxH = (frameH * layer.heightPct) / 100;
+    // Measure the frame live rather than trusting frameW/frameH: those come
+    // from React state and can lag one layout behind (e.g. an image load and
+    // a frame resize landing in the same commit). Fitting against stale
+    // dimensions while measuring the text in the current layout left
+    // captions stuck far too small or too big.
+    const frame = el.parentElement;
+    const w = frame?.clientWidth || frameW;
+    const h = frame?.clientHeight || frameH;
+    const maxW = (w * layer.widthPct) / 100;
+    const maxH = (h * layer.heightPct) / 100;
     let lo = 8;
-    let hi = Math.max(10, frameW * 0.12);
+    let hi = Math.max(10, w * 0.12);
     let best = lo;
     for (let i = 0; i < 8; i += 1) {
       const mid = (lo + hi) / 2;
