@@ -116,6 +116,51 @@ export function deletePepitesEntry(
   return lines.join(eol);
 }
 
+function quoteTs(s: string): string {
+  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
+/**
+ * Ajoute une entrée en fin de tableau dans un pack au format "zones en
+ * clair" (pepites.ts, snap.ts, francais.ts), dans le même format que celui
+ * produit par `templates:<pack>` — donc relisible par les autres fonctions de
+ * ce fichier. Refuse un id déjà présent plutôt que de le dupliquer.
+ */
+export function appendPackEntry(
+  source: string,
+  entry: { id: string; url: string; name: string; boxes: TemplateBox[] },
+  fileLabel: string
+): string {
+  const { lines, eol } = splitLines(source);
+  if (lines.some((l) => l.trim() === `id: ${quoteTs(entry.id)},`)) {
+    throw new Error(`Le template ${entry.id} existe déjà dans ${fileLabel}`);
+  }
+  let closeIdx = -1;
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (lines[i] === '];') {
+      closeIdx = i;
+      break;
+    }
+  }
+  if (closeIdx === -1) throw new Error(`Fin du tableau de templates introuvable dans ${fileLabel}`);
+  const boxes =
+    entry.boxes.length === 1
+      ? [`    boxes: [${formatBox(entry.boxes[0])}],`]
+      : ['    boxes: [', ...entry.boxes.map((b) => `      ${formatBox(b)},`), '    ],'];
+  lines.splice(
+    closeIdx,
+    0,
+    '  {',
+    `    id: ${quoteTs(entry.id)},`,
+    `    url: ${quoteTs(entry.url)},`,
+    `    name: ${quoteTs(entry.name)},`,
+    "    source: 'library',",
+    ...boxes,
+    '  },'
+  );
+  return lines.join(eol);
+}
+
 /**
  * Retire l'entrée CURATED d'un template Imgflip si elle existe. Silencieux
  * (retourne la source inchangée) si absente : un template resté sur la

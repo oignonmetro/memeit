@@ -14,6 +14,7 @@ import {
   formatBox,
   deleteClassiqueEntry,
   deletePepitesEntry,
+  appendPackEntry,
   deleteCuratedBoxes,
   deleteFingerprintEntry,
   upsertFingerprintEntry,
@@ -220,6 +221,28 @@ const MANUAL_PACKS = [
   { file: SNAP, templates: SNAP_TEMPLATES, label: 'snap.ts', prefix: 'snap' },
   { file: FRANCAIS, templates: FRANCAIS_TEMPLATES, label: 'francais.ts', prefix: 'francais' },
 ];
+
+// 13. Ajout d'une entrée (bouton « Ajouter une image » de l'éditeur) : le
+//     round-trip ajout puis suppression doit rendre le fichier tel quel, et
+//     un id déjà présent doit être refusé.
+for (const { file, label, prefix } of MANUAL_PACKS) {
+  const src = readFileSync(file, 'utf8');
+  const entry = {
+    id: `${prefix}-test-ajout`,
+    url: `/templates/${prefix}-test-ajout.jpg`,
+    name: "Test d'ajout",
+    boxes: [
+      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
+      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
+    ],
+  };
+  const added = appendPackEntry(src, entry, label);
+  assert.ok(added.includes(`id: '${prefix}-test-ajout',`), `${label} : entrée absente après ajout`);
+  assert.ok(added.includes(`name: 'Test d\\'ajout',`), `${label} : nom mal échappé`);
+  assert.equal(deletePepitesEntry(added, entry.id, label), src, `${label} : ajout puis suppression ≠ identité`);
+  assert.throws(() => appendPackEntry(added, entry, label), /existe déjà/, `${label} : doublon accepté`);
+  console.log(`PASS  ajout      → ${label} : ajout/suppression neutres, doublon refusé`);
+}
 
 for (const { file, templates, label, prefix } of MANUAL_PACKS) {
   const src = readFileSync(file, 'utf8');

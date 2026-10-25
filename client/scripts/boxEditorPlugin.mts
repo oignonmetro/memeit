@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 import {
+  appendPackEntry,
   writeCuratedBoxes,
   writePepitesBoxes,
   deleteClassiqueEntry,
@@ -19,6 +20,7 @@ import {
   upsertFingerprintEntry,
 } from './boxWriter.mts';
 import { fingerprintBuffer } from './imageFingerprint.mts';
+import { findDuplicate } from '../src/lib/packs/fingerprints.ts';
 import type { TemplateBox } from '../src/types.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -63,6 +65,12 @@ interface BakeTextPayload {
   dataUrl: string; // image déjà composée côté client (template + sous-titres), en data: URL
 }
 
+interface AddPayload {
+  pack: PackId; // un pack "fait main" (snap, francais)
+  name: string;
+  dataUrl: string; // image déjà ré-encodée côté client (jpeg ou png), en data: URL
+}
+
 interface CropPayload {
   pack: PackId;
   id: string; // id complet du template, pour l'empreinte et l'entrée de pack
@@ -70,6 +78,22 @@ interface CropPayload {
   url: string; // template.url — désigne le fichier à écraser
   dataUrl: string; // image déjà rognée côté client, en data: URL
   boxes: TemplateBox[]; // zones déjà recalculées dans le repère de l'image rognée
+}
+
+// Packs dans lesquels l'éditeur sait ajouter une image : les packs "faits
+// main", dont les images n'ont pas d'autre source que ce qu'on y dépose.
+// classiques.ts (instantané Imgflip) et pepites.ts n'en font pas partie.
+const ADDABLE_PACKS: PackId[] = ['snap', 'francais'];
+
+// "Café du coin !" -> "cafe-du-coin", comme templates.mts le fait pour un
+// nom de fichier : les ids produits ici et par l'import restent homogènes.
+function slugify(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 // Une image encodée en data: URL (base64, ~+33%) peut largement dépasser la
@@ -310,6 +334,65 @@ export function boxEditorPlugin(): Plugin {
           res.end(JSON.stringify({ ok: true, boxes }));
         } catch (err) {
           fail(400, err instanceof Error ? err.message : 'Rognage impossible');
+        }
+      });
+
+      // Ajoute une image à un pack "fait main" : écrit le fichier dans
+      // public/templates/, ajoute l'entrée (avec la disposition de zones
+      // générique haut/bas, à recaler ensuite) et l'empreinte. Comme pour
+      // /delete, tout est validé avant la première écriture — refus d'un
+      // doublon (même id ou même image, quel que soit son nom) compris.
+      server.middlewares.use('/__boxes/add', async (req, res) => {
+        const fail = (code: number, message: string) => {
+          res.statusCode = code;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: false, error: message }));
+        };
+        if (req.method !== 'POST') return fail(405, 'POST attendu');
+        try {
+          const payload: AddPayload = JSON.parse(await readBody(req, 25_000_000));
+          if (!ADDABLE_PACKS.includes(payload.pack)) throw new Error("Pack non modifiable depuis l'éditeur");
+          const packFile = INLINE_PACK_FILES[payload.pack]!;
+
+          const name = String(payload.name || '').replace(/\s+/g, ' ').trim();
+          const slug = slugify(name);
+          if (!slug) throw new Error('Donne un nom au template (lettres ou chiffres)');
+          const id = `${payload.pack}-${slug}`;
+
+          const dataMatch = /^data:image\/(jpeg|png);base64,(.+)$/.exec(payload.dataUrl || '');
+          if (!dataMatch) throw new Error('Image manquante ou format non géré (jpg / png)');
+          const ext = dataMatch[1] === 'png' ? 'png' : 'jpg';
+          const buf = Buffer.from(dataMatch[2], 'base64');
+          const url = `/templates/${id}.${ext}`;
+          const target = path.join(TEMPLATES_DIR, `${id}.${ext}`);
+          if (path.dirname(target) !== TEMPLATES_DIR) throw new Error('Chemin de template invalide');
+          if (existsSync(target)) throw new Error(`Un fichier ${id}.${ext} existe déjà : change le nom`);
+
+          const fingerprint = await fingerprintBuffer(buf);
+          const fpSource = await readFile(FINGERPRINTS, 'utf8');
+          const known: Record<string, { sha256: string; dhash: string }> = {};
+          for (const m of fpSource.matchAll(/^ {2}'([^']+)': \{ sha256: '([0-9a-f]+)', dhash: '([0-9a-f]+)'/gm)) {
+            known[m[1]] = { sha256: m[2], dhash: m[3] };
+          }
+          const dup = findDuplicate(fingerprint, known);
+          if (dup) throw new Error(`Cette image existe déjà dans les packs (« ${dup.againstId} »)`);
+
+          const boxes: TemplateBox[] = [
+            { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
+            { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
+          ];
+          const packSource = await readFile(packFile, 'utf8');
+          const newPackSource = appendPackEntry(packSource, { id, url, name, boxes }, path.basename(packFile));
+          const newFpSource = upsertFingerprintEntry(fpSource, id, fingerprint);
+
+          await writeFile(target, buf);
+          await writeFile(packFile, newPackSource, 'utf8');
+          await writeFile(FINGERPRINTS, newFpSource, 'utf8');
+
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ok: true, id }));
+        } catch (err) {
+          fail(400, err instanceof Error ? err.message : 'Ajout impossible');
         }
       });
 

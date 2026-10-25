@@ -28,6 +28,13 @@ type Entry = { template: Template; pack: PackId };
 // que "choisir un pack" corresponde à ce que les joueurs voient réellement.
 type PackFilter = 'tous' | 'classiques' | 'snap' | 'francais';
 type SampleMode = 'court' | 'long' | 'numeros';
+// Packs dans lesquels l'éditeur sait ajouter une image (ceux dont les images
+// n'ont pas d'autre source que ce qu'on y dépose).
+type AddablePack = 'snap' | 'francais';
+const ADDABLE_PACKS: { id: AddablePack; label: string }[] = [
+  { id: 'francais', label: 'Memes français' },
+  { id: 'snap', label: 'Snap français' },
+];
 // Un seul outil actif à la fois : chacun a ses propres cadres sur l'image, et
 // n'activer que ceux de l'outil courant évite d'attraper un sous-titre en
 // voulant déplacer une zone (ou l'inverse) quand ils se chevauchent.
@@ -265,6 +272,16 @@ export default function BoxEditor() {
   const [aspect, setAspect] = useState<{ id: string; ratio: number } | null>(null);
   const [tool, setTool] = useState<Tool>('zones');
   const [showHelp, setShowHelp] = useState(false);
+  // Ajout d'une image dans un pack "fait main" (voir /__boxes/add).
+  const [showAdd, setShowAdd] = useState(false);
+  const [addFile, setAddFile] = useState<File | null>(null);
+  const [addPreview, setAddPreview] = useState<string | null>(null);
+  const [addName, setAddName] = useState('');
+  const [addPack, setAddPack] = useState<AddablePack>('francais');
+  const [adding, setAdding] = useState(false);
+  // Id du template tout juste ajouté : la liste ne le contient qu'après le
+  // rechargement à chaud du module du pack, on le sélectionne à ce moment-là.
+  const [pendingSelectId, setPendingSelectId] = useState<string | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -561,12 +578,91 @@ export default function BoxEditor() {
     if (next) move(1);
   }, [template, reviewedIds, move]);
 
+  const closeAdd = useCallback(() => {
+    setShowAdd(false);
+    setAddFile(null);
+    setAddName('');
+    setAddPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, []);
+
+  const pickAddFile = useCallback((file: File | null) => {
+    setAddFile(file);
+    setAddPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+    // Le nom du fichier sert de nom par défaut, comme pour l'import par
+    // dossier ("chat_qui_dort.png" -> "Chat qui dort") — modifiable avant d'ajouter.
+    if (file) {
+      const base = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+      setAddName((prev) => prev || (base ? base.charAt(0).toUpperCase() + base.slice(1) : ''));
+    }
+  }, []);
+
+  const addImage = useCallback(async () => {
+    if (!addFile || !addPreview) return;
+    setAdding(true);
+    setStatus('Ajout de l’image…');
+    try {
+      // Ré-encodage via un canvas : accepte tout ce que le navigateur sait
+      // lire (webp compris, que l'outillage Node ne décode pas) et sort
+      // toujours du jpg (ou du png quand l'original en est un).
+      const img = new Image();
+      img.src = addPreview;
+      await img.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas indisponible');
+      const png = addFile.type === 'image/png';
+      if (!png) {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, png ? 'image/png' : 'image/jpeg', 0.93)
+      );
+      if (!blob) throw new Error('Encodage de l’image impossible');
+      const res = await fetch('/__boxes/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack: addPack, name: addName, dataUrl: await blobToDataUrl(blob) }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      setStatus(`« ${addName.trim()} » ajouté ✓ — zones génériques haut/bas, à recaler`);
+      setSearch('');
+      setPackFilter('tous');
+      setPendingSelectId(data.id);
+      closeAdd();
+    } catch (err) {
+      setStatus(`Échec : ${err instanceof Error ? err.message : 'inconnu'}`);
+    } finally {
+      setAdding(false);
+    }
+  }, [addFile, addPreview, addPack, addName, closeAdd]);
+
+  useEffect(() => {
+    if (!pendingSelectId) return;
+    const i = visible.findIndex(({ template: t }) => t.id === pendingSelectId);
+    if (i >= 0) {
+      setIndex(i);
+      setPendingSelectId(null);
+    }
+  }, [pendingSelectId, visible]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const t = e.target;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return;
       if (e.key === 'Escape') {
-        if (showHelp) setShowHelp(false);
+        if (showAdd) { if (!adding) closeAdd(); }
+        else if (showHelp) setShowHelp(false);
         else if (previewUrl) clearPreview();
         else if (cropMode) setTool('zones');
         return;
@@ -575,7 +671,7 @@ export default function BoxEditor() {
         setShowHelp((v) => !v);
         return;
       }
-      if (showHelp) return;
+      if (showHelp || showAdd) return;
       const step = e.shiftKey ? 5 : 1;
       switch (e.key) {
         // ←/→ changent de template ; le nudge d'une zone passe par Ctrl/Cmd
@@ -628,7 +724,7 @@ export default function BoxEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [
     nudge, nudgeRotation, move, save, toggleReviewed, selected, moveZone, deleteZone, addZone,
-    showHelp, previewUrl, clearPreview, cropMode, draft.length,
+    showHelp, showAdd, adding, closeAdd, previewUrl, clearPreview, cropMode, draft.length,
   ]);
 
   // Un seul gestionnaire pour le déplacement et le redimensionnement (et un
@@ -967,6 +1063,11 @@ export default function BoxEditor() {
             </button>
           ))}
         </div>
+
+        <button className="be-add-btn" onClick={() => setShowAdd(true)} title="Ajouter une image à un pack">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          Ajouter une image
+        </button>
 
         <div className="be-progress" title={`${reviewedVisible} template(s) revu(s) sur ${visible.length}`}>
           <div className="be-progress-label">
@@ -1415,6 +1516,62 @@ export default function BoxEditor() {
         </div>
       )}
 
+      {showAdd && (
+        <div className="be-modal-backdrop" onClick={() => !adding && closeAdd()}>
+          <div className="be-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Ajouter une image">
+            <header>
+              <h2>Ajouter une image</h2>
+              <button className="be-icon-btn" onClick={closeAdd} disabled={adding} title="Fermer (Échap)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            </header>
+            <div className="be-add-form">
+              <label className="be-add-drop">
+                {addPreview ? <img src={addPreview} alt="" /> : <span>Choisir une image (jpg, png, webp…)</span>}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => pickAddFile(e.target.files?.[0] ?? null)}
+                  disabled={adding}
+                />
+              </label>
+              <label className="be-add-field">
+                Nom du template
+                <input
+                  type="text"
+                  value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  placeholder="Ex. Chat qui dort"
+                  disabled={adding}
+                />
+              </label>
+              <label className="be-add-field">
+                Pack
+                <select value={addPack} onChange={(e) => setAddPack(e.target.value as AddablePack)} disabled={adding}>
+                  {ADDABLE_PACKS.map(({ id, label }) => (
+                    <option key={id} value={id}>{label}</option>
+                  ))}
+                </select>
+              </label>
+              <p>
+                L'image est copiée dans <code>public/templates/</code> et le template reçoit les deux zones
+                génériques haut/bas, à recaler ensuite. Une image déjà présente dans un pack est refusée.
+              </p>
+              <div className="be-row-btns">
+                <button className="be-btn" onClick={closeAdd} disabled={adding}>Annuler</button>
+                <button
+                  className="be-btn be-btn--primary"
+                  onClick={addImage}
+                  disabled={adding || !addFile || !addName.trim()}
+                >
+                  {adding ? 'Ajout…' : 'Ajouter'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showHelp && (
         <div className="be-modal-backdrop" onClick={() => setShowHelp(false)}>
           <div className="be-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Raccourcis clavier">
@@ -1703,6 +1860,20 @@ function Styles() {
       .be-modal dl > div { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--be-line); }
       .be-modal dt { width: 130px; flex: none; display: flex; gap: 4px; flex-wrap: wrap; }
       .be-modal dd { margin: 0; color: var(--be-muted); font-size: 13px; }
+      .be-add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 36px;
+        margin: 0 0 10px; border-radius: 10px; border: 1px dashed var(--be-line-strong); background: none;
+        color: var(--be-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .be-add-btn:hover { color: var(--be-text); border-color: var(--be-accent); }
+      .be-add-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+      .be-add-form { display: flex; flex-direction: column; gap: 12px; }
+      .be-add-drop { display: grid; place-items: center; min-height: 140px; max-height: 280px; overflow: hidden;
+        border-radius: 12px; border: 1px dashed var(--be-line-strong); cursor: pointer; color: var(--be-muted); font-size: 13px; }
+      .be-add-drop:hover { border-color: var(--be-accent); }
+      .be-add-drop img { max-width: 100%; max-height: 280px; object-fit: contain; }
+      .be-add-drop input { display: none; }
+      .be-add-field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--be-muted); }
+      .be-add-field input, .be-add-field select { height: 38px; padding: 0 10px; border-radius: 10px; font: inherit;
+        color: var(--be-text); background: var(--be-bg, #0f0b14); border: 1px solid var(--be-line-strong); }
       .be-modal p { margin: 14px 0 0; font-size: 12.5px; color: var(--be-faint); line-height: 1.5; }
 
       @media (max-width: 1100px) {
