@@ -7,7 +7,6 @@ interface CaptionEditorProps {
   onSubmit: (layers: TextLayer[]) => void;
   submitting: boolean;
   changesLeft: number;
-  isFirstTemplate: boolean;
   isSharedTemplate: boolean;
   onChangeTemplate: () => Promise<void>;
 }
@@ -16,7 +15,7 @@ function boxLabel(i: number): string {
   return `Texte ${i + 1}`;
 }
 
-export default function CaptionEditor({ template, onSubmit, submitting, changesLeft, isFirstTemplate, isSharedTemplate, onChangeTemplate }: CaptionEditorProps) {
+export default function CaptionEditor({ template, onSubmit, submitting, changesLeft, isSharedTemplate, onChangeTemplate }: CaptionEditorProps) {
   const boxes = template.boxes && template.boxes.length ? template.boxes : [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }];
   const [texts, setTexts] = useState<string[]>(() => boxes.map(() => ''));
   const [changing, setChanging] = useState(false);
@@ -46,10 +45,6 @@ export default function CaptionEditor({ template, onSubmit, submitting, changesL
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {!isSharedTemplate && isFirstTemplate && (
-        <div className="first-template-badge">1er template !</div>
-      )}
-
       <div className="caption-preview">
         <MemeRender templateUrl={template.url} layers={submitLayers} />
         {boxes.map(

@@ -234,7 +234,6 @@ export default function RoomPage() {
               template={roundStarted.template}
               submitting={submitting}
               changesLeft={roundStarted.changesLeft}
-              isFirstTemplate={roundStarted.isFirstTemplate}
               isSharedTemplate={roundStarted.isSharedTemplate}
               onChangeTemplate={changeTemplate}
               onSubmit={async (layers) => {
@@ -255,6 +254,9 @@ export default function RoomPage() {
       {room.phase === 'reveal' && (
         revealMeme ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {revealMeme.index === 0 && (
+              <div className="first-template-badge">1er template !</div>
+            )}
             <div className="subtitle" style={{ margin: 0 }}>
               Découverte des memes — {revealMeme.index + 1} / {revealMeme.total}
             </div>
