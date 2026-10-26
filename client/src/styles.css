@@ -527,13 +527,17 @@ input[type="text"]:focus { outline: 2px solid var(--accent); }
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(0, 0, 0, 0.55);
+  /* Pas de voile : le haut de la page reste visible et utilisable, seul le bas est masqué par le panneau. */
+  background: none;
+  pointer-events: none;
   display: flex;
   align-items: flex-end;
   justify-content: center;
 }
 
 .chat-panel {
+  pointer-events: auto;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.45);
   width: 100%;
   max-width: 520px;
   height: 40vh;

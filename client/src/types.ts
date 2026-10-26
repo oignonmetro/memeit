@@ -151,6 +151,8 @@ export interface RevealMemePayload {
   total: number;
   template: Template;
   meme: { authorId: string; layers: TextLayer[] };
+  // True when the author never re-rolled their template this round.
+  isFirstTemplate: boolean;
   deadline: number;
   // How many connected players (excluding the meme's own author — see
   // isAuthor) have hit "Vu" on the currently displayed meme. Once seenCount

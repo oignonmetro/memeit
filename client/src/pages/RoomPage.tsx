@@ -254,7 +254,7 @@ export default function RoomPage() {
       {room.phase === 'reveal' && (
         revealMeme ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {revealMeme.index === 0 && (
+            {revealMeme.isFirstTemplate && (
               <div className="first-template-badge">1er template !</div>
             )}
             <div className="subtitle" style={{ margin: 0 }}>

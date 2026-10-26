@@ -123,6 +123,7 @@ export function deriveView(
         total: (dbRoom.revealOrder || []).length,
         template,
         meme: { authorId, layers: submission.layers || [] },
+        isFirstTemplate: (dbRoom.templateChanges?.[authorId] || 0) === 0,
         deadline: dbRoom.revealDeadline || Date.now(),
         seenCount: requiredIds.filter((id) => seenBy[id]).length,
         seenTotal: requiredIds.length,
