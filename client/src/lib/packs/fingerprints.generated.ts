@@ -202,7 +202,6 @@ export const TEMPLATE_FINGERPRINTS: Record<string, TemplateFingerprint> = {
   'snap-photo-survetement-vert-nike': { sha256: '1b76c055f83ab0dfa3d80db96a7cfc3708b1a26b6aeb8c52100892003bc12827', dhash: '8fe2c76b971a973add3ad9b2fe9686d6c7f6e7aee7dce1c2e1c3e4c2ccc2cd8a', width: 736, height: 981 },
   'snap-sa-se-marrie-a-clicli': { sha256: 'ff61dc17c4438f903017b8ff1a1c5ecf6ce5ba76a248d83b201f4f81d547d7ac', dhash: 'ef889d0e9904d1144994c788e796f78ed5cceb0cc7088f089d20dce6da54e198', width: 675, height: 1200 },
   'snap-vsi-affiche-toi-fdp-on-te-regarde': { sha256: '48452f5e18399ee2783ef38fda2d92d31dc93cefd109d40f02909bf614f642eb', dhash: 'e630eb30e4e0e4e0c2e0caf0d8f8c1d8c9dcc9dc8978bbb29f8e1f861f073303', width: 735, height: 495 },
-  'francais-aucune-limite-francois-hollande': { sha256: 'cc0f4dcd1defdbdc67343e9704219a3cbd65e4aa90a32fafebce9c9c53dce96a', dhash: '58027882f083e308a333e329e533e933f23052143235f409d605d867fc61f630', width: 204, height: 250 },
   'francais-moitie-du-sel-des-francais': { sha256: '9ada48445cf24f1c7bcf485bf33c860cd117525594e8ca390cc5cdde83cba6b5', dhash: '86d28192939aa498840cb00cb018b02cc82e800a804c8166c204d604d70e840e', width: 960, height: 682 },
   'francais-pas-mal-non-cest-francais-2': { sha256: 'ec9872695317012eb973824e9df0e7bed4c13701ee580c7adf15a6f23e77f52c', dhash: '98e219a2792247326572e51bc71a2037464e424a624a3007b0a3b8e3a4e294de', width: 614, height: 359 },
   'francais-fabrice-eboue': { sha256: 'a6b56aa3b27697946c04a62343e263c5db02196bda853631906b51fbf2fde6b6', dhash: '6839683d631ce719ef890e4c2548a758605ce197e1a7e1e760c7e092e1088102', width: 415, height: 351 },
@@ -229,4 +228,5 @@ export const TEMPLATE_FINGERPRINTS: Record<string, TemplateFingerprint> = {
   'francais-tout-plaquer-et-devenir-un-babybel': { sha256: '8fb69ea1894bbf0f882c5a0cd8673a221918af5537472b8e1ddf0c9c736dbd1d', dhash: '15b662ad54a70479c41da70e865a049ca49d0e17030ff00fe00bc00901cb01cb', width: 612, height: 960 },
   'francais-tu-es-pauvre-meurs': { sha256: '4c7313e9350ad56469b9fcf2339177e4ea01f6b64d660a2317e3798ea20a6d95', dhash: '888a8a07810b98718c718c518c75272563292199f682be66b0e6866682f680d6', width: 736, height: 786 },
   'francais-vous-gardez-calme-vous-deviene-fou': { sha256: '21a7d91c8d75c338cc55ded9cd6ea541c4bdaff0b1604a1996f5c822ea723b99', dhash: 'b0e6a726a7332698a2dc26da269a3336b36c33f43270a1f48a589559cb18c85a', width: 640, height: 457 },
+  'francais-je-n-ai-aucune-limite': { sha256: '1f6c8dbca058ddb706ce2229d3034ee8c1de71602c9b35d5a85803152d3bf76c', dhash: 'f8786e1a58027802f143f321f33b6133e133f331721032317609fa06ec67f621', width: 1080, height: 1419 },
 };

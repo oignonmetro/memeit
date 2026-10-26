@@ -21,13 +21,6 @@ import type { Template } from '../../types';
 // packs/index.ts : il n'apparaît ni dans le lobby, ni dans les tests.
 export const FRANCAIS_TEMPLATES: Template[] = [
   {
-    id: 'francais-aucune-limite-francois-hollande',
-    url: '/templates/francais-aucune-limite-francois-hollande.jpg',
-    name: 'Aucune limite francois hollande',
-    source: 'library',
-    boxes: [{ xPct: 50, yPct: 12, widthPct: 90, heightPct: 19 }],
-  },
-  {
     id: 'francais-moitie-du-sel-des-francais',
     url: '/templates/francais-moitie-du-sel-des-francais.jpg',
     name: 'Moitie du sel des francais',
@@ -98,20 +91,14 @@ export const FRANCAIS_TEMPLATES: Template[] = [
     url: '/templates/francais-du-pure-delire-gwer.jpg',
     name: 'Du pure delire gwer',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 14, widthPct: 90, heightPct: 21 }],
   },
   {
     id: 'francais-enorme-collier-de-fleurs',
     url: '/templates/francais-enorme-collier-de-fleurs.jpg',
     name: 'Enorme collier de fleurs',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-femme-cheveux-courts-main-devant-la-bouche',
@@ -128,50 +115,35 @@ export const FRANCAIS_TEMPLATES: Template[] = [
     url: '/templates/francais-femme-lunettes-rouges-bouche-ouverte.jpg',
     name: 'Femme lunettes rouges bouche ouverte',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-for-sure-lunettes-bleues',
     url: '/templates/francais-for-sure-lunettes-bleues.jpg',
     name: 'For sure lunettes bleues',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 48, yPct: 55, widthPct: 45, heightPct: 26 }],
   },
   {
     id: 'francais-haagrah',
     url: '/templates/francais-haagrah.jpg',
     name: 'Haagrah',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 56, widthPct: 90, heightPct: 21 }],
   },
   {
     id: 'francais-homme-barbu-lunettes-dans-un-stade',
     url: '/templates/francais-homme-barbu-lunettes-dans-un-stade.jpg',
     name: 'Homme barbu lunettes dans un stade',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-homme-boit-avec-une-paille',
     url: '/templates/francais-homme-boit-avec-une-paille.jpg',
     name: 'Homme boit avec une paille',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-homme-dans-un-avion-avec-des-dossiers',
@@ -179,7 +151,7 @@ export const FRANCAIS_TEMPLATES: Template[] = [
     name: 'Homme dans un avion avec des dossiers',
     source: 'library',
     boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
+      { xPct: 50, yPct: 14, widthPct: 90, heightPct: 23 },
       { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
     ],
   },
@@ -188,79 +160,62 @@ export const FRANCAIS_TEMPLATES: Template[] = [
     url: '/templates/francais-homme-debout-devant-un-match-a-la-tv.jpg',
     name: 'Homme debout devant un match a la tv',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-homme-devant-un-alphabet-a-lecran',
     url: '/templates/francais-homme-devant-un-alphabet-a-lecran.jpg',
     name: 'Homme devant un alphabet a lecran',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-il-fait-tarpin-chaud',
     url: '/templates/francais-il-fait-tarpin-chaud.jpg',
     name: 'Il fait tarpin chaud',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-portrait-noir-et-blanc-doigt-sur-la-bouche',
     url: '/templates/francais-portrait-noir-et-blanc-doigt-sur-la-bouche.jpg',
     name: 'Portrait noir et blanc doigt sur la bouche',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 17, widthPct: 90, heightPct: 30 }],
   },
   {
     id: 'francais-radar-arc-en-ciel-parabole',
     url: '/templates/francais-radar-arc-en-ciel-parabole.jpg',
     name: 'Radar arc en ciel parabole',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-tout-plaquer-et-devenir-un-babybel',
     url: '/templates/francais-tout-plaquer-et-devenir-un-babybel.jpg',
     name: 'Tout plaquer et devenir un babybel',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 }],
   },
   {
     id: 'francais-tu-es-pauvre-meurs',
     url: '/templates/francais-tu-es-pauvre-meurs.jpg',
     name: 'Tu es pauvre meurs',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 70, widthPct: 90, heightPct: 22 }],
   },
   {
     id: 'francais-vous-gardez-calme-vous-deviene-fou',
     url: '/templates/francais-vous-gardez-calme-vous-deviene-fou.jpg',
     name: 'Vous gardez calme vous deviene fou',
     source: 'library',
-    boxes: [
-      { xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 },
-      { xPct: 50, yPct: 85, widthPct: 90, heightPct: 26 },
-    ],
+    boxes: [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }],
+  },
+  {
+    id: 'francais-je-n-ai-aucune-limite',
+    url: '/templates/francais-je-n-ai-aucune-limite.jpg',
+    name: 'je n\'ai aucune limite',
+    source: 'library',
+    boxes: [{ xPct: 50, yPct: 15, widthPct: 90, heightPct: 26 }],
   },
 ];
