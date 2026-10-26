@@ -156,6 +156,7 @@ export function reduceCaption(room: DbRoom | null, now: number): DbRoom | null {
     revealIndex: 0,
     revealDeadline: now + room.settings.revealTimeSec * 1000,
     revealSeenBy: {},
+    revealLaughBy: {},
     voteDeadline: null,
     favoriteVotes: {},
     lastActivityAt: now,
@@ -197,6 +198,7 @@ export function reduceReveal(room: DbRoom | null, now: number): DbRoom | null {
     revealIndex: nextIndex,
     revealDeadline: now + room.settings.revealTimeSec * 1000,
     revealSeenBy: {},
+    revealLaughBy: {},
     lastActivityAt: now,
   };
 }
@@ -214,6 +216,15 @@ export function reduceMarkSeen(room: DbRoom | null, playerId: string, now: numbe
   if (room.revealSeenBy?.[playerId]) return room;
   const marked = { ...room, revealSeenBy: { ...(room.revealSeenBy || {}), [playerId]: true }, lastActivityAt: now };
   return reduceReveal(marked, now);
+}
+
+// A player reacts with the laughing emoji to the meme currently shown. One
+// reaction per player and per meme; it does not affect the advance condition.
+export function reduceLaugh(room: DbRoom | null, playerId: string, now: number): DbRoom | null {
+  if (!room || room.status !== 'reveal') return room;
+  if (!room.players?.[playerId]) return room;
+  if (room.revealLaughBy?.[playerId]) return room;
+  return { ...room, revealLaughBy: { ...(room.revealLaughBy || {}), [playerId]: true }, lastActivityAt: now };
 }
 
 export function reduceTally(room: DbRoom | null, now: number): DbRoom | null {
@@ -298,6 +309,7 @@ export function reduceRestartGame(room: DbRoom | null, now: number): DbRoom | nu
     revealIndex: -1,
     revealDeadline: null,
     revealSeenBy: {},
+    revealLaughBy: {},
     voteDeadline: null,
     favoriteVotes: {},
     lastRoundVotes: {},

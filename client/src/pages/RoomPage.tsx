@@ -50,6 +50,7 @@ export default function RoomPage() {
     changeTemplate,
     castFavorite,
     markMemeSeen,
+    laughAtMeme,
     joinRoom,
     leaveRoom,
     restartGame,
@@ -134,6 +135,11 @@ export default function RoomPage() {
     } finally {
       setMarking(false);
     }
+  }
+
+  async function handleLaugh() {
+    if (!revealMeme || revealMeme.selfLaughed) return;
+    await laughAtMeme();
   }
 
   if (!loaded) {
@@ -277,7 +283,20 @@ export default function RoomPage() {
                   ? `👀 Vu (${revealMeme.seenCount}/${revealMeme.seenTotal})`
                   : '👀 Vu'}
               </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleLaugh}
+                disabled={revealMeme.selfLaughed}
+                aria-label="Réagir avec un rire"
+              >
+                😂{revealMeme.laughers.length > 0 ? ` ${revealMeme.laughers.length}` : ''}
+              </button>
             </div>
+            {revealMeme.laughers.length > 0 && (
+              <div className="center-note" style={{ margin: 0 }}>
+                😂 {revealMeme.laughers.join(', ')}
+              </div>
+            )}
             {downloadError && (
               <div className="center-note" style={{ color: 'var(--accent2)' }}>{downloadError}</div>
             )}

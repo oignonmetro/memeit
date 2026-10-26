@@ -94,6 +94,9 @@ export interface DbRoom {
   // Which connected players have hit "Vu" on the meme currently on screen.
   // Reset every time revealIndex moves to the next meme.
   revealSeenBy: Record<string, boolean>;
+  // Players who tapped the laughing emoji on the meme currently on screen.
+  // Reset with revealSeenBy; optional because RTDB drops empty objects.
+  revealLaughBy?: Record<string, boolean>;
   voteDeadline: number | null;
   // favoriteVotes[voterId] = authorId the voter picked as favorite this round.
   favoriteVotes: Record<string, string>;
@@ -165,6 +168,9 @@ export interface RevealMemePayload {
   // already know it, so the "Vu" button is disabled for them and they don't
   // count towards seenTotal.
   isAuthor: boolean;
+  // Nicknames of the players who reacted with the laughing emoji.
+  laughers: string[];
+  selfLaughed: boolean;
 }
 
 export interface VoteMeme {

@@ -23,6 +23,7 @@ import {
   maybeAdvanceFromCaption,
   advanceReveal,
   markMemeSeen as apiMarkMemeSeen,
+  laughAtMeme as apiLaughAtMeme,
   maybeTallyVotes,
   advanceAfterRoundResults,
   touchActivity,
@@ -65,6 +66,7 @@ interface GameState extends DerivedView {
   changeTemplate: () => Promise<void>;
   castFavorite: (authorId: string) => Promise<void>;
   markMemeSeen: () => Promise<void>;
+  laughAtMeme: () => Promise<void>;
   sendChat: (text: string) => Promise<void>;
   kickPlayer: (playerId: string) => Promise<void>;
   leaveRoom: () => void;
@@ -268,6 +270,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { code, selfId } = get();
     if (!code) return;
     await apiCastFavorite(code, selfId, authorId);
+  },
+
+  laughAtMeme: async () => {
+    const { code, selfId } = get();
+    if (!code) return;
+    await apiLaughAtMeme(code, selfId);
   },
 
   markMemeSeen: async () => {

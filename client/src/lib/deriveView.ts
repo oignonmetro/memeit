@@ -129,6 +129,8 @@ export function deriveView(
         seenTotal: requiredIds.length,
         selfSeen: Boolean(seenBy[selfId]),
         isAuthor: selfId === authorId,
+        laughers: players.filter((p) => dbRoom.revealLaughBy?.[p.id]).map((p) => p.nickname),
+        selfLaughed: Boolean(dbRoom.revealLaughBy?.[selfId]),
       };
     }
   }
