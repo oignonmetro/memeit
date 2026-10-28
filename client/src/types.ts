@@ -6,11 +6,15 @@ export type TemplateSource = 'library' | 'upload';
 
 // A predefined text zone on a template (imgflip-style). Coordinates are
 // percentages of the image; (xPct,yPct) is the CENTER of the box.
+// rotationDeg is optional and omitted from the data files when 0 (the
+// overwhelming majority of zones), so untouched entries keep their exact
+// existing formatting — only zones an editor actually rotated grow the field.
 export interface TemplateBox {
   xPct: number;
   yPct: number;
   widthPct: number;
   heightPct: number;
+  rotationDeg?: number;
 }
 
 export interface Template {
@@ -28,6 +32,7 @@ export interface TextLayer {
   yPct: number;
   widthPct: number;
   heightPct: number;
+  rotationDeg?: number;
 }
 
 export interface RoomSettings {
@@ -89,6 +94,9 @@ export interface DbRoom {
   // Which connected players have hit "Vu" on the meme currently on screen.
   // Reset every time revealIndex moves to the next meme.
   revealSeenBy: Record<string, boolean>;
+  // Players who tapped the laughing emoji on the meme currently on screen.
+  // Reset with revealSeenBy; optional because RTDB drops empty objects.
+  revealLaughBy?: Record<string, boolean>;
   voteDeadline: number | null;
   // favoriteVotes[voterId] = authorId the voter picked as favorite this round.
   favoriteVotes: Record<string, string>;
@@ -146,13 +154,23 @@ export interface RevealMemePayload {
   total: number;
   template: Template;
   meme: { authorId: string; layers: TextLayer[] };
+  // True when the author never re-rolled their template this round.
+  isFirstTemplate: boolean;
   deadline: number;
-  // How many connected players have hit "Vu" on the currently displayed meme.
-  // Once seenCount reaches seenTotal, the room advances immediately instead
-  // of waiting for the deadline.
+  // How many connected players (excluding the meme's own author — see
+  // isAuthor) have hit "Vu" on the currently displayed meme. Once seenCount
+  // reaches seenTotal, the room advances immediately instead of waiting for
+  // the deadline.
   seenCount: number;
   seenTotal: number;
   selfSeen: boolean;
+  // True when the viewer is the author of the meme currently shown: they
+  // already know it, so the "Vu" button is disabled for them and they don't
+  // count towards seenTotal.
+  isAuthor: boolean;
+  // Nicknames of the players who reacted with the laughing emoji.
+  laughers: string[];
+  selfLaughed: boolean;
 }
 
 export interface VoteMeme {
@@ -205,7 +223,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   mode: 'normal',
   rounds: 3,
   captionTimeSec: 120,
-  revealTimeSec: 10,
+  revealTimeSec: 13,
   voteTimeSec: 25,
   maxTemplateChanges: 5,
   templateSource: 'both',

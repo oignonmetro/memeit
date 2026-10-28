@@ -1,12 +1,19 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { boxEditorPlugin } from './scripts/boxEditorPlugin.mts';
 
 export default defineConfig({
   plugins: [
     react(),
+    // Écriture des zones de texte depuis /dev/boxes. Actif en dev seulement.
+    boxEditorPlugin(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' plutôt que 'autoUpdate' : un rechargement silencieux
+      // couperait une partie en cours (caption à moitié écrite, vote en
+      // cours...). Le nouveau service worker reste en attente jusqu'à ce
+      // que le joueur choisisse de recharger, via le bandeau UpdatePrompt.
+      registerType: 'prompt',
       includeAssets: ['icons/favicon.png'],
       manifest: {
         name: 'MemeIt',

@@ -24,6 +24,7 @@ import {
   reduceCaption,
   reduceReveal,
   reduceMarkSeen,
+  reduceLaugh,
   reduceTally,
   reduceRoundResults,
   reduceChangeTemplate,
@@ -308,6 +309,11 @@ export async function advanceReveal(code: string): Promise<void> {
 // for the cooldown deadline.
 export async function markMemeSeen(code: string, playerId: string): Promise<void> {
   await runTransaction(roomRef(code), (room: DbRoom | null) => reduceMarkSeen(room, playerId, Date.now()));
+}
+
+// A player reacts with a laughing emoji to the meme currently on screen.
+export async function laughAtMeme(code: string, playerId: string): Promise<void> {
+  await runTransaction(roomRef(code), (room: DbRoom | null) => reduceLaugh(room, playerId, Date.now()));
 }
 
 // Vote phase: each player picks their single favorite meme of the round
