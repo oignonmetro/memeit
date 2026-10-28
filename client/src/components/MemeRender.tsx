@@ -42,17 +42,43 @@ function MemeTextLayer({ layer, frameW, frameH }: { layer: TextLayer; frameW: nu
     const h = frame?.clientHeight || frameH;
     const maxW = (w * layer.widthPct) / 100;
     const maxH = (h * layer.heightPct) / 100;
-    let lo = 8;
+    const fits = (size: number) => {
+      el.style.fontSize = `${size}px`;
+      return el.scrollWidth <= maxW + 0.5 && el.scrollHeight <= maxH + 0.5;
+    };
+    // "Fits" is NOT monotonic in the font size: a smaller size can wrap to an
+    // extra line and overflow while a larger one fits on fewer lines. A plain
+    // binary search got trapped in that smaller regime at some frame widths
+    // (tiny text). So scan down coarsely from the max for the first size that
+    // fits, then bisect only inside that bracket, where it is monotonic.
+    const MIN = 8;
     let hi = Math.max(10, w * 0.12);
-    let best = lo;
-    for (let i = 0; i < 8; i += 1) {
-      const mid = (lo + hi) / 2;
-      el.style.fontSize = `${mid}px`;
-      if (el.scrollWidth <= maxW + 0.5 && el.scrollHeight <= maxH + 0.5) {
-        best = mid;
-        lo = mid;
-      } else {
-        hi = mid;
+    let best = MIN;
+    let lo = MIN;
+    if (fits(hi)) {
+      best = hi;
+    } else {
+      let found = false;
+      while (hi > MIN) {
+        const next = Math.max(MIN, hi * 0.9);
+        if (fits(next)) {
+          lo = next;
+          found = true;
+          break;
+        }
+        hi = next;
+      }
+      if (found) {
+        best = lo;
+        for (let i = 0; i < 4; i += 1) {
+          const mid = (lo + hi) / 2;
+          if (fits(mid)) {
+            best = mid;
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
       }
     }
     el.style.fontSize = `${best}px`;
